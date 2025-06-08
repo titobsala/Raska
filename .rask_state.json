@@ -1,0 +1,65 @@
+{
+  "title": "Project: Rask - A CLI Project Planner in Rust",
+  "tasks": [
+    {
+      "id": 1,
+      "description": "Initialize the Rust project and add dependencies.",
+      "status": "Completed"
+    },
+    {
+      "id": 2,
+      "description": "Define the core data structures (Task, Roadmap, Status).",
+      "status": "Pending"
+    },
+    {
+      "id": 3,
+      "description": "Implement the function to parse a markdown file.",
+      "status": "Pending"
+    },
+    {
+      "id": 4,
+      "description": "Extract the project title from the H1 heading.",
+      "status": "Pending"
+    },
+    {
+      "id": 5,
+      "description": "Extract tasks from markdown list items.",
+      "status": "Pending"
+    },
+    {
+      "id": 6,
+      "description": "Implement the",
+      "status": "Pending"
+    },
+    {
+      "id": 7,
+      "description": "Implement the",
+      "status": "Pending"
+    },
+    {
+      "id": 8,
+      "description": "Implement the",
+      "status": "Pending"
+    },
+    {
+      "id": 9,
+      "description": "Add logic to save the project state to a",
+      "status": "Pending"
+    },
+    {
+      "id": 10,
+      "description": "Add logic to load the project state from the",
+      "status": "Pending"
+    },
+    {
+      "id": 11,
+      "description": "Use the",
+      "status": "Pending"
+    },
+    {
+      "id": 12,
+      "description": "Write usage instructions in the",
+      "status": "Pending"
+    }
+  ]
+}
