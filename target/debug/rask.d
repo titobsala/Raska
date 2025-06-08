@@ -1,0 +1,1 @@
+/home/tito-sala/Code/Personal/Raska/target/debug/rask: /home/tito-sala/Code/Personal/Raska/src/main.rs /home/tito-sala/Code/Personal/Raska/src/model.rs /home/tito-sala/Code/Personal/Raska/src/parser.rs /home/tito-sala/Code/Personal/Raska/src/state.rs
