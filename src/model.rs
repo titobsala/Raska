@@ -17,4 +17,5 @@ pub struct Task {
 pub struct Roadmap {
     pub title: String,
     pub tasks: Vec<Task>,
+    pub source_file: Option<String>, // Path to the original markdown file
 }

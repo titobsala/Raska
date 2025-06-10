@@ -4,12 +4,12 @@
     {
       "id": 1,
       "description": "Initialize the Rust project and add dependencies.",
-      "status": "Pending"
+      "status": "Completed"
     },
     {
       "id": 2,
       "description": "Define the core data structures (Task, Roadmap, Status).",
-      "status": "Pending"
+      "status": "Completed"
     },
     {
       "id": 3,
@@ -61,5 +61,6 @@
       "description": "Write usage instructions in the",
       "status": "Pending"
     }
-  ]
+  ],
+  "source_file": "roadmap.md"
 }
