@@ -3,6 +3,7 @@
 **/*.rs.bk
 *.pdb
 target/
+/target
 
 # Cargo lock file (include this for binaries, ignore for libraries)
 # Since rask is a binary application, we should keep Cargo.lock
