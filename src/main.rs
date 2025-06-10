@@ -27,5 +27,9 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         Commands::Init { filepath } => commands::init_project(filepath),
         Commands::Show => commands::show_project(),
         Commands::Complete { id } => commands::complete_task(*id),
+        Commands::Add { description } => commands::add_task(description),
+        Commands::Remove { id } => commands::remove_task(*id),
+        Commands::Edit { id, description } => commands::edit_task(*id, description),
+        Commands::Reset { id } => commands::reset_tasks(*id),
     }
 }
