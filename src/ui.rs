@@ -88,6 +88,50 @@ pub fn display_completion_success(task_id: usize) {
     println!("   🎊 Well done! Keep up the great work!\n");
 }
 
+/// Displays success message for adding a task
+pub fn display_add_success(task_id: usize, description: &str) {
+    println!("\n{} {} Task #{} added successfully!", "➕".to_string(), "Success:".green().bold(), task_id);
+    println!("   📝 Task: {}", description.bright_cyan());
+    println!("   🆔 Assigned ID: {}", task_id.to_string().bright_yellow());
+    println!("   💡 Task added to both state and markdown file!\n");
+}
+
+/// Displays success message for removing a task
+pub fn display_remove_success(description: &str) {
+    println!("\n{} {} Task removed successfully!", "🗑️".to_string(), "Success:".green().bold());
+    println!("   📝 Removed: {}", description.bright_cyan());
+    println!("   🔢 Remaining tasks have been renumbered!");
+    println!("   💡 Task removed from both state and markdown file!\n");
+}
+
+/// Displays success message for editing a task
+pub fn display_edit_success(task_id: usize, old_description: &str, new_description: &str) {
+    println!("\n{} {} Task #{} edited successfully!", "✏️".to_string(), "Success:".green().bold(), task_id);
+    println!("   📝 Old: {}", old_description.strikethrough().dimmed());
+    println!("   📝 New: {}", new_description.bright_cyan());
+    println!("   💡 Changes saved to both state and markdown file!\n");
+}
+
+/// Displays success message for resetting tasks
+pub fn display_reset_success(task_id: Option<usize>) {
+    match task_id {
+        Some(id) => {
+            println!("\n{} {} Task #{} reset to pending!", "🔄".to_string(), "Success:".green().bold(), id);
+            println!("   ⏪ Task is now pending and ready to be worked on again!");
+        }
+        None => {
+            println!("\n{} {} All tasks reset to pending!", "🔄".to_string(), "Success:".green().bold());
+            println!("   ⏪ Fresh start! All tasks are now pending!");
+        }
+    }
+    println!("   💡 Changes saved to both state and markdown file!\n");
+}
+
+/// Displays informational messages
+pub fn display_info(message: &str) {
+    println!("\n{} {}", "Info:".blue().bold(), message);
+}
+
 /// Displays error messages with consistent formatting
 pub fn display_error(message: &str) {
     eprintln!("{} {}", "Error:".red().bold(), message);

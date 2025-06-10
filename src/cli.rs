@@ -34,6 +34,37 @@ pub enum Commands {
         #[arg(value_name = "TASK_ID", help = "The ID number of the task to complete")]
         id: usize 
     },
+
+    /// Add a new task to the project
+    Add {
+        /// Description of the new task to add
+        #[arg(value_name = "DESCRIPTION", help = "The description of the new task")]
+        description: String
+    },
+
+    /// Remove a task from the project
+    Remove {
+        /// ID of the task to remove
+        #[arg(value_name = "TASK_ID", help = "The ID number of the task to remove")]
+        id: usize
+    },
+
+    /// Edit the description of an existing task
+    Edit {
+        /// ID of the task to edit
+        #[arg(value_name = "TASK_ID", help = "The ID number of the task to edit")]
+        id: usize,
+        /// New description for the task
+        #[arg(value_name = "DESCRIPTION", help = "The new description for the task")]
+        description: String
+    },
+
+    /// Reset task(s) to pending status
+    Reset {
+        /// ID of the task to reset (if not provided, resets all tasks)
+        #[arg(value_name = "TASK_ID", help = "The ID number of the task to reset (optional - resets all if not provided)")]
+        id: Option<usize>
+    },
 }
 
 /// Parse command line arguments and return the CLI structure
