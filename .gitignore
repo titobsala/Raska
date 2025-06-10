@@ -1,0 +1,86 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+*.pdb
+target/
+
+# Cargo lock file (include this for binaries, ignore for libraries)
+# Since rask is a binary application, we should keep Cargo.lock
+# Cargo.lock
+
+# IDE and Editor files
+# VS Code / Cursor
+.vscode/
+*.code-workspace
+
+# IntelliJ Rust
+.idea/
+*.iml
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# Application specific files
+# Our state file (you might want to keep this in version control for testing)
+# .rask_state.json
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+
+# Documentation builds (if using mdbook or similar)
+book/
+
+# Flamegraph profiling
+flamegraph.svg
+perf.data*
+
+# Coverage reports
+*.profraw
+tarpaulin-report.html 
