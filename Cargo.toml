@@ -2,6 +2,12 @@
 name = "rask"
 version = "2.2.0"
 edition = "2021"
+description = "An advanced CLI project planner with tags, priorities, dependencies, and multi-project support"
+license = "MIT"
+authors = ["Tito Sala"]
+repository = "https://github.com/tito-sala/rask"
+keywords = ["cli", "project-management", "task-manager", "productivity", "rust"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
