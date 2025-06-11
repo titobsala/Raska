@@ -1,13 +1,12 @@
 use crate::model::{Priority, Roadmap, Task, TaskStatus};
 use colored::*;
-use std::collections::HashSet;
 
 /// Displays the project roadmap with a beautiful formatted output
 pub fn display_roadmap(roadmap: &Roadmap) {
     // Calculate progress statistics
     let total_tasks = roadmap.tasks.len();
     let completed_tasks = roadmap.tasks.iter().filter(|t| t.status == TaskStatus::Completed).count();
-    let progress_percentage = if total_tasks > 0 { (completed_tasks * 100) / total_tasks } else { 0 };
+    let _progress_percentage = if total_tasks > 0 { (completed_tasks * 100) / total_tasks } else { 0 };
     
     // Print header with project title
     println!("\n{}", "═".repeat(60).bright_blue());
@@ -128,7 +127,31 @@ pub fn display_filtered_tasks(roadmap: &Roadmap, filtered_tasks: &[&Task], detai
     
     if filtered_tasks.is_empty() {
         println!("\n  🔍 No tasks match your filter criteria.");
-        println!("      Try adjusting your search terms or filters.\n");
+        println!("      Try adjusting your search terms or filters.");
+        
+        // Provide helpful suggestions
+        if total_tasks > 0 {
+            println!("\n  💡 Suggestions:");
+            println!("      • Use 'rask list' to see all tasks");
+            println!("      • Use 'rask list --status all' to include completed tasks");
+            println!("      • Try broader search terms with 'rask list --search <keyword>'");
+            
+            // Show available tags if any
+            let all_tags: std::collections::HashSet<String> = roadmap.tasks.iter()
+                .flat_map(|t| &t.tags)
+                .cloned()
+                .collect();
+            if !all_tags.is_empty() {
+                let tags_sample: Vec<_> = all_tags.iter().take(5).collect();
+                println!("      • Available tags: {}", 
+                    tags_sample.iter()
+                        .map(|t| format!("#{}", t))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                );
+            }
+        }
+        println!();
         return;
     }
     
@@ -248,13 +271,7 @@ pub fn display_completion_success(task_id: usize) {
     println!("   🎊 Well done! Keep up the great work!");
 }
 
-/// Display success message for task addition (backward compatibility)
-pub fn display_add_success(task_id: usize, description: &str) {
-    println!("\n➕ {}: Task #{} added successfully!", "Success".green().bold(), task_id.to_string().bright_white());
-    println!("   📝 Task: {}", description.bright_white());
-    println!("   🆔 Assigned ID: {}", task_id.to_string().bright_cyan());
-    println!("   💡 Task added to both state and markdown file!");
-}
+
 
 /// Display success message for task removal
 pub fn display_remove_success(description: &str) {
@@ -307,7 +324,7 @@ pub fn display_warning(message: &str) {
 
 /// Display list of projects
 pub fn display_projects_list(projects_config: &crate::project::ProjectsConfig, current_project: Option<&str>) {
-    use chrono::{DateTime, Utc};
+    use chrono::DateTime;
     
     println!("\n{}", "═".repeat(60).bright_blue());
     println!("  {} ({})", 

@@ -46,9 +46,11 @@ pub enum Commands {
     },
     
     /// Show the current project status and task list
+    #[command(alias = "status")]
     Show,
     
     /// Mark a task as completed
+    #[command(alias = "done")]
     Complete { 
         /// ID of the task to mark as complete
         #[arg(value_name = "TASK_ID", help = "The ID number of the task to complete")]
@@ -103,6 +105,7 @@ pub enum Commands {
     },
 
     /// List and filter tasks with advanced options
+    #[command(alias = "ls")]
     List {
         /// Filter by tags (comma-separated)
         #[arg(long, value_name = "TAGS", help = "Show only tasks with these tags (comma-separated)")]

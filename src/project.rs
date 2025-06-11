@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::io::{Error, ErrorKind};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 const PROJECTS_CONFIG_FILE: &str = ".rask_projects.json";
 const CURRENT_PROJECT_FILE: &str = ".rask_current_project";
