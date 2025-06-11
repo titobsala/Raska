@@ -79,10 +79,7 @@ pub fn complete_task(task_id: usize) -> CommandResult {
     }
 }
 
-/// Add a new task to the project (simple version for backward compatibility)
-pub fn add_task(description: &str) -> CommandResult {
-    add_task_enhanced(description, &None, &None, &None, &None)
-}
+
 
 /// Add a new task with enhanced metadata support
 pub fn add_task_enhanced(
