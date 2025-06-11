@@ -37,11 +37,12 @@ pub fn parse_markdown_to_roadmap(markdown_input: &str, source_file: Option<&Path
                 // Check if task is already completed (checkbox syntax)
                 let (description, status) = parse_task_text(&task_text);
                 
-                tasks.push(Task {
-                    id: task_id_counter,
-                    description,
-                    status,
-                });
+                let mut task = Task::new(task_id_counter, description);
+                if status == TaskStatus::Completed {
+                    task.mark_completed();
+                }
+                
+                tasks.push(task);
             }
             _ => {}
         }
@@ -51,11 +52,13 @@ pub fn parse_markdown_to_roadmap(markdown_input: &str, source_file: Option<&Path
         return Err(Error::new(ErrorKind::InvalidData, "Markdown is missing a project title (H1 heading)."));
     }
 
-    Ok(Roadmap {
-        title: roadmap_title,
-        tasks,
-        source_file: source_file.map(|p| p.to_string_lossy().to_string()),
-    })
+    let mut roadmap = Roadmap::new(roadmap_title);
+    roadmap.tasks = tasks;
+    if let Some(source) = source_file {
+        roadmap = roadmap.with_source_file(source.to_string_lossy().to_string());
+    }
+
+    Ok(roadmap)
 }
 
 /// Parse task text to extract description and status
