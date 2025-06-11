@@ -5,7 +5,7 @@ use std::path::PathBuf;
 #[derive(ClapParser)]
 #[command(
     name = "rask",
-    version = "2.0.0",
+    version = "2.1.0",
     about = "An advanced CLI project planner with tags, priorities, and dependencies",
     long_about = "Rask is a powerful command-line project planner that helps you track tasks defined in Markdown files. \
                   It supports tags, priorities, task dependencies, and advanced filtering capabilities."

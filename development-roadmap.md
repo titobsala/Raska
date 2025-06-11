@@ -17,11 +17,11 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [x] Implement status-based filtering (pending, completed)
 - [x] Add search by task description functionality
 - [x] Create combined filter logic (AND/OR operations)
-- [ ] Design project workspace system
-- [ ] Add 'project' command group (create, switch, list, delete)
-- [ ] Implement project-specific state files
-- [ ] Add current project indicator in CLI output
-- [ ] Create project configuration management
+- [x] Design project workspace system
+- [x] Add 'project' command group (create, switch, list, delete)
+- [x] Implement project-specific state files
+- [x] Add current project indicator in CLI output
+- [x] Create project configuration management
 - [ ] Implement dependency validation logic
 - [ ] Add dependency visualization in show command
 - [ ] Prevent completion of tasks with incomplete dependencies

@@ -4,6 +4,7 @@ mod commands;
 mod markdown_writer;
 mod model;
 mod parser;
+mod project;
 mod state;
 mod ui;
 
