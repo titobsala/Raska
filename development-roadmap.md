@@ -22,11 +22,11 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [x] Implement project-specific state files
 - [x] Add current project indicator in CLI output
 - [x] Create project configuration management
-- [ ] Implement dependency validation logic
-- [ ] Add dependency visualization in show command
-- [ ] Prevent completion of tasks with incomplete dependencies
-- [ ] Add dependency chain analysis
-- [ ] Create dependency conflict detection
+- [x] Implement dependency validation logic
+- [x] Add dependency visualization in show command
+- [x] Prevent completion of tasks with incomplete dependencies
+- [x] Add dependency chain analysis
+- [x] Create dependency conflict detection
 - [ ] Update show command to display tags, priorities, and notes
 - [ ] Add color coding for different priorities
 - [ ] Implement dependency tree visualization
@@ -42,3 +42,7 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [ ] Create usage examples and tutorials
 - [ ] Add error handling and validation improvements
 - [ ] Performance optimization for large roadmaps
+- [x] Test dependency task B
+- [ ] Test circular dependency
+- [ ] Create circular test
+- [ ] Final circular test

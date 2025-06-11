@@ -297,7 +297,229 @@ impl Roadmap {
             completion_percentage: if total > 0 { (completed * 100) / total } else { 0 },
         }
     }
+
+    /// Validate dependency relationships for a specific task
+    pub fn validate_task_dependencies(&self, task_id: usize) -> Result<(), Vec<DependencyError>> {
+        let mut errors = Vec::new();
+        
+        if let Some(task) = self.find_task_by_id(task_id) {
+            // Check if all dependencies exist
+            for &dep_id in &task.dependencies {
+                if self.find_task_by_id(dep_id).is_none() {
+                    errors.push(DependencyError::MissingDependency { task_id, missing_dep_id: dep_id });
+                }
+            }
+            
+            // Check for circular dependencies
+            if let Err(cycle) = self.check_circular_dependencies_for_task(task_id) {
+                errors.push(DependencyError::CircularDependency { cycle });
+            }
+        } else {
+            errors.push(DependencyError::TaskNotFound { task_id });
+        }
+        
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
+
+    /// Validate all dependency relationships in the roadmap
+    pub fn validate_all_dependencies(&self) -> Result<(), Vec<DependencyError>> {
+        let mut all_errors = Vec::new();
+        
+        for task in &self.tasks {
+            if let Err(mut errors) = self.validate_task_dependencies(task.id) {
+                all_errors.append(&mut errors);
+            }
+        }
+        
+        if all_errors.is_empty() {
+            Ok(())
+        } else {
+            Err(all_errors)
+        }
+    }
+
+    /// Check for circular dependencies starting from a specific task
+    fn check_circular_dependencies_for_task(&self, start_task_id: usize) -> Result<(), Vec<usize>> {
+        let mut visited = HashSet::new();
+        let mut path = Vec::new();
+        
+        if self.has_circular_dependency_recursive(start_task_id, &mut visited, &mut path) {
+            Err(path)
+        } else {
+            Ok(())
+        }
+    }
+
+    fn has_circular_dependency_recursive(
+        &self, 
+        task_id: usize, 
+        visited: &mut HashSet<usize>, 
+        path: &mut Vec<usize>
+    ) -> bool {
+        if path.contains(&task_id) {
+            // Found a cycle - add the current task to complete the cycle
+            path.push(task_id);
+            return true;
+        }
+        
+        if visited.contains(&task_id) {
+            return false;
+        }
+        
+        visited.insert(task_id);
+        path.push(task_id);
+        
+        if let Some(task) = self.find_task_by_id(task_id) {
+            for &dep_id in &task.dependencies {
+                if self.has_circular_dependency_recursive(dep_id, visited, path) {
+                    return true;
+                }
+            }
+        }
+        
+        path.pop();
+        false
+    }
+
+    /// Get the full dependency chain for a task (all tasks it depends on, recursively)
+    pub fn get_dependency_chain(&self, task_id: usize) -> Vec<usize> {
+        let mut chain = Vec::new();
+        let mut visited = HashSet::new();
+        self.collect_dependencies_recursive(task_id, &mut chain, &mut visited);
+        chain
+    }
+
+    fn collect_dependencies_recursive(
+        &self, 
+        task_id: usize, 
+        chain: &mut Vec<usize>, 
+        visited: &mut HashSet<usize>
+    ) {
+        if visited.contains(&task_id) {
+            return;
+        }
+        visited.insert(task_id);
+        
+        if let Some(task) = self.find_task_by_id(task_id) {
+            for &dep_id in &task.dependencies {
+                if !chain.contains(&dep_id) {
+                    chain.push(dep_id);
+                }
+                self.collect_dependencies_recursive(dep_id, chain, visited);
+            }
+        }
+    }
+
+    /// Get all tasks that depend on a specific task (reverse dependencies)
+    pub fn get_dependents(&self, task_id: usize) -> Vec<usize> {
+        self.tasks
+            .iter()
+            .filter(|task| task.dependencies.contains(&task_id))
+            .map(|task| task.id)
+            .collect()
+    }
+
+    /// Get tasks that are ready to be started (all dependencies completed)
+    pub fn get_ready_tasks(&self) -> Vec<&Task> {
+        let completed_ids = self.get_completed_task_ids();
+        self.tasks
+            .iter()
+            .filter(|task| task.status == TaskStatus::Pending && task.can_be_started(&completed_ids))
+            .collect()
+    }
+
+    /// Get tasks that are blocked by incomplete dependencies
+    pub fn get_blocked_tasks(&self) -> Vec<&Task> {
+        let completed_ids = self.get_completed_task_ids();
+        self.tasks
+            .iter()
+            .filter(|task| task.status == TaskStatus::Pending && !task.can_be_started(&completed_ids))
+            .collect()
+    }
+
+    /// Get detailed dependency tree for visualization
+    pub fn get_dependency_tree(&self, task_id: usize) -> Option<DependencyNode> {
+        if let Some(task) = self.find_task_by_id(task_id) {
+            let mut visited = HashSet::new();
+            Some(self.build_dependency_tree_recursive(task_id, &mut visited))
+        } else {
+            None
+        }
+    }
+
+    fn build_dependency_tree_recursive(&self, task_id: usize, visited: &mut HashSet<usize>) -> DependencyNode {
+        if visited.contains(&task_id) {
+            // Circular reference detected
+            return DependencyNode {
+                task_id,
+                description: "[Circular Reference]".to_string(),
+                status: TaskStatus::Pending,
+                dependencies: Vec::new(),
+                is_circular: true,
+            };
+        }
+        
+        visited.insert(task_id);
+        
+        let task = self.find_task_by_id(task_id).unwrap();
+        let dependencies = task.dependencies
+            .iter()
+            .map(|&dep_id| self.build_dependency_tree_recursive(dep_id, visited))
+            .collect();
+        
+        visited.remove(&task_id);
+        
+        DependencyNode {
+            task_id,
+            description: task.description.clone(),
+            status: task.status.clone(),
+            dependencies,
+            is_circular: false,
+        }
+    }
 }
+
+#[derive(Debug, Clone)]
+pub struct DependencyNode {
+    pub task_id: usize,
+    pub description: String,
+    pub status: TaskStatus,
+    pub dependencies: Vec<DependencyNode>,
+    pub is_circular: bool,
+}
+
+#[derive(Debug, Clone)]
+pub enum DependencyError {
+    TaskNotFound { task_id: usize },
+    MissingDependency { task_id: usize, missing_dep_id: usize },
+    CircularDependency { cycle: Vec<usize> },
+}
+
+impl std::fmt::Display for DependencyError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DependencyError::TaskNotFound { task_id } => {
+                write!(f, "Task #{} not found", task_id)
+            }
+            DependencyError::MissingDependency { task_id, missing_dep_id } => {
+                write!(f, "Task #{} depends on missing task #{}", task_id, missing_dep_id)
+            }
+            DependencyError::CircularDependency { cycle } => {
+                let cycle_str = cycle.iter()
+                    .map(|id| format!("#{}", id))
+                    .collect::<Vec<_>>()
+                    .join(" → ");
+                write!(f, "Circular dependency detected: {}", cycle_str)
+            }
+        }
+    }
+}
+
+impl std::error::Error for DependencyError {}
 
 #[derive(Debug)]
 pub struct RoadmapStatistics {

@@ -32,6 +32,14 @@ pub fn complete_task(task_id: usize) -> CommandResult {
     // Load current state
     let mut roadmap = state::load_state()?;
     
+    // Validate dependencies first
+    if let Err(errors) = roadmap.validate_task_dependencies(task_id) {
+        for error in &errors {
+            ui::display_error(&format!("Dependency validation failed: {}", error));
+        }
+        return Err("Cannot complete task due to dependency issues".into());
+    }
+    
     // Check dependencies before completing
     if let Some(task) = roadmap.find_task_by_id(task_id) {
         let completed_task_ids = roadmap.get_completed_task_ids();
@@ -40,6 +48,9 @@ pub fn complete_task(task_id: usize) -> CommandResult {
                 .filter(|&&dep_id| !completed_task_ids.contains(&dep_id))
                 .copied()
                 .collect();
+            
+            // Show detailed dependency information
+            ui::display_dependency_error(task_id, &incomplete_deps, &roadmap);
             return Err(format!(
                 "Cannot complete task {}. Missing dependencies: {:?}", 
                 task_id, incomplete_deps
@@ -104,6 +115,22 @@ pub fn add_task_enhanced(
     for &dep_id in &parsed_deps {
         if roadmap.find_task_by_id(dep_id).is_none() {
             return Err(format!("Dependency task {} does not exist.", dep_id).into());
+        }
+    }
+    
+    // Create a temporary task to check for circular dependencies
+    if !parsed_deps.is_empty() {
+        let temp_task = Task::new(roadmap.get_next_task_id(), description.to_string())
+            .with_dependencies(parsed_deps.clone());
+        let mut temp_roadmap = roadmap.clone();
+        temp_roadmap.tasks.push(temp_task);
+        
+        // Check for circular dependencies
+        if let Err(errors) = temp_roadmap.validate_task_dependencies(temp_roadmap.get_next_task_id() - 1) {
+            for error in &errors {
+                ui::display_error(&format!("Dependency validation failed: {}", error));
+            }
+            return Err("Cannot add task due to dependency conflicts".into());
         }
     }
     
@@ -425,5 +452,57 @@ pub fn delete_project(name: &str, force: bool) -> CommandResult {
     }
     
     ui::display_success(&format!("Deleted project '{}'", name));
+    Ok(())
+}
+
+/// Analyze and visualize task dependencies
+pub fn analyze_dependencies(
+    tree_task_id: &Option<usize>,
+    validate: bool,
+    show_ready: bool,
+    show_blocked: bool,
+) -> CommandResult {
+    let roadmap = state::load_state()?;
+    
+    // If no specific options provided, show a summary
+    if tree_task_id.is_none() && !validate && !show_ready && !show_blocked {
+        ui::display_dependency_overview(&roadmap);
+        return Ok(());
+    }
+    
+    // Validate dependencies if requested
+    if validate {
+        match roadmap.validate_all_dependencies() {
+            Ok(()) => {
+                ui::display_success("All dependencies are valid!");
+            }
+            Err(errors) => {
+                ui::display_dependency_validation_errors(&errors);
+                return Err("Dependency validation failed".into());
+            }
+        }
+    }
+    
+    // Show dependency tree for specific task
+    if let Some(task_id) = tree_task_id {
+        if let Some(tree) = roadmap.get_dependency_tree(*task_id) {
+            ui::display_dependency_tree(&tree, &roadmap);
+        } else {
+            return Err(format!("Task {} not found", task_id).into());
+        }
+    }
+    
+    // Show ready tasks
+    if show_ready {
+        let ready_tasks = roadmap.get_ready_tasks();
+        ui::display_ready_tasks(&ready_tasks);
+    }
+    
+    // Show blocked tasks
+    if show_blocked {
+        let blocked_tasks = roadmap.get_blocked_tasks();
+        ui::display_blocked_tasks(&blocked_tasks, &roadmap);
+    }
+    
     Ok(())
 } 

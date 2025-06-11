@@ -5,7 +5,7 @@ use std::path::PathBuf;
 #[derive(ClapParser)]
 #[command(
     name = "rask",
-    version = "2.1.0",
+    version = "2.2.0",
     about = "An advanced CLI project planner with tags, priorities, and dependencies",
     long_about = "Rask is a powerful command-line project planner that helps you track tasks defined in Markdown files. \
                   It supports tags, priorities, task dependencies, and advanced filtering capabilities."
@@ -128,6 +128,25 @@ pub enum Commands {
     /// Manage projects (multi-project support)
     #[command(subcommand)]
     Project(ProjectCommands),
+
+    /// Analyze and visualize task dependencies
+    Dependencies {
+        /// Show dependency tree for a specific task
+        #[arg(long, value_name = "TASK_ID", help = "Show dependency tree for a specific task")]
+        tree: Option<usize>,
+        
+        /// Validate all dependencies for issues
+        #[arg(long, help = "Validate all dependencies and show any issues")]
+        validate: bool,
+        
+        /// Show tasks ready to be started
+        #[arg(long, help = "Show tasks that are ready to be started")]
+        ready: bool,
+        
+        /// Show tasks blocked by dependencies
+        #[arg(long, help = "Show tasks blocked by incomplete dependencies")]
+        blocked: bool,
+    },
 }
 
 /// Project management commands
