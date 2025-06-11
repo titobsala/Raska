@@ -52,6 +52,9 @@ fn run_command(command: &Commands) -> commands::CommandResult {
                     commands::delete_project(name, *force)
                 },
             }
+        },
+        Commands::Dependencies { tree, validate, ready, blocked } => {
+            commands::analyze_dependencies(tree, *validate, *ready, *blocked)
         }
     }
 }
