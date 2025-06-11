@@ -1,66 +1,454 @@
 {
-  "title": "Project: Rask - A CLI Project Planner in Rust",
+  "title": "Rask Advanced Features Development Roadmap",
   "tasks": [
     {
       "id": 1,
-      "description": "Initialize the Rust project and add dependencies.",
-      "status": "Completed"
+      "description": "Update Task struct to support tags, priorities, notes, and dependencies",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
     },
     {
       "id": 2,
-      "description": "Define the core data structures (Task, Roadmap, Status).",
-      "status": "Completed"
+      "description": "Update Roadmap struct to support metadata and project identification",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
     },
     {
       "id": 3,
-      "description": "Implement the function to parse a markdown file.",
-      "status": "Pending"
+      "description": "Create new enums for Priority levels (Low, Medium, High, Critical)",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
     },
     {
       "id": 4,
-      "description": "Extract the project title from the H1 heading.",
-      "status": "Pending"
+      "description": "Design dependency system data structures",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
     },
     {
       "id": 5,
-      "description": "Extract tasks from markdown list items.",
-      "status": "Pending"
+      "description": "Update serialization/deserialization for backward compatibility",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
     },
     {
       "id": 6,
-      "description": "Implement the",
-      "status": "Pending"
+      "description": "Add --tag parameter to add command for categorizing tasks",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": "2025-06-10T23:59:41.471421294+00:00"
     },
     {
       "id": 7,
-      "description": "Implement the",
-      "status": "Pending"
+      "description": "Add --priority parameter to add command for task prioritization",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": "2025-06-10T23:59:41.477018073+00:00"
     },
     {
       "id": 8,
-      "description": "Implement the",
-      "status": "Pending"
+      "description": "Add --note parameter to add command for detailed task descriptions",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": "2025-06-10T23:59:41.482844051+00:00"
     },
     {
       "id": 9,
-      "description": "Add logic to save the project state to a",
-      "status": "Pending"
+      "description": "Add --depends-on parameter to add command for task dependencies",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": "2025-06-10T23:59:41.491796764+00:00"
     },
     {
       "id": 10,
-      "description": "Add logic to load the project state from the",
-      "status": "Pending"
+      "description": "Create new 'list' command with filtering capabilities",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": "2025-06-10T23:59:41.496608720+00:00"
     },
     {
       "id": 11,
-      "description": "Use the",
-      "status": "Pending"
+      "description": "Implement tag-based filtering in list command",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": "2025-06-10T23:59:55.340008692+00:00"
     },
     {
       "id": 12,
-      "description": "Write usage instructions in the",
-      "status": "Pending"
+      "description": "Implement priority-based filtering in list command",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": "2025-06-10T23:59:55.345909389+00:00"
+    },
+    {
+      "id": 13,
+      "description": "Implement status-based filtering (pending, completed)",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": "2025-06-10T23:59:55.351450542+00:00"
+    },
+    {
+      "id": 14,
+      "description": "Add search by task description functionality",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": "2025-06-10T23:59:55.356933607+00:00"
+    },
+    {
+      "id": 15,
+      "description": "Create combined filter logic (AND/OR operations)",
+      "status": "Completed",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": "2025-06-10T23:59:55.363170505+00:00"
+    },
+    {
+      "id": 16,
+      "description": "Design project workspace system",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 17,
+      "description": "Add 'project' command group (create, switch, list, delete)",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 18,
+      "description": "Implement project-specific state files",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 19,
+      "description": "Add current project indicator in CLI output",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 20,
+      "description": "Create project configuration management",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 21,
+      "description": "Implement dependency validation logic",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 22,
+      "description": "Add dependency visualization in show command",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 23,
+      "description": "Prevent completion of tasks with incomplete dependencies",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 24,
+      "description": "Add dependency chain analysis",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 25,
+      "description": "Create dependency conflict detection",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 26,
+      "description": "Update show command to display tags, priorities, and notes",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 27,
+      "description": "Add color coding for different priorities",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 28,
+      "description": "Implement dependency tree visualization",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 29,
+      "description": "Add project switcher interface",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 30,
+      "description": "Create detailed task view command",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 31,
+      "description": "Add bulk operations (complete multiple tasks, add multiple tags)",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 32,
+      "description": "Implement task templates",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 33,
+      "description": "Add time estimation and tracking",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 34,
+      "description": "Create progress analytics and reporting",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 35,
+      "description": "Add export capabilities (JSON, CSV, HTML)",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 36,
+      "description": "Write comprehensive unit tests for all new features",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 37,
+      "description": "Update README with new feature documentation",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 38,
+      "description": "Create usage examples and tutorials",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 39,
+      "description": "Add error handling and validation improvements",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
+    },
+    {
+      "id": 40,
+      "description": "Performance optimization for large roadmaps",
+      "status": "Pending",
+      "tags": [],
+      "priority": "Medium",
+      "notes": null,
+      "dependencies": [],
+      "created_at": null,
+      "completed_at": null
     }
   ],
-  "source_file": "roadmap.md"
+  "source_file": "development-roadmap.md",
+  "metadata": {
+    "name": "Untitled Project",
+    "description": null,
+    "created_at": "2025-06-10T23:57:51.304924827+00:00",
+    "last_modified": "2025-06-10T23:59:33.494058614+00:00",
+    "version": "1.0.0"
+  },
+  "project_id": null
 }

@@ -1,0 +1,44 @@
+# Rask Advanced Features Development Roadmap
+
+This file outlines the tasks required to build the MVP for the Rask application.
+
+- [x] Update Task struct to support tags, priorities, notes, and dependencies
+- [x] Update Roadmap struct to support metadata and project identification
+- [x] Create new enums for Priority levels (Low, Medium, High, Critical)
+- [x] Design dependency system data structures
+- [x] Update serialization/deserialization for backward compatibility
+- [x] Add --tag parameter to add command for categorizing tasks
+- [x] Add --priority parameter to add command for task prioritization
+- [x] Add --note parameter to add command for detailed task descriptions
+- [x] Add --depends-on parameter to add command for task dependencies
+- [x] Create new 'list' command with filtering capabilities
+- [x] Implement tag-based filtering in list command
+- [x] Implement priority-based filtering in list command
+- [x] Implement status-based filtering (pending, completed)
+- [x] Add search by task description functionality
+- [x] Create combined filter logic (AND/OR operations)
+- [ ] Design project workspace system
+- [ ] Add 'project' command group (create, switch, list, delete)
+- [ ] Implement project-specific state files
+- [ ] Add current project indicator in CLI output
+- [ ] Create project configuration management
+- [ ] Implement dependency validation logic
+- [ ] Add dependency visualization in show command
+- [ ] Prevent completion of tasks with incomplete dependencies
+- [ ] Add dependency chain analysis
+- [ ] Create dependency conflict detection
+- [ ] Update show command to display tags, priorities, and notes
+- [ ] Add color coding for different priorities
+- [ ] Implement dependency tree visualization
+- [ ] Add project switcher interface
+- [ ] Create detailed task view command
+- [ ] Add bulk operations (complete multiple tasks, add multiple tags)
+- [ ] Implement task templates
+- [ ] Add time estimation and tracking
+- [ ] Create progress analytics and reporting
+- [ ] Add export capabilities (JSON, CSV, HTML)
+- [ ] Write comprehensive unit tests for all new features
+- [ ] Update README with new feature documentation
+- [ ] Create usage examples and tutorials
+- [ ] Add error handling and validation improvements
+- [ ] Performance optimization for large roadmaps
