@@ -20,10 +20,53 @@ pub fn init_project(filepath: &PathBuf) -> CommandResult {
     Ok(())
 }
 
-/// Show the current project status
+/// Show the current project status with enhanced display
 pub fn show_project() -> CommandResult {
     let roadmap = state::load_state()?;
-    ui::display_roadmap(&roadmap);
+    ui::display_roadmap_enhanced(&roadmap, true); // Show detailed view with tags, priorities, and notes
+    Ok(())
+}
+
+/// Find tasks that become unblocked after completing a specific task
+fn find_newly_unblocked_tasks(roadmap: &Roadmap, completed_task_id: usize) -> Vec<usize> {
+    let mut completed_task_ids = roadmap.get_completed_task_ids();
+    // Add the task we're about to complete to the list
+    completed_task_ids.insert(completed_task_id);
+    
+    roadmap.tasks.iter()
+        .filter(|task| {
+            // Task must be pending
+            task.status == TaskStatus::Pending && 
+            // Task must depend on the completed task
+            task.dependencies.contains(&completed_task_id) &&
+            // All of task's dependencies must now be complete (including the one we just completed)
+            task.dependencies.iter().all(|&dep_id| completed_task_ids.contains(&dep_id))
+        })
+        .map(|task| task.id)
+        .collect()
+}
+
+/// Enhanced input validation for task descriptions
+fn validate_task_description(description: &str) -> Result<(), String> {
+    let trimmed = description.trim();
+    
+    if trimmed.is_empty() {
+        return Err("Task description cannot be empty".to_string());
+    }
+    
+    if trimmed.len() < 3 {
+        return Err("Task description must be at least 3 characters long".to_string());
+    }
+    
+    if trimmed.len() > 500 {
+        return Err("Task description cannot exceed 500 characters".to_string());
+    }
+    
+    // Check for suspicious patterns
+    if trimmed.chars().all(|c| c.is_whitespace() || c == '.' || c == '-') {
+        return Err("Task description must contain meaningful content".to_string());
+    }
+    
     Ok(())
 }
 
@@ -58,19 +101,23 @@ pub fn complete_task(task_id: usize) -> CommandResult {
         }
     }
     
+    // Find tasks that will be unblocked (before completing this task)
+    let newly_unblocked = find_newly_unblocked_tasks(&roadmap, task_id);
+    
     // Find and update the task
     let task = roadmap.tasks.iter_mut().find(|t| t.id == task_id);
     
     match task {
         Some(task) => {
+            let task_description = task.description.clone();
             task.mark_completed();
             
             // Save to both JSON state and original markdown file
             state::save_state(&roadmap)?;
             markdown_writer::sync_to_source_file(&roadmap)?;
             
-            // Display success and updated roadmap
-            ui::display_completion_success(task_id);
+            // Display enhanced completion success with dependency unlocking
+            ui::display_completion_success_enhanced(task_id, &task_description, &newly_unblocked, &roadmap);
             ui::display_roadmap(&roadmap);
             
             Ok(())
@@ -78,8 +125,6 @@ pub fn complete_task(task_id: usize) -> CommandResult {
         None => Err(format!("Task with ID {} not found.", task_id).into()),
     }
 }
-
-
 
 /// Add a new task with enhanced metadata support
 pub fn add_task_enhanced(
@@ -89,31 +134,66 @@ pub fn add_task_enhanced(
     notes: &Option<String>,
     dependencies: &Option<String>,
 ) -> CommandResult {
+    // Enhanced input validation
+    if let Err(validation_error) = validate_task_description(description) {
+        ui::display_error(&format!("Invalid task description: {}", validation_error));
+        ui::display_info("💡 Try providing a more descriptive task name");
+        return Err(validation_error.into());
+    }
+    
     // Load current state
     let mut roadmap = state::load_state()?;
     
-    // Parse tags
+    // Parse tags with validation
     let parsed_tags: Vec<String> = if let Some(tag_str) = tags {
-        tag_str.split(',').map(|s| s.trim().to_string()).collect()
-    } else {
-        Vec::new()
-    };
-    
-    // Parse dependencies
-    let parsed_deps: Vec<usize> = if let Some(dep_str) = dependencies {
-        dep_str.split(',')
-            .filter_map(|s| s.trim().parse().ok())
-            .collect()
-    } else {
-        Vec::new()
-    };
-    
-    // Validate dependencies exist
-    for &dep_id in &parsed_deps {
-        if roadmap.find_task_by_id(dep_id).is_none() {
-            return Err(format!("Dependency task {} does not exist.", dep_id).into());
+        let tags: Vec<String> = tag_str.split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        
+        // Validate tag format
+        for tag in &tags {
+            if tag.len() > 50 {
+                return Err(format!("Tag '{}' is too long (max 50 characters)", tag).into());
+            }
+            if !tag.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
+                return Err(format!("Tag '{}' contains invalid characters. Use only letters, numbers, hyphens, and underscores", tag).into());
+            }
         }
-    }
+        tags
+    } else {
+        Vec::new()
+    };
+    
+    // Parse dependencies with enhanced validation
+    let parsed_deps: Vec<usize> = if let Some(dep_str) = dependencies {
+        let deps: Vec<usize> = dep_str.split(',')
+            .filter_map(|s| {
+                let trimmed = s.trim();
+                if trimmed.is_empty() {
+                    None
+                } else {
+                    match trimmed.parse() {
+                        Ok(id) => Some(id),
+                        Err(_) => {
+                            ui::display_warning(&format!("Invalid dependency ID '{}' - must be a number", trimmed));
+                            None
+                        }
+                    }
+                }
+            })
+            .collect();
+        
+        // Validate dependencies exist
+        for &dep_id in &deps {
+            if roadmap.find_task_by_id(dep_id).is_none() {
+                return Err(format!("Dependency task {} does not exist. Use 'rask list' to see available tasks.", dep_id).into());
+            }
+        }
+        deps
+    } else {
+        Vec::new()
+    };
     
     // Create a temporary task to check for circular dependencies
     if !parsed_deps.is_empty() {
@@ -144,7 +224,13 @@ pub fn add_task_enhanced(
     }
     
     if let Some(ref note_text) = notes {
-        new_task = new_task.with_notes(note_text.clone());
+        if note_text.trim().is_empty() {
+            ui::display_warning("Empty note provided - skipping");
+        } else if note_text.len() > 1000 {
+            return Err("Note cannot exceed 1000 characters".into());
+        } else {
+            new_task = new_task.with_notes(note_text.clone());
+        }
     }
     
     if !parsed_deps.is_empty() {

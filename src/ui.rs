@@ -3,6 +3,11 @@ use colored::*;
 
 /// Displays the project roadmap with a beautiful formatted output
 pub fn display_roadmap(roadmap: &Roadmap) {
+    display_roadmap_enhanced(roadmap, false);
+}
+
+/// Enhanced roadmap display with optional detailed view
+pub fn display_roadmap_enhanced(roadmap: &Roadmap, show_detailed: bool) {
     // Calculate progress statistics
     let total_tasks = roadmap.tasks.len();
     let completed_tasks = roadmap.tasks.iter().filter(|t| t.status == TaskStatus::Completed).count();
@@ -30,12 +35,15 @@ pub fn display_roadmap(roadmap: &Roadmap) {
     display_progress_bar(completed_tasks, total_tasks);
     
     // Print task list header
-    println!("\n  📋 {}:", "Tasks".bold());
+    println!("\n  📋 {}{}:", 
+        "Tasks".bold(),
+        if show_detailed { " (Detailed View)" } else { "" }
+    );
     println!("  {}", "─".repeat(50).bright_black());
     
     // Print each task with enhanced formatting
     for task in &roadmap.tasks {
-        display_task_line(task, false);
+        display_task_line(task, show_detailed);
     }
     
     println!("  {}", "─".repeat(50).bright_black());
@@ -43,7 +51,71 @@ pub fn display_roadmap(roadmap: &Roadmap) {
     // Print motivational message
     display_motivational_message(completed_tasks, total_tasks);
     
+    // Show summary statistics if in detailed mode
+    if show_detailed {
+        display_project_statistics(roadmap);
+    }
+    
     println!();
+}
+
+/// Display project statistics summary
+fn display_project_statistics(roadmap: &Roadmap) {
+    let total_tasks = roadmap.tasks.len();
+    let completed_tasks = roadmap.tasks.iter().filter(|t| t.status == TaskStatus::Completed).count();
+    let pending_tasks = total_tasks - completed_tasks;
+    
+    // Priority breakdown
+    let critical_tasks = roadmap.tasks.iter().filter(|t| t.priority == Priority::Critical && t.status == TaskStatus::Pending).count();
+    let high_tasks = roadmap.tasks.iter().filter(|t| t.priority == Priority::High && t.status == TaskStatus::Pending).count();
+    let medium_tasks = roadmap.tasks.iter().filter(|t| t.priority == Priority::Medium && t.status == TaskStatus::Pending).count();
+    let low_tasks = roadmap.tasks.iter().filter(|t| t.priority == Priority::Low && t.status == TaskStatus::Pending).count();
+    
+    // Dependency analysis
+    let ready_tasks = roadmap.tasks.iter()
+        .filter(|t| t.status == TaskStatus::Pending && t.can_be_started(&roadmap.get_completed_task_ids()))
+        .count();
+    let blocked_tasks = pending_tasks - ready_tasks;
+    
+    println!("\n  📊 {}:", "Project Statistics".bold().bright_cyan());
+    println!("      📈 Progress: {}/{} completed ({:.1}%)", 
+        completed_tasks, total_tasks, 
+        if total_tasks > 0 { (completed_tasks as f64 / total_tasks as f64) * 100.0 } else { 0.0 }
+    );
+    
+    if pending_tasks > 0 {
+        println!("      🎯 Priority Breakdown:");
+        if critical_tasks > 0 { println!("         🔥 Critical: {}", critical_tasks.to_string().bright_red()); }
+        if high_tasks > 0 { println!("         ⬆️  High: {}", high_tasks.to_string().red()); }
+        if medium_tasks > 0 { println!("         ▶️  Medium: {}", medium_tasks.to_string().yellow()); }
+        if low_tasks > 0 { println!("         ⬇️  Low: {}", low_tasks.to_string().green()); }
+        
+        println!("      🚀 Task Status:");
+        println!("         ✅ Ready to start: {}", ready_tasks.to_string().bright_green());
+        if blocked_tasks > 0 {
+            println!("         🔒 Blocked by dependencies: {}", blocked_tasks.to_string().bright_red());
+        }
+    }
+}
+
+/// Get priority indicator with appropriate color
+fn get_priority_indicator(priority: &Priority) -> colored::ColoredString {
+    match priority {
+        Priority::Critical => "🔥".red(),
+        Priority::High => "⬆️".bright_red(),
+        Priority::Medium => "▶️".yellow(),
+        Priority::Low => "⬇️".green(),
+    }
+}
+
+/// Get priority color for task text based on priority level
+fn get_priority_color(priority: &Priority) -> fn(&str) -> colored::ColoredString {
+    match priority {
+        Priority::Critical => |s: &str| s.bright_red().bold(),
+        Priority::High => |s: &str| s.red(),
+        Priority::Medium => |s: &str| s.normal(),
+        Priority::Low => |s: &str| s.bright_black(),
+    }
 }
 
 /// Display a single task line with enhanced formatting
@@ -58,11 +130,12 @@ fn display_task_line(task: &Task, detailed: bool) {
     // Priority indicator with color
     let priority_indicator = get_priority_indicator(&task.priority);
     
-    // Task description with strikethrough if completed
+    // Apply priority-based coloring to task description
+    let priority_color_fn = get_priority_color(&task.priority);
     let description = if task.status == TaskStatus::Completed {
-        task.description.strikethrough().dimmed()
+        priority_color_fn(&task.description).strikethrough().dimmed()
     } else {
-        task.description.normal()
+        priority_color_fn(&task.description)
     };
     
     // Format the main task line
@@ -87,6 +160,14 @@ fn display_task_line(task: &Task, detailed: bool) {
     
     // Show detailed info if requested
     if detailed {
+        // Show priority if not default
+        if task.priority != Priority::Medium {
+            println!("      {} Priority: {}", 
+                get_priority_indicator(&task.priority),
+                format!("{}", task.priority).bright_white()
+            );
+        }
+        
         if let Some(ref notes) = task.notes {
             println!("      💭 {}", notes.italic().bright_black());
         }
@@ -98,16 +179,14 @@ fn display_task_line(task: &Task, detailed: bool) {
                 .join(", ");
             println!("      🔗 Depends on: {}", deps_str.bright_yellow());
         }
-    }
-}
-
-/// Get priority indicator with appropriate color
-fn get_priority_indicator(priority: &Priority) -> colored::ColoredString {
-    match priority {
-        Priority::Critical => "🔥".red(),
-        Priority::High => "⬆️".bright_red(),
-        Priority::Medium => "▶️".yellow(),
-        Priority::Low => "⬇️".green(),
+        
+        // Show creation/completion info if available
+        if let Some(ref created_at) = task.created_at {
+            use chrono::DateTime;
+            if let Ok(datetime) = DateTime::parse_from_rfc3339(created_at) {
+                println!("      📅 Created: {}", datetime.format("%Y-%m-%d %H:%M").to_string().bright_black());
+            }
+        }
     }
 }
 
@@ -265,13 +344,46 @@ pub fn display_init_success(roadmap: &Roadmap) {
     println!("\n   💡 Use {} to view your tasks!", "rask show".bright_cyan());
 }
 
-/// Display success message for task completion
-pub fn display_completion_success(task_id: usize) {
-    println!("\n✨ {}: Task #{} completed!", "Success".green().bold(), task_id.to_string().bright_white());
+/// Display enhanced completion success with dependency unlocking notifications
+pub fn display_completion_success_enhanced(
+    task_id: usize, 
+    task_description: &str, 
+    newly_unblocked: &[usize],
+    roadmap: &crate::model::Roadmap
+) {
+    println!("\n✨ {}: Task #{} completed!", 
+        "Success".green().bold(), 
+        task_id.to_string().bright_white()
+    );
+    
+    println!("   📝 Task: {}", task_description.bright_white());
     println!("   🎊 Well done! Keep up the great work!");
+    
+    // Show dependency unlocking notifications
+    if !newly_unblocked.is_empty() {
+        println!("\n🔓 {} unblocked by completing this task:", 
+            if newly_unblocked.len() == 1 { "Task" } else { "Tasks" }.bright_green().bold()
+        );
+        
+        for &unblocked_id in newly_unblocked {
+            if let Some(unblocked_task) = roadmap.find_task_by_id(unblocked_id) {
+                let priority_indicator = get_priority_indicator(&unblocked_task.priority);
+                println!("   {} {} #{} {}", 
+                    "▶️".bright_green(),
+                    priority_indicator,
+                    unblocked_id.to_string().bright_cyan(),
+                    unblocked_task.description.bright_white()
+                );
+            }
+        }
+        
+        println!("   💡 {} ready to start!", 
+            if newly_unblocked.len() == 1 { "This task is now" } else { "These tasks are now" }.bright_yellow()
+        );
+    }
+    
+    println!();
 }
-
-
 
 /// Display success message for task removal
 pub fn display_remove_success(description: &str) {
