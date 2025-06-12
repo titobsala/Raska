@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::io::{Error, ErrorKind};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// The main configuration structure for Rask
 /// This struct holds all user-configurable settings and preferences
@@ -341,7 +341,7 @@ impl RaskConfig {
     }
     
     /// Merge two configurations, with the second taking precedence
-    fn merge_configs(base: RaskConfig, overlay: RaskConfig) -> RaskConfig {
+    fn merge_configs(_base: RaskConfig, overlay: RaskConfig) -> RaskConfig {
         // For now, we'll do a simple overlay where overlay completely replaces sections
         // In the future, we could implement more sophisticated merging
         overlay

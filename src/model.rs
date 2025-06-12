@@ -443,7 +443,7 @@ impl Roadmap {
 
     /// Get detailed dependency tree for visualization
     pub fn get_dependency_tree(&self, task_id: usize) -> Option<DependencyNode> {
-        if let Some(task) = self.find_task_by_id(task_id) {
+        if let Some(_task) = self.find_task_by_id(task_id) {
             let mut visited = HashSet::new();
             Some(self.build_dependency_tree_recursive(task_id, &mut visited))
         } else {
