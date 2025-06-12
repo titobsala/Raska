@@ -154,6 +154,44 @@ pub enum Commands {
     /// Manage configuration settings
     #[command(subcommand)]
     Config(ConfigCommands),
+
+    /// View detailed information about a specific task
+    View {
+        /// ID of the task to view in detail
+        #[arg(value_name = "TASK_ID", help = "The ID number of the task to view")]
+        id: usize,
+    },
+
+    /// Perform bulk operations on multiple tasks
+    #[command(subcommand)]
+    Bulk(BulkCommands),
+
+    /// Export roadmap to different formats
+    Export {
+        /// Output format
+        #[arg(value_enum, help = "Export format: json, csv, or html")]
+        format: ExportFormat,
+        
+        /// Output file path (optional, defaults to stdout)
+        #[arg(short, long, value_name = "FILE", help = "Output file path")]
+        output: Option<PathBuf>,
+        
+        /// Include completed tasks
+        #[arg(long, help = "Include completed tasks in export")]
+        include_completed: bool,
+        
+        /// Include only specific tags (comma-separated)
+        #[arg(long, value_name = "TAGS", help = "Export only tasks with these tags")]
+        tags: Option<String>,
+        
+        /// Include only specific priority
+        #[arg(long, value_enum, help = "Export only tasks with this priority")]
+        priority: Option<CliPriority>,
+        
+        /// Pretty print JSON output
+        #[arg(long, help = "Pretty print JSON output")]
+        pretty: bool,
+    },
 }
 
 /// Project management commands
@@ -256,6 +294,79 @@ pub enum ConfigCommands {
         #[arg(long, help = "Force reset without confirmation")]
         force: bool,
     },
+}
+
+/// Bulk operations on multiple tasks
+#[derive(Subcommand)]
+pub enum BulkCommands {
+    /// Complete multiple tasks at once
+    Complete {
+        /// Comma-separated list of task IDs to complete
+        #[arg(value_name = "IDS", help = "Task IDs separated by commas (e.g., 1,2,3)")]
+        ids: String,
+    },
+    
+    /// Add tags to multiple tasks
+    AddTags {
+        /// Comma-separated list of task IDs
+        #[arg(value_name = "IDS", help = "Task IDs separated by commas")]
+        ids: String,
+        
+        /// Comma-separated list of tags to add
+        #[arg(value_name = "TAGS", help = "Tags separated by commas")]
+        tags: String,
+    },
+    
+    /// Remove tags from multiple tasks
+    RemoveTags {
+        /// Comma-separated list of task IDs
+        #[arg(value_name = "IDS", help = "Task IDs separated by commas")]
+        ids: String,
+        
+        /// Comma-separated list of tags to remove
+        #[arg(value_name = "TAGS", help = "Tags separated by commas")]
+        tags: String,
+    },
+    
+    /// Set priority for multiple tasks
+    SetPriority {
+        /// Comma-separated list of task IDs
+        #[arg(value_name = "IDS", help = "Task IDs separated by commas")]
+        ids: String,
+        
+        /// Priority level to set
+        #[arg(value_enum, help = "Priority level")]
+        priority: CliPriority,
+    },
+    
+    /// Reset multiple tasks to pending status
+    Reset {
+        /// Comma-separated list of task IDs to reset
+        #[arg(value_name = "IDS", help = "Task IDs separated by commas")]
+        ids: String,
+    },
+    
+    /// Remove multiple tasks (with dependency validation)
+    Remove {
+        /// Comma-separated list of task IDs to remove
+        #[arg(value_name = "IDS", help = "Task IDs separated by commas")]
+        ids: String,
+        
+        /// Force removal even if other tasks depend on these
+        #[arg(long, help = "Force removal even with dependencies")]
+        force: bool,
+    },
+}
+
+/// Export format options
+#[derive(ValueEnum, Clone)]
+pub enum ExportFormat {
+    /// JSON format
+    Json,
+    /// CSV format  
+    Csv,
+    /// HTML format
+    Html,
 }
 
 /// Parse command line arguments and return the CLI structure

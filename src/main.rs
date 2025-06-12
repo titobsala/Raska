@@ -83,5 +83,14 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         Commands::Config(config_command) => {
             commands::handle_config_command(config_command)
         },
+        Commands::View { id } => {
+            commands::view_task(*id)
+        },
+        Commands::Bulk(bulk_command) => {
+            commands::handle_bulk_command(bulk_command)
+        },
+        Commands::Export { format, output, include_completed, tags, priority, pretty } => {
+            commands::export_roadmap(format, output.as_deref(), *include_completed, tags.as_deref(), priority.as_ref(), *pretty)
+        },
     }
 }

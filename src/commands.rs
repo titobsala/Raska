@@ -1,8 +1,8 @@
 use crate::{cli::CliPriority, markdown_writer, model::{TaskStatus, Priority, Task, Roadmap}, parser, state, ui};
-use crate::cli::ConfigCommands;
+use crate::cli::{ConfigCommands, BulkCommands, ExportFormat};
 use crate::config::RaskConfig;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// Result type for command operations
@@ -800,4 +800,754 @@ fn reset_config(project_config: bool, user_config: bool, force: bool) -> Command
     }
     
     Ok(())
+}
+
+/// View detailed information about a specific task
+/// This provides comprehensive task analysis including dependencies, metadata, and context
+pub fn view_task(task_id: usize) -> CommandResult {
+    let roadmap = state::load_state()?;
+    
+    // Find the task
+    let task = roadmap.find_task_by_id(task_id)
+        .ok_or_else(|| format!("Task #{} not found", task_id))?;
+    
+    // Display detailed task information
+    ui::display_detailed_task_view(task, &roadmap);
+    
+    Ok(())
+}
+
+/// Handle bulk operations on multiple tasks
+/// This provides efficient batch processing for common operations
+pub fn handle_bulk_command(bulk_command: &BulkCommands) -> CommandResult {
+    match bulk_command {
+        BulkCommands::Complete { ids } => bulk_complete_tasks(ids),
+        BulkCommands::AddTags { ids, tags } => bulk_add_tags(ids, tags),
+        BulkCommands::RemoveTags { ids, tags } => bulk_remove_tags(ids, tags),
+        BulkCommands::SetPriority { ids, priority } => bulk_set_priority(ids, priority),
+        BulkCommands::Reset { ids } => bulk_reset_tasks(ids),
+        BulkCommands::Remove { ids, force } => bulk_remove_tasks(ids, *force),
+    }
+}
+
+/// Parse comma-separated task IDs and validate they exist
+fn parse_and_validate_task_ids(ids_str: &str, roadmap: &Roadmap) -> Result<Vec<usize>, String> {
+    let task_ids: Result<Vec<usize>, _> = ids_str
+        .split(',')
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.parse::<usize>())
+        .collect();
+    
+    let task_ids = task_ids.map_err(|_| "Invalid task ID format. Use comma-separated numbers (e.g., 1,2,3)".to_string())?;
+    
+    if task_ids.is_empty() {
+        return Err("No task IDs provided".to_string());
+    }
+    
+    // Validate all task IDs exist
+    let mut missing_ids = Vec::new();
+    for &task_id in &task_ids {
+        if roadmap.find_task_by_id(task_id).is_none() {
+            missing_ids.push(task_id);
+        }
+    }
+    
+    if !missing_ids.is_empty() {
+        return Err(format!("Tasks not found: {}", 
+            missing_ids.iter()
+                .map(|id| format!("#{}", id))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
+    }
+    
+    Ok(task_ids)
+}
+
+/// Complete multiple tasks at once
+fn bulk_complete_tasks(ids_str: &str) -> CommandResult {
+    let mut roadmap = state::load_state()?;
+    let task_ids = parse_and_validate_task_ids(ids_str, &roadmap)?;
+    
+    ui::display_info(&format!("🚀 Attempting to complete {} tasks...", task_ids.len()));
+    
+    let mut completed_count = 0;
+    let mut failed_tasks = Vec::new();
+    let mut newly_unblocked = Vec::new();
+    
+    for &task_id in &task_ids {
+        // Check if task is already completed
+        if let Some(task) = roadmap.find_task_by_id(task_id) {
+            if task.status == TaskStatus::Completed {
+                ui::display_warning(&format!("Task #{} is already completed", task_id));
+                continue;
+            }
+        }
+        
+        // Validate dependencies
+        {
+            if let Err(errors) = roadmap.validate_task_dependencies(task_id) {
+                failed_tasks.push((task_id, format!("Dependency validation failed: {}", 
+                    errors.iter().map(|e| e.to_string()).collect::<Vec<_>>().join(", "))));
+                continue;
+            }
+            
+            // Check if task can be started
+            if let Some(task) = roadmap.find_task_by_id(task_id) {
+                let completed_ids = roadmap.get_completed_task_ids();
+                if !task.can_be_started(&completed_ids) {
+                    let incomplete_deps: Vec<usize> = task.dependencies.iter()
+                        .filter(|&&dep_id| !completed_ids.contains(&dep_id))
+                        .copied()
+                        .collect();
+                    failed_tasks.push((task_id, format!("Blocked by dependencies: {}", 
+                        incomplete_deps.iter()
+                            .map(|id| format!("#{}", id))
+                            .collect::<Vec<_>>()
+                            .join(", "))));
+                    continue;
+                }
+            }
+        }
+        
+        // Find newly unblocked tasks before completing this one
+        let unblocked = find_newly_unblocked_tasks(&roadmap, task_id);
+        newly_unblocked.extend(unblocked);
+        
+        // Complete the task
+        if let Some(task) = roadmap.tasks.iter_mut().find(|t| t.id == task_id) {
+            task.mark_completed();
+            completed_count += 1;
+            ui::display_success(&format!("✅ Completed task #{}: {}", task_id, task.description));
+        }
+    }
+    
+    // Save state if any tasks were completed
+    if completed_count > 0 {
+        state::save_state(&roadmap)?;
+        markdown_writer::sync_to_source_file(&roadmap)?;
+        
+        ui::display_success(&format!("🎉 Successfully completed {} out of {} tasks!", 
+            completed_count, task_ids.len()));
+        
+        // Show newly unblocked tasks
+        if !newly_unblocked.is_empty() {
+            newly_unblocked.sort();
+            newly_unblocked.dedup();
+            ui::display_info(&format!("🔓 Unlocked tasks: {}", 
+                newly_unblocked.iter()
+                    .map(|id| format!("#{}", id))
+                    .collect::<Vec<_>>()
+                    .join(", ")));
+        }
+    }
+    
+    // Report failed tasks
+    if !failed_tasks.is_empty() {
+        ui::display_warning(&format!("⚠️  Failed to complete {} tasks:", failed_tasks.len()));
+        for (task_id, reason) in failed_tasks {
+            ui::display_error(&format!("  #{}: {}", task_id, reason));
+        }
+        ui::display_info("💡 Dependencies must be completed before tasks can be marked as done");
+    }
+    
+    Ok(())
+}
+
+/// Add tags to multiple tasks
+fn bulk_add_tags(ids_str: &str, tags_str: &str) -> CommandResult {
+    let mut roadmap = state::load_state()?;
+    let task_ids = parse_and_validate_task_ids(ids_str, &roadmap)?;
+    
+    // Parse and validate tags
+    let tags: Vec<String> = tags_str.split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    
+    if tags.is_empty() {
+        return Err("No tags provided".into());
+    }
+    
+    // Validate tag format
+    for tag in &tags {
+        if tag.len() > 50 {
+            return Err(format!("Tag '{}' is too long (max 50 characters)", tag).into());
+        }
+        if !tag.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
+            return Err(format!("Tag '{}' contains invalid characters. Use only letters, numbers, hyphens, and underscores", tag).into());
+        }
+    }
+    
+    ui::display_info(&format!("🏷️  Adding tags {} to {} tasks...", 
+        tags.iter().map(|t| format!("#{}", t)).collect::<Vec<_>>().join(" "),
+        task_ids.len()));
+    
+    let mut modified_count = 0;
+    
+    for &task_id in &task_ids {
+        if let Some(task) = roadmap.tasks.iter_mut().find(|t| t.id == task_id) {
+            let mut added_tags = Vec::new();
+            
+                         for tag in &tags {
+                 if !task.tags.contains(tag) {
+                     task.tags.insert(tag.clone());
+                     added_tags.push(tag);
+                 }
+             }
+            
+            if !added_tags.is_empty() {
+                modified_count += 1;
+                ui::display_success(&format!("✅ Added tags {} to task #{}: {}", 
+                    added_tags.iter().map(|t| format!("#{}", t)).collect::<Vec<_>>().join(" "),
+                    task_id, task.description));
+            } else {
+                ui::display_info(&format!("ℹ️  Task #{} already has all specified tags", task_id));
+            }
+        }
+    }
+    
+    if modified_count > 0 {
+        state::save_state(&roadmap)?;
+        markdown_writer::sync_to_source_file(&roadmap)?;
+        ui::display_success(&format!("🎉 Successfully modified {} tasks!", modified_count));
+    }
+    
+    Ok(())
+}
+
+/// Remove tags from multiple tasks
+fn bulk_remove_tags(ids_str: &str, tags_str: &str) -> CommandResult {
+    let mut roadmap = state::load_state()?;
+    let task_ids = parse_and_validate_task_ids(ids_str, &roadmap)?;
+    
+    let tags: Vec<String> = tags_str.split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    
+    if tags.is_empty() {
+        return Err("No tags provided".into());
+    }
+    
+    ui::display_info(&format!("🗑️  Removing tags {} from {} tasks...", 
+        tags.iter().map(|t| format!("#{}", t)).collect::<Vec<_>>().join(" "),
+        task_ids.len()));
+    
+    let mut modified_count = 0;
+    
+    for &task_id in &task_ids {
+        if let Some(task) = roadmap.tasks.iter_mut().find(|t| t.id == task_id) {
+            let mut removed_tags = Vec::new();
+            
+            for tag in &tags {
+                if task.tags.remove(tag) {
+                    removed_tags.push(tag);
+                }
+            }
+            
+            if !removed_tags.is_empty() {
+                modified_count += 1;
+                ui::display_success(&format!("✅ Removed tags {} from task #{}: {}", 
+                    removed_tags.iter().map(|t| format!("#{}", t)).collect::<Vec<_>>().join(" "),
+                    task_id, task.description));
+            } else {
+                ui::display_info(&format!("ℹ️  Task #{} doesn't have any of the specified tags", task_id));
+            }
+        }
+    }
+    
+    if modified_count > 0 {
+        state::save_state(&roadmap)?;
+        markdown_writer::sync_to_source_file(&roadmap)?;
+        ui::display_success(&format!("🎉 Successfully modified {} tasks!", modified_count));
+    }
+    
+    Ok(())
+}
+
+/// Set priority for multiple tasks
+fn bulk_set_priority(ids_str: &str, priority: &CliPriority) -> CommandResult {
+    let mut roadmap = state::load_state()?;
+    let task_ids = parse_and_validate_task_ids(ids_str, &roadmap)?;
+    let new_priority: Priority = priority.clone().into();
+    
+    ui::display_info(&format!("⚡ Setting priority to {} for {} tasks...", 
+        new_priority, task_ids.len()));
+    
+    let mut modified_count = 0;
+    
+    for &task_id in &task_ids {
+        if let Some(task) = roadmap.tasks.iter_mut().find(|t| t.id == task_id) {
+            if task.priority != new_priority {
+                let old_priority = task.priority.clone();
+                task.priority = new_priority.clone();
+                modified_count += 1;
+                ui::display_success(&format!("✅ Changed priority of task #{} from {} to {}: {}", 
+                    task_id, old_priority, new_priority, task.description));
+            } else {
+                ui::display_info(&format!("ℹ️  Task #{} already has {} priority", task_id, new_priority));
+            }
+        }
+    }
+    
+    if modified_count > 0 {
+        state::save_state(&roadmap)?;
+        markdown_writer::sync_to_source_file(&roadmap)?;
+        ui::display_success(&format!("🎉 Successfully modified {} tasks!", modified_count));
+    }
+    
+    Ok(())
+}
+
+/// Reset multiple tasks to pending status
+fn bulk_reset_tasks(ids_str: &str) -> CommandResult {
+    let mut roadmap = state::load_state()?;
+    let task_ids = parse_and_validate_task_ids(ids_str, &roadmap)?;
+    
+    ui::display_info(&format!("🔄 Resetting {} tasks to pending status...", task_ids.len()));
+    
+    let mut reset_count = 0;
+    
+    for &task_id in &task_ids {
+        if let Some(task) = roadmap.tasks.iter_mut().find(|t| t.id == task_id) {
+            if task.status == TaskStatus::Completed {
+                task.status = TaskStatus::Pending;
+                reset_count += 1;
+                ui::display_success(&format!("✅ Reset task #{}: {}", task_id, task.description));
+            } else {
+                ui::display_info(&format!("ℹ️  Task #{} is already pending", task_id));
+            }
+        }
+    }
+    
+    if reset_count > 0 {
+        state::save_state(&roadmap)?;
+        markdown_writer::sync_to_source_file(&roadmap)?;
+        ui::display_success(&format!("🎉 Successfully reset {} tasks!", reset_count));
+    }
+    
+    Ok(())
+}
+
+/// Remove multiple tasks
+fn bulk_remove_tasks(ids_str: &str, force: bool) -> CommandResult {
+    let mut roadmap = state::load_state()?;
+    let task_ids = parse_and_validate_task_ids(ids_str, &roadmap)?;
+    
+    // Check for tasks that depend on the ones being removed
+    let mut blocking_dependencies = Vec::new();
+    for &task_id in &task_ids {
+        let dependents = roadmap.get_dependents(task_id);
+        if !dependents.is_empty() {
+            // Filter out dependents that are also being removed
+            let external_dependents: Vec<usize> = dependents.iter()
+                .filter(|&&dep_id| !task_ids.contains(&dep_id))
+                .copied()
+                .collect();
+            
+            if !external_dependents.is_empty() {
+                blocking_dependencies.push((task_id, external_dependents));
+            }
+        }
+    }
+    
+    // Show warning about dependencies if not forced
+    if !blocking_dependencies.is_empty() && !force {
+        ui::display_warning("⚠️  The following tasks have dependencies that would be broken:");
+        for (task_id, dependents) in &blocking_dependencies {
+            if let Some(task) = roadmap.find_task_by_id(*task_id) {
+                ui::display_error(&format!("  #{}: {} (depended on by: {})", 
+                    task_id, task.description,
+                    dependents.iter().map(|id| format!("#{}", id)).collect::<Vec<_>>().join(", ")));
+            }
+        }
+        ui::display_info("💡 Use --force to remove tasks anyway (this will break dependencies)");
+        return Err("Cannot remove tasks with dependencies. Use --force to override.".into());
+    }
+    
+    ui::display_info(&format!("🗑️  Removing {} tasks...", task_ids.len()));
+    
+    let mut removed_count = 0;
+    let mut task_descriptions = Vec::new();
+    
+    // Collect task descriptions before removal
+    for &task_id in &task_ids {
+        if let Some(task) = roadmap.find_task_by_id(task_id) {
+            task_descriptions.push((task_id, task.description.clone()));
+        }
+    }
+    
+    // Remove tasks (in reverse order to maintain indices)
+    let mut sorted_ids = task_ids.clone();
+    sorted_ids.sort_by(|a, b| b.cmp(a)); // Sort in descending order
+    
+    for &task_id in &sorted_ids {
+        if let Some(pos) = roadmap.tasks.iter().position(|t| t.id == task_id) {
+            roadmap.tasks.remove(pos);
+            removed_count += 1;
+        }
+    }
+    
+    // Show removed tasks
+    for (task_id, description) in task_descriptions {
+        ui::display_success(&format!("✅ Removed task #{}: {}", task_id, description));
+    }
+    
+    if removed_count > 0 {
+        state::save_state(&roadmap)?;
+        markdown_writer::sync_to_source_file(&roadmap)?;
+        ui::display_success(&format!("🎉 Successfully removed {} tasks!", removed_count));
+        
+        if !blocking_dependencies.is_empty() {
+            ui::display_warning("⚠️  Some task dependencies were broken by this removal");
+        }
+    }
+    
+    Ok(())
+}
+
+/// Export roadmap to different formats (JSON, CSV, HTML)
+/// This provides comprehensive export capabilities with filtering and formatting options
+pub fn export_roadmap(
+    format: &ExportFormat,
+    output_path: Option<&Path>,
+    include_completed: bool,
+    tags_filter: Option<&str>,
+    priority_filter: Option<&CliPriority>,
+    pretty: bool,
+) -> CommandResult {
+    let roadmap = state::load_state()?;
+    
+    // Apply filters to get the tasks to export
+    let mut tasks_to_export: Vec<&Task> = roadmap.tasks.iter().collect();
+    
+    // Filter by completion status
+    if !include_completed {
+        tasks_to_export.retain(|task| task.status != TaskStatus::Completed);
+    }
+    
+    // Filter by tags if specified
+    if let Some(tags_str) = tags_filter {
+        let filter_tags: Vec<String> = tags_str.split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        
+        if !filter_tags.is_empty() {
+            tasks_to_export.retain(|task| {
+                filter_tags.iter().any(|tag| task.tags.contains(tag))
+            });
+        }
+    }
+    
+    // Filter by priority if specified
+    if let Some(priority_filter) = priority_filter {
+        let target_priority: Priority = priority_filter.clone().into();
+        tasks_to_export.retain(|task| task.priority == target_priority);
+    }
+    
+    // Sort tasks by ID for consistent output
+    tasks_to_export.sort_by_key(|task| task.id);
+    
+    // Generate export content based on format
+    let export_content = match format {
+        ExportFormat::Json => export_to_json(&roadmap, &tasks_to_export, pretty)?,
+        ExportFormat::Csv => export_to_csv(&roadmap, &tasks_to_export)?,
+        ExportFormat::Html => export_to_html(&roadmap, &tasks_to_export)?,
+    };
+    
+    // Output to file or stdout
+    match output_path {
+        Some(path) => {
+            fs::write(path, export_content)?;
+            ui::display_success(&format!("✅ Exported {} tasks to {}", 
+                tasks_to_export.len(), 
+                path.display()));
+        },
+        None => {
+            println!("{}", export_content);
+        }
+    }
+    
+    Ok(())
+}
+
+/// Export roadmap to JSON format
+fn export_to_json(roadmap: &Roadmap, tasks: &[&Task], pretty: bool) -> Result<String, Box<dyn std::error::Error>> {
+    use serde_json;
+    
+    // Create export structure
+    let export_data = serde_json::json!({
+                 "roadmap": {
+             "title": roadmap.title,
+             "description": roadmap.metadata.description,
+             "project_id": roadmap.project_id,
+            "exported_at": chrono::Utc::now().to_rfc3339(),
+            "total_tasks": roadmap.tasks.len(),
+            "exported_tasks": tasks.len(),
+            "progress": {
+                "completed": roadmap.tasks.iter().filter(|t| t.status == TaskStatus::Completed).count(),
+                "total": roadmap.tasks.len(),
+                "percentage": (roadmap.tasks.iter().filter(|t| t.status == TaskStatus::Completed).count() as f64 / roadmap.tasks.len() as f64 * 100.0).round()
+            }
+        },
+        "tasks": tasks.iter().map(|task| {
+            serde_json::json!({
+                "id": task.id,
+                "description": task.description,
+                "status": match task.status {
+                    TaskStatus::Pending => "pending",
+                    TaskStatus::Completed => "completed"
+                },
+                "priority": match task.priority {
+                    Priority::Low => "low",
+                    Priority::Medium => "medium", 
+                    Priority::High => "high",
+                    Priority::Critical => "critical"
+                },
+                "tags": task.tags.iter().collect::<Vec<_>>(),
+                "notes": task.notes,
+                "dependencies": task.dependencies,
+                                 "created_at": task.created_at,
+                 "completed_at": task.completed_at
+            })
+        }).collect::<Vec<_>>()
+    });
+    
+    if pretty {
+        Ok(serde_json::to_string_pretty(&export_data)?)
+    } else {
+        Ok(serde_json::to_string(&export_data)?)
+    }
+}
+
+/// Export roadmap to CSV format
+fn export_to_csv(roadmap: &Roadmap, tasks: &[&Task]) -> Result<String, Box<dyn std::error::Error>> {
+    let mut csv_content = String::new();
+    
+    // Add header
+    csv_content.push_str("ID,Description,Status,Priority,Tags,Notes,Dependencies,Created At,Completed At\n");
+    
+    // Add tasks
+    for task in tasks {
+         let tags_str = task.tags.iter().cloned().collect::<Vec<_>>().join(";");
+        let deps_str = task.dependencies.iter()
+            .map(|id| id.to_string())
+            .collect::<Vec<_>>()
+            .join(";");
+        let notes_escaped = task.notes.as_deref().unwrap_or("").replace("\"", "\"\"");
+        let desc_escaped = task.description.replace("\"", "\"\"");
+        
+        csv_content.push_str(&format!(
+            "{},\"{}\",{},{},\"{}\",\"{}\",\"{}\",{},{}\n",
+            task.id,
+            desc_escaped,
+            match task.status {
+                TaskStatus::Pending => "pending",
+                TaskStatus::Completed => "completed"
+            },
+            match task.priority {
+                Priority::Low => "low",
+                Priority::Medium => "medium",
+                Priority::High => "high", 
+                Priority::Critical => "critical"
+            },
+            tags_str,
+            notes_escaped,
+            deps_str,
+                         task.created_at.as_deref().unwrap_or(""),
+             task.completed_at.as_deref().unwrap_or("")
+        ));
+    }
+    
+    Ok(csv_content)
+}
+
+/// Export roadmap to HTML format
+fn export_to_html(roadmap: &Roadmap, tasks: &[&Task]) -> Result<String, Box<dyn std::error::Error>> {
+    let completed_count = roadmap.tasks.iter().filter(|t| t.status == TaskStatus::Completed).count();
+    let progress_percentage = (completed_count as f64 / roadmap.tasks.len() as f64 * 100.0).round();
+    
+    let mut html = String::new();
+    
+    // HTML header with embedded CSS
+    html.push_str(&format!(r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{}</title>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; background: #f8f9fa; }}
+        .container {{ max-width: 1200px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+        h1 {{ color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }}
+        .progress {{ background: #ecf0f1; border-radius: 20px; height: 20px; margin: 20px 0; }}
+        .progress-bar {{ background: linear-gradient(90deg, #3498db, #2ecc71); height: 100%; border-radius: 20px; transition: width 0.3s; }}
+        .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 30px 0; }}
+        .stat-card {{ background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; border-left: 4px solid #3498db; }}
+        .stat-number {{ font-size: 2em; font-weight: bold; color: #2c3e50; }}
+        .stat-label {{ color: #7f8c8d; margin-top: 5px; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 30px; }}
+        th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }}
+        th {{ background: #34495e; color: white; font-weight: 600; }}
+        tr:hover {{ background: #f5f5f5; }}
+        .status-completed {{ color: #27ae60; font-weight: bold; }}
+        .status-pending {{ color: #e67e22; font-weight: bold; }}
+        .priority-critical {{ color: #e74c3c; font-weight: bold; }}
+        .priority-high {{ color: #f39c12; font-weight: bold; }}
+        .priority-medium {{ color: #3498db; }}
+        .priority-low {{ color: #95a5a6; }}
+        .tags {{ display: flex; flex-wrap: wrap; gap: 5px; }}
+        .tag {{ background: #3498db; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; }}
+        .dependencies {{ color: #7f8c8d; font-style: italic; }}
+        .export-info {{ background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #3498db; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{}</h1>
+        
+        <div class="export-info">
+            <strong>📊 Export Information:</strong><br>
+            Exported on: {}<br>
+            Total tasks in roadmap: {} | Tasks in this export: {}
+        </div>
+        
+        <div class="progress">
+            <div class="progress-bar" style="width: {}%"></div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">{}</div>
+                <div class="stat-label">Total Tasks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{}</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{}%</div>
+                <div class="stat-label">Progress</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{}</div>
+                <div class="stat-label">In Export</div>
+            </div>
+        </div>
+"#, 
+        roadmap.title,
+        roadmap.title,
+        chrono::Utc::now().format("%Y-%m-%d %H:%M UTC"),
+        roadmap.tasks.len(),
+        tasks.len(),
+        progress_percentage,
+        roadmap.tasks.len(),
+        completed_count,
+        progress_percentage,
+        tasks.len()
+    ));
+    
+    // Tasks table
+    html.push_str(r#"
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Tags</th>
+                    <th>Dependencies</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+"#);
+    
+    for task in tasks {
+        let status_class = match task.status {
+            TaskStatus::Completed => "status-completed",
+            TaskStatus::Pending => "status-pending",
+        };
+        
+        let priority_class = match task.priority {
+            Priority::Critical => "priority-critical",
+            Priority::High => "priority-high",
+            Priority::Medium => "priority-medium",
+            Priority::Low => "priority-low",
+        };
+        
+        let tags_html = if task.tags.is_empty() {
+            String::new()
+        } else {
+            format!("<div class=\"tags\">{}</div>", 
+                task.tags.iter()
+                    .map(|tag| format!("<span class=\"tag\">{}</span>", tag))
+                    .collect::<Vec<_>>()
+                    .join(""))
+        };
+        
+        let deps_html = if task.dependencies.is_empty() {
+            String::new()
+        } else {
+            format!("<span class=\"dependencies\">Depends on: {}</span>", 
+                task.dependencies.iter()
+                    .map(|id| format!("#{}", id))
+                    .collect::<Vec<_>>()
+                    .join(", "))
+        };
+        
+        html.push_str(&format!(r#"
+                <tr>
+                    <td>#{}</td>
+                    <td>{}</td>
+                    <td class="{}">{}</td>
+                    <td class="{}">{}</td>
+                    <td>{}</td>
+                    <td>{}</td>
+                    <td>{}</td>
+                </tr>
+"#,
+            task.id,
+            html_escape(&task.description),
+            status_class,
+            match task.status {
+                TaskStatus::Completed => "✅ Completed",
+                TaskStatus::Pending => "⏳ Pending",
+            },
+            priority_class,
+            match task.priority {
+                Priority::Critical => "🔥 Critical",
+                Priority::High => "⬆️ High",
+                Priority::Medium => "▶️ Medium",
+                Priority::Low => "⬇️ Low",
+            },
+            tags_html,
+            deps_html,
+                         task.created_at.as_deref().unwrap_or("").split('T').next().unwrap_or("")
+        ));
+    }
+    
+    // Close HTML
+    html.push_str(r#"
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
+"#);
+    
+    Ok(html)
+}
+
+/// Escape HTML special characters
+fn html_escape(text: &str) -> String {
+    text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("'", "&#x27;")
 } 
