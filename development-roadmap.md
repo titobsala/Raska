@@ -38,8 +38,8 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [ ] Create progress analytics and reporting
 - [x] Add export capabilities (JSON, CSV, HTML)
 - [ ] Write comprehensive unit tests for all new features
-- [ ] Update README with new feature documentation
-- [ ] Create usage examples and tutorials
+- [x] Update README with new feature documentation
+- [x] Create usage examples and tutorials
 - [x] Add error handling and validation improvements
 - [ ] Performance optimization for large roadmaps
 - [x] Test dependency task B
