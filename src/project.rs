@@ -43,6 +43,25 @@ pub struct ProjectConfig {
     pub work_directory: Option<String>,
 }
 
+/// Legacy project configuration structure for migration
+/// This represents the old format without global_settings and work_directory
+#[derive(Debug, Serialize, Deserialize)]
+struct LegacyProjectsConfig {
+    pub projects: HashMap<String, LegacyProjectConfig>,
+    pub default_project: Option<String>,
+}
+
+/// Legacy project configuration for migration
+#[derive(Debug, Serialize, Deserialize)]
+struct LegacyProjectConfig {
+    pub name: String,
+    pub description: Option<String>,
+    pub created_at: String,
+    pub last_accessed: String,
+    pub state_file: String,
+    pub source_file: Option<String>,
+}
+
 /// Global projects configuration
 /// Manages all projects and default settings
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -94,9 +113,22 @@ impl ProjectsConfig {
         }
         
         let json_data = fs::read_to_string(&config_file)?;
-        let config: ProjectsConfig = serde_json::from_str(&json_data)
-            .map_err(|e| Error::new(ErrorKind::InvalidData, format!("Failed to parse projects config: {}", e)))?;
-        Ok(config)
+        
+        // Try to parse as the new format first
+        match serde_json::from_str::<ProjectsConfig>(&json_data) {
+            Ok(config) => Ok(config),
+            Err(_) => {
+                // Try to parse as legacy format and migrate
+                match serde_json::from_str::<LegacyProjectsConfig>(&json_data) {
+                    Ok(legacy_config) => {
+                        let migrated_config = legacy_config.migrate();
+                        migrated_config.save()?;
+                        Ok(migrated_config)
+                    },
+                    Err(e) => Err(Error::new(ErrorKind::InvalidData, format!("Failed to parse projects config: {}", e)))
+                }
+            }
+        }
     }
     
     /// Save the projects configuration to the centralized data directory
@@ -212,6 +244,41 @@ impl ProjectsConfig {
             self.save()?;
         }
         Ok(())
+    }
+}
+
+impl LegacyProjectsConfig {
+    /// Migrate legacy configuration to new format
+    fn migrate(self) -> ProjectsConfig {
+        let mut new_projects = HashMap::new();
+        
+        for (name, legacy_project) in self.projects {
+            // Update state file path to new centralized location
+            let new_state_file = if let Ok(data_dir) = get_rask_data_dir() {
+                data_dir.join(format!("project_{}.json", name))
+                    .to_string_lossy()
+                    .to_string()
+            } else {
+                legacy_project.state_file // Fallback to original if data dir fails
+            };
+            
+            let new_project = ProjectConfig {
+                name: legacy_project.name,
+                description: legacy_project.description,
+                created_at: legacy_project.created_at,
+                last_accessed: legacy_project.last_accessed,
+                state_file: new_state_file,
+                source_file: legacy_project.source_file,
+                work_directory: None, // Legacy projects don't have this field
+            };
+            new_projects.insert(name, new_project);
+        }
+        
+        ProjectsConfig {
+            projects: new_projects,
+            default_project: self.default_project,
+            global_settings: GlobalProjectSettings::default(),
+        }
     }
 }
 

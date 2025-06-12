@@ -717,9 +717,10 @@ fn edit_config(project_config: bool) -> CommandResult {
     let config = RaskConfig::load()?;
     
     // Determine the editor to use
+    let editor_env = std::env::var("EDITOR").ok();
     let editor = config.advanced.editor
         .as_ref()
-        .or_else(|| std::env::var("EDITOR").ok().as_ref())
+        .or_else(|| editor_env.as_ref())
         .ok_or("No editor configured. Set EDITOR environment variable or use 'rask config set advanced.editor <editor>'")?;
     
     // Determine the config file path

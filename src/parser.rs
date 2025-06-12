@@ -27,7 +27,7 @@ pub fn parse_markdown_to_roadmap(markdown_input: &str, source_file: Option<&Path
 
     while let Some(event) = parser.next() {
         match event {
-            Event::Start(Tag::Heading { level: pulldown_cmark::HeadingLevel::H1, .. }) => {
+            Event::Start(Tag::Heading(pulldown_cmark::HeadingLevel::H1, _, _)) => {
                 roadmap_title = extract_text(&mut parser);
             }
             Event::Start(Tag::Item) => {
