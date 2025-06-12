@@ -73,14 +73,14 @@ cargo install --path .
 ```
 
 2. **Initialize your project:**
-```bash
-rask init roadmap.md
-```
+    ```bash
+    rask init roadmap.md
+    ```
 
 3. **View your project:**
-```bash
-rask show
-```
+    ```bash
+    rask show
+    ```
 
 4. **Complete tasks:**
 ```bash
@@ -289,7 +289,7 @@ rask project list
 
 ### Scenario 3: Complex Dependency Analysis
 
-```bash
+    ```bash
 # Add tasks with complex dependencies
 rask add "Design system architecture" --tag architecture --priority critical
 rask add "Set up CI/CD pipeline" --tag devops --depends-on 1
