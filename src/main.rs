@@ -72,6 +72,9 @@ fn run_command(command: &Commands) -> commands::CommandResult {
                 ProjectCommands::List => {
                     commands::list_projects()
                 },
+                ProjectCommands::Switcher => {
+                    commands::project_switcher()
+                },
                 ProjectCommands::Delete { name, force } => {
                     commands::delete_project(name, *force)
                 },

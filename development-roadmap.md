@@ -30,7 +30,7 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [x] Update show command to display tags, priorities, and notes
 - [x] Add color coding for different priorities
 - [x] Implement dependency tree visualization
-- [ ] Add project switcher interface
+- [x] Add project switcher interface
 - [x] Create detailed task view command
 - [x] Add bulk operations (complete multiple tasks, add multiple tags)
 - [ ] Implement task templates

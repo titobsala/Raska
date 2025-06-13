@@ -260,6 +260,9 @@ pub enum ProjectCommands {
     /// List all projects
     List,
     
+    /// Interactive project switcher interface
+    Switcher,
+    
     /// Delete a project
     Delete {
         /// Name of the project to delete
