@@ -32,6 +32,62 @@ impl std::fmt::Display for Priority {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub enum Phase {
+    MVP,        // Minimum Viable Product
+    Beta,       // Beta release features
+    Release,    // Production release features
+    Future,     // Future enhancements
+    Backlog,    // Ideas and backlog items
+}
+
+impl Default for Phase {
+    fn default() -> Self {
+        Phase::MVP
+    }
+}
+
+impl std::fmt::Display for Phase {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Phase::MVP => write!(f, "MVP"),
+            Phase::Beta => write!(f, "Beta"),
+            Phase::Release => write!(f, "Release"),
+            Phase::Future => write!(f, "Future"),
+            Phase::Backlog => write!(f, "Backlog"),
+        }
+    }
+}
+
+impl Phase {
+    /// Get all available phases
+    pub fn all() -> Vec<Phase> {
+        vec![Phase::MVP, Phase::Beta, Phase::Release, Phase::Future, Phase::Backlog]
+    }
+    
+    /// Get phase description
+    pub fn description(&self) -> &'static str {
+        match self {
+            Phase::MVP => "Core features for minimum viable product",
+            Phase::Beta => "Features for beta release and testing",
+            Phase::Release => "Features for production release",
+            Phase::Future => "Future enhancements and improvements",
+            Phase::Backlog => "Ideas and backlog items for consideration",
+        }
+    }
+    
+    /// Get phase emoji for display
+    pub fn emoji(&self) -> &'static str {
+        match self {
+            Phase::MVP => "🚀",
+            Phase::Beta => "🧪",
+            Phase::Release => "🎯",
+            Phase::Future => "🔮",
+            Phase::Backlog => "💡",
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
     pub id: usize,
@@ -41,6 +97,8 @@ pub struct Task {
     pub tags: HashSet<String>,
     #[serde(default)]
     pub priority: Priority,
+    #[serde(default)]
+    pub phase: Phase,
     #[serde(default)]
     pub notes: Option<String>,
     #[serde(default)]
@@ -59,6 +117,7 @@ impl Task {
             status: TaskStatus::Pending,
             tags: HashSet::new(),
             priority: Priority::default(),
+            phase: Phase::default(),
             notes: None,
             dependencies: Vec::new(),
             created_at: Some(chrono::Utc::now().to_rfc3339()),
@@ -83,6 +142,11 @@ impl Task {
 
     pub fn with_dependencies(mut self, dependencies: Vec<usize>) -> Self {
         self.dependencies = dependencies;
+        self
+    }
+
+    pub fn with_phase(mut self, phase: Phase) -> Self {
+        self.phase = phase;
         self
     }
 
@@ -255,6 +319,13 @@ impl Roadmap {
             .collect()
     }
 
+    pub fn filter_by_phase(&self, phase: &Phase) -> Vec<&Task> {
+        self.tasks
+            .iter()
+            .filter(|task| &task.phase == phase)
+            .collect()
+    }
+
     pub fn search_tasks(&self, query: &str) -> Vec<&Task> {
         let query_lower = query.to_lowercase();
         self.tasks
@@ -283,6 +354,14 @@ impl Roadmap {
             (Priority::Low, self.tasks.iter().filter(|t| t.priority == Priority::Low).count()),
         ];
 
+        let by_phase = [
+            (Phase::MVP, self.tasks.iter().filter(|t| t.phase == Phase::MVP).count()),
+            (Phase::Beta, self.tasks.iter().filter(|t| t.phase == Phase::Beta).count()),
+            (Phase::Release, self.tasks.iter().filter(|t| t.phase == Phase::Release).count()),
+            (Phase::Future, self.tasks.iter().filter(|t| t.phase == Phase::Future).count()),
+            (Phase::Backlog, self.tasks.iter().filter(|t| t.phase == Phase::Backlog).count()),
+        ];
+
         let all_tags: HashSet<String> = self.tasks.iter()
             .flat_map(|t| &t.tags)
             .cloned()
@@ -293,6 +372,7 @@ impl Roadmap {
             completed_tasks: completed,
             pending_tasks: pending,
             tasks_by_priority: by_priority.into_iter().collect(),
+            tasks_by_phase: by_phase.into_iter().collect(),
             unique_tags: all_tags.len(),
             completion_percentage: if total > 0 { (completed * 100) / total } else { 0 },
         }
@@ -527,6 +607,7 @@ pub struct RoadmapStatistics {
     pub completed_tasks: usize,
     pub pending_tasks: usize,
     pub tasks_by_priority: Vec<(Priority, usize)>,
+    pub tasks_by_phase: Vec<(Phase, usize)>,
     pub unique_tags: usize,
     pub completion_percentage: usize,
 }

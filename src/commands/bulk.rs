@@ -4,8 +4,8 @@
 //! completion, tag management, priority setting, and removal.
 
 use crate::{
-    cli::CliPriority,
-    model::{TaskStatus, Priority},
+    cli::{CliPriority, CliPhase},
+    model::{TaskStatus, Priority, Phase},
     ui
 };
 use super::{CommandResult, utils, dependencies, BulkCommands};
@@ -17,6 +17,7 @@ pub fn handle_bulk_command(bulk_command: &BulkCommands) -> CommandResult {
         BulkCommands::AddTags { ids, tags } => bulk_add_tags(ids, tags),
         BulkCommands::RemoveTags { ids, tags } => bulk_remove_tags(ids, tags),
         BulkCommands::SetPriority { ids, priority } => bulk_set_priority(ids, priority),
+        BulkCommands::SetPhase { ids, phase } => bulk_set_phase(ids, phase),
         BulkCommands::Reset { ids } => bulk_reset_tasks(ids),
         BulkCommands::Remove { ids, force } => bulk_remove_tasks(ids, *force),
     }
@@ -229,6 +230,39 @@ pub fn bulk_set_priority(ids_str: &str, priority: &CliPriority) -> CommandResult
                     task_id, old_priority, new_priority, task.description));
             } else {
                 ui::display_info(&format!("ℹ️  Task #{} already has {} priority", task_id, new_priority));
+            }
+        }
+    }
+    
+    if modified_count > 0 {
+        utils::save_and_sync(&roadmap)?;
+        ui::display_success(&format!("🎉 Successfully modified {} tasks!", modified_count));
+    }
+    
+    Ok(())
+}
+
+/// Set phase for multiple tasks
+pub fn bulk_set_phase(ids_str: &str, phase: &CliPhase) -> CommandResult {
+    let mut roadmap = crate::state::load_state()?;
+    let task_ids = utils::parse_and_validate_task_ids(ids_str, &roadmap)?;
+    let new_phase: Phase = phase.clone().into();
+    
+    ui::display_info(&format!("{} Setting phase to {} for {} tasks...", 
+        new_phase.emoji(), new_phase, task_ids.len()));
+    
+    let mut modified_count = 0;
+    
+    for &task_id in &task_ids {
+        if let Some(task) = roadmap.tasks.iter_mut().find(|t| t.id == task_id) {
+            if task.phase != new_phase {
+                let old_phase = task.phase.clone();
+                task.phase = new_phase.clone();
+                modified_count += 1;
+                ui::display_success(&format!("✅ Changed phase of task #{} from {} {} to {} {}: {}", 
+                    task_id, old_phase.emoji(), old_phase, new_phase.emoji(), new_phase, task.description));
+            } else {
+                ui::display_info(&format!("ℹ️  Task #{} is already in {} phase", task_id, new_phase));
             }
         }
     }

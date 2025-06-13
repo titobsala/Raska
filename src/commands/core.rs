@@ -4,9 +4,9 @@
 //! complete, add, remove, edit, reset, list, and view.
 
 use crate::{
-    cli::CliPriority,
+    cli::{CliPriority, CliPhase},
     markdown_writer, 
-    model::{TaskStatus, Priority, Task, Roadmap}, 
+    model::{TaskStatus, Priority, Phase, Task, Roadmap}, 
     parser, 
     state, 
     ui
@@ -97,6 +97,7 @@ pub fn add_task_enhanced(
     description: &str,
     tags: &Option<String>,
     priority: &Option<CliPriority>,
+    phase: &Option<CliPhase>,
     notes: &Option<String>,
     dependencies: &Option<String>,
 ) -> CommandResult {
@@ -147,11 +148,16 @@ pub fn add_task_enhanced(
         new_task = new_task.with_tags(parsed_tags);
     }
     
-    if let Some(ref priority_cli) = priority {
+        if let Some(ref priority_cli) = priority {
         let priority_model: Priority = priority_cli.clone().into();
         new_task = new_task.with_priority(priority_model);
     }
-    
+
+    if let Some(ref phase_cli) = phase {
+        let phase_model: Phase = phase_cli.clone().into();
+        new_task = new_task.with_phase(phase_model);
+    }
+
     if let Some(ref note_text) = notes {
         if note_text.trim().is_empty() {
             ui::display_warning("Empty note provided - skipping");
@@ -298,6 +304,7 @@ pub fn reset_tasks(task_id: Option<usize>) -> CommandResult {
 pub fn list_tasks(
     tags: &Option<String>,
     priority: &Option<CliPriority>,
+    phase: &Option<CliPhase>,
     status: &Option<String>,
     search: &Option<String>,
     detailed: bool,
@@ -315,12 +322,18 @@ pub fn list_tasks(
         });
     }
     
-    // Apply priority filter
+        // Apply priority filter
     if let Some(ref priority_cli) = priority {
         let priority_model: Priority = priority_cli.clone().into();
         filtered_tasks.retain(|task| task.priority == priority_model);
     }
-    
+
+    // Apply phase filter
+    if let Some(ref phase_cli) = phase {
+        let phase_model: Phase = phase_cli.clone().into();
+        filtered_tasks.retain(|task| task.phase == phase_model);
+    }
+
     // Apply status filter
     if let Some(ref status_str) = status {
         match status_str.to_lowercase().as_str() {
