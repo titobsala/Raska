@@ -29,26 +29,21 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [x] Create dependency conflict detection
 - [x] Update show command to display tags, priorities, and notes
 - [x] Add color coding for different priorities
-- [ ] Implement dependency tree visualization
+- [x] Implement dependency tree visualization
 - [ ] Add project switcher interface
-- [ ] Create detailed task view command
-- [ ] Add bulk operations (complete multiple tasks, add multiple tags)
+- [x] Create detailed task view command
+- [x] Add bulk operations (complete multiple tasks, add multiple tags)
 - [ ] Implement task templates
 - [ ] Add time estimation and tracking
 - [ ] Create progress analytics and reporting
-- [ ] Add export capabilities (JSON, CSV, HTML)
+- [x] Add export capabilities (JSON, CSV, HTML)
 - [ ] Write comprehensive unit tests for all new features
-- [ ] Update README with new feature documentation
-- [ ] Create usage examples and tutorials
+- [x] Update README with new feature documentation
+- [x] Create usage examples and tutorials
 - [x] Add error handling and validation improvements
 - [ ] Performance optimization for large roadmaps
-- [x] Test dependency task B
-- [ ] Test circular dependency
-- [ ] Create circular test
-- [ ] Final circular test
-- [ ] Test critical priority task
-- [ ] Dependency test A
-- [x] Test dependency unlock base
-- [ ] Depends on 47
-- [x] New base task
-- [ ] Depends on new base
+- [ ] Implement roadmap phases system
+- [ ] Add implementation notes system to tasks
+- [ ] Add task scheduling with start/due dates
+- [ ] Add data import/export for project sharing
+- [ ] Add advanced configuration and customization
