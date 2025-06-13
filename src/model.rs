@@ -102,6 +102,8 @@ pub struct Task {
     #[serde(default)]
     pub notes: Option<String>,
     #[serde(default)]
+    pub implementation_notes: Vec<String>, // Detailed implementation notes, code snippets, etc.
+    #[serde(default)]
     pub dependencies: Vec<usize>, // Task IDs this task depends on
     #[serde(default)]
     pub created_at: Option<String>, // ISO 8601 timestamp
@@ -119,6 +121,7 @@ impl Task {
             priority: Priority::default(),
             phase: Phase::default(),
             notes: None,
+            implementation_notes: Vec::new(),
             dependencies: Vec::new(),
             created_at: Some(chrono::Utc::now().to_rfc3339()),
             completed_at: None,
@@ -174,6 +177,26 @@ impl Task {
 
     pub fn can_be_started(&self, completed_tasks: &HashSet<usize>) -> bool {
         self.dependencies.iter().all(|dep_id| completed_tasks.contains(dep_id))
+    }
+
+    pub fn add_implementation_note(&mut self, note: String) {
+        self.implementation_notes.push(note);
+    }
+
+    pub fn remove_implementation_note(&mut self, index: usize) -> Option<String> {
+        if index < self.implementation_notes.len() {
+            Some(self.implementation_notes.remove(index))
+        } else {
+            None
+        }
+    }
+
+    pub fn clear_implementation_notes(&mut self) {
+        self.implementation_notes.clear();
+    }
+
+    pub fn has_implementation_notes(&self) -> bool {
+        !self.implementation_notes.is_empty()
     }
 }
 
