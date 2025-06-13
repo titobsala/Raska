@@ -42,13 +42,8 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [x] Create usage examples and tutorials
 - [x] Add error handling and validation improvements
 - [ ] Performance optimization for large roadmaps
-- [x] Test dependency task B
-- [ ] Test circular dependency
-- [ ] Create circular test
-- [ ] Final circular test
-- [ ] Test critical priority task
-- [ ] Dependency test A
-- [x] Test dependency unlock base
-- [x] Depends on 47
-- [x] New base task
-- [x] Depends on new base
+- [ ] Implement roadmap phases system
+- [ ] Add implementation notes system to tasks
+- [ ] Add task scheduling with start/due dates
+- [ ] Add data import/export for project sharing
+- [ ] Add advanced configuration and customization
