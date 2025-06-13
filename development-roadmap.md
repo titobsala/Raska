@@ -43,7 +43,7 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [x] Add error handling and validation improvements
 - [ ] Performance optimization for large roadmaps
 - [x] Implement roadmap phases system
-- [ ] Add implementation notes system to tasks
+- [x] Add implementation notes system to tasks
 - [ ] Add task scheduling with start/due dates
 - [ ] Add data import/export for project sharing
 - [ ] Add advanced configuration and customization

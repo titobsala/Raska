@@ -127,6 +127,7 @@ fn export_to_json(roadmap: &Roadmap, tasks: &[&Task], pretty: bool) -> Result<St
                 },
                 "tags": task.tags.iter().collect::<Vec<_>>(),
                 "notes": task.notes,
+                "implementation_notes": task.implementation_notes,
                 "dependencies": task.dependencies,
                 "created_at": task.created_at,
                 "completed_at": task.completed_at
@@ -146,7 +147,7 @@ fn export_to_csv(roadmap: &Roadmap, tasks: &[&Task]) -> Result<String, Box<dyn s
     let mut csv_content = String::new();
     
     // Add header
-    csv_content.push_str("ID,Description,Status,Priority,Phase,Tags,Notes,Dependencies,Created At,Completed At\n");
+    csv_content.push_str("ID,Description,Status,Priority,Phase,Tags,Notes,Implementation Notes,Dependencies,Created At,Completed At\n");
     
     // Add tasks
     for task in tasks {
@@ -156,10 +157,12 @@ fn export_to_csv(roadmap: &Roadmap, tasks: &[&Task]) -> Result<String, Box<dyn s
             .collect::<Vec<_>>()
             .join(";");
         let notes_escaped = task.notes.as_deref().unwrap_or("").replace("\"", "\"\"");
+        let impl_notes_str = task.implementation_notes.join(" | ");
+        let impl_notes_escaped = impl_notes_str.replace("\"", "\"\"");
         let desc_escaped = task.description.replace("\"", "\"\"");
         
         csv_content.push_str(&format!(
-            "{},\"{}\",{},{},{},\"{}\",\"{}\",\"{}\",{},{}\n",
+            "{},\"{}\",{},{},{},\"{}\",\"{}\",\"{}\",\"{}\",{},{}\n",
             task.id,
             desc_escaped,
             match task.status {
@@ -181,6 +184,7 @@ fn export_to_csv(roadmap: &Roadmap, tasks: &[&Task]) -> Result<String, Box<dyn s
             },
             tags_str,
             notes_escaped,
+            impl_notes_escaped,
             deps_str,
             task.created_at.as_deref().unwrap_or(""),
             task.completed_at.as_deref().unwrap_or("")

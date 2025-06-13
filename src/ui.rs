@@ -761,7 +761,7 @@ pub fn display_detailed_task_view(task: &crate::model::Task, roadmap: &crate::mo
         );
     }
     
-    // Notes
+        // Notes
     if let Some(ref notes) = task.notes {
         println!("  💭 {}:", "Notes".bold());
         // Handle multi-line notes with proper indentation
@@ -769,7 +769,26 @@ pub fn display_detailed_task_view(task: &crate::model::Task, roadmap: &crate::mo
             println!("      {}", line.italic().bright_black());
         }
     }
-    
+
+    // Implementation Notes
+    if !task.implementation_notes.is_empty() {
+        println!("  🔧 {} ({}):", "Implementation Notes".bold().bright_blue(), task.implementation_notes.len());
+        for (index, note) in task.implementation_notes.iter().enumerate() {
+            println!("      {} {}:", format!("#{}", index).bright_white().bold(), "Note".bright_blue());
+            // Handle multi-line implementation notes with proper indentation
+            for line in note.lines() {
+                if line.trim().is_empty() {
+                    println!();
+                } else {
+                    println!("        {}", line.bright_cyan());
+                }
+            }
+            if index < task.implementation_notes.len() - 1 {
+                println!(); // Add spacing between notes
+            }
+        }
+    }
+
     // Creation date
     if let Some(ref created_at) = task.created_at {
         use chrono::DateTime;
