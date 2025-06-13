@@ -4,8 +4,8 @@
 //! JSON, CSV, and HTML with filtering and formatting options.
 
 use crate::{
-    cli::CliPriority,
-    model::{TaskStatus, Priority, Task, Roadmap},
+    cli::{CliPriority, CliPhase},
+    model::{TaskStatus, Priority, Phase, Task, Roadmap},
     state,
     ui
 };
@@ -20,6 +20,7 @@ pub fn export_roadmap(
     include_completed: bool,
     tags_filter: Option<&str>,
     priority_filter: Option<&CliPriority>,
+    phase_filter: Option<&CliPhase>,
     pretty: bool,
 ) -> CommandResult {
     let roadmap = state::load_state()?;
@@ -46,12 +47,18 @@ pub fn export_roadmap(
         }
     }
     
-    // Filter by priority if specified
+        // Filter by priority if specified
     if let Some(priority_filter) = priority_filter {
         let target_priority: Priority = priority_filter.clone().into();
         tasks_to_export.retain(|task| task.priority == target_priority);
     }
-    
+
+    // Filter by phase if specified
+    if let Some(phase_filter) = phase_filter {
+        let target_phase: Phase = phase_filter.clone().into();
+        tasks_to_export.retain(|task| task.phase == target_phase);
+    }
+
     // Sort tasks by ID for consistent output
     tasks_to_export.sort_by_key(|task| task.id);
     
@@ -111,6 +118,13 @@ fn export_to_json(roadmap: &Roadmap, tasks: &[&Task], pretty: bool) -> Result<St
                     Priority::High => "high",
                     Priority::Critical => "critical"
                 },
+                "phase": match task.phase {
+                    Phase::MVP => "mvp",
+                    Phase::Beta => "beta",
+                    Phase::Release => "release",
+                    Phase::Future => "future",
+                    Phase::Backlog => "backlog"
+                },
                 "tags": task.tags.iter().collect::<Vec<_>>(),
                 "notes": task.notes,
                 "dependencies": task.dependencies,
@@ -132,7 +146,7 @@ fn export_to_csv(roadmap: &Roadmap, tasks: &[&Task]) -> Result<String, Box<dyn s
     let mut csv_content = String::new();
     
     // Add header
-    csv_content.push_str("ID,Description,Status,Priority,Tags,Notes,Dependencies,Created At,Completed At\n");
+    csv_content.push_str("ID,Description,Status,Priority,Phase,Tags,Notes,Dependencies,Created At,Completed At\n");
     
     // Add tasks
     for task in tasks {
@@ -145,7 +159,7 @@ fn export_to_csv(roadmap: &Roadmap, tasks: &[&Task]) -> Result<String, Box<dyn s
         let desc_escaped = task.description.replace("\"", "\"\"");
         
         csv_content.push_str(&format!(
-            "{},\"{}\",{},{},\"{}\",\"{}\",\"{}\",{},{}\n",
+            "{},\"{}\",{},{},{},\"{}\",\"{}\",\"{}\",{},{}\n",
             task.id,
             desc_escaped,
             match task.status {
@@ -157,6 +171,13 @@ fn export_to_csv(roadmap: &Roadmap, tasks: &[&Task]) -> Result<String, Box<dyn s
                 Priority::Medium => "medium",
                 Priority::High => "high", 
                 Priority::Critical => "critical"
+            },
+            match task.phase {
+                Phase::MVP => "mvp",
+                Phase::Beta => "beta",
+                Phase::Release => "release",
+                Phase::Future => "future",
+                Phase::Backlog => "backlog"
             },
             tags_str,
             notes_escaped,
