@@ -4,7 +4,7 @@
 //! complete, add, remove, edit, reset, list, and view.
 
 use crate::{
-    cli::{CliPriority, CliPhase},
+    cli::CliPriority,
     markdown_writer, 
     model::{TaskStatus, Priority, Phase, Task, Roadmap}, 
     parser, 
@@ -97,7 +97,7 @@ pub fn add_task_enhanced(
     description: &str,
     tags: &Option<String>,
     priority: &Option<CliPriority>,
-    phase: &Option<CliPhase>,
+    phase: &Option<String>,
     notes: &Option<String>,
     dependencies: &Option<String>,
 ) -> CommandResult {
@@ -153,8 +153,8 @@ pub fn add_task_enhanced(
         new_task = new_task.with_priority(priority_model);
     }
 
-    if let Some(ref phase_cli) = phase {
-        let phase_model: Phase = phase_cli.clone().into();
+    if let Some(ref phase_str) = phase {
+        let phase_model = Phase::from_string(phase_str);
         new_task = new_task.with_phase(phase_model);
     }
 
@@ -304,7 +304,7 @@ pub fn reset_tasks(task_id: Option<usize>) -> CommandResult {
 pub fn list_tasks(
     tags: &Option<String>,
     priority: &Option<CliPriority>,
-    phase: &Option<CliPhase>,
+    phase: &Option<String>,
     status: &Option<String>,
     search: &Option<String>,
     detailed: bool,
@@ -329,8 +329,8 @@ pub fn list_tasks(
     }
 
     // Apply phase filter
-    if let Some(ref phase_cli) = phase {
-        let phase_model: Phase = phase_cli.clone().into();
+    if let Some(ref phase_str) = phase {
+        let phase_model = Phase::from_string(phase_str);
         filtered_tasks.retain(|task| task.phase == phase_model);
     }
 

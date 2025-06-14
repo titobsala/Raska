@@ -27,4 +27,4 @@ pub use notes::*;
 pub type CommandResult = Result<(), Box<dyn std::error::Error>>;
 
 // Re-export CLI types for convenience
-pub use crate::cli::{CliPriority, CliPhase, ConfigCommands, BulkCommands, PhaseCommands, NotesCommands, ExportFormat}; 
+pub use crate::cli::{CliPriority, ConfigCommands, BulkCommands, PhaseCommands, NotesCommands, ExportFormat}; 
