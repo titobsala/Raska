@@ -4,7 +4,7 @@
 //! completion, tag management, priority setting, and removal.
 
 use crate::{
-    cli::{CliPriority, CliPhase},
+    cli::CliPriority,
     model::{TaskStatus, Priority, Phase},
     ui
 };
@@ -243,10 +243,10 @@ pub fn bulk_set_priority(ids_str: &str, priority: &CliPriority) -> CommandResult
 }
 
 /// Set phase for multiple tasks
-pub fn bulk_set_phase(ids_str: &str, phase: &CliPhase) -> CommandResult {
+pub fn bulk_set_phase(ids_str: &str, phase_name: &str) -> CommandResult {
     let mut roadmap = crate::state::load_state()?;
     let task_ids = utils::parse_and_validate_task_ids(ids_str, &roadmap)?;
-    let new_phase: Phase = phase.clone().into();
+    let new_phase = Phase::from_string(phase_name);
     
     ui::display_info(&format!("{} Setting phase to {} for {} tasks...", 
         new_phase.emoji(), new_phase, task_ids.len()));

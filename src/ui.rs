@@ -78,22 +78,22 @@ fn display_project_statistics(roadmap: &Roadmap) {
     let blocked_tasks = pending_tasks - ready_tasks;
     
     println!("\n  📊 {}:", "Project Statistics".bold().bright_cyan());
-    println!("      📈 Progress: {}/{} completed ({:.1}%)", 
+    println!("       📈 Progress: {}/{} completed ({:.1}%)", 
         completed_tasks, total_tasks, 
         if total_tasks > 0 { (completed_tasks as f64 / total_tasks as f64) * 100.0 } else { 0.0 }
     );
     
     if pending_tasks > 0 {
-        println!("      🎯 Priority Breakdown:");
-        if critical_tasks > 0 { println!("         🔥 Critical: {}", critical_tasks.to_string().bright_red()); }
-        if high_tasks > 0 { println!("         ⬆️  High: {}", high_tasks.to_string().red()); }
-        if medium_tasks > 0 { println!("         ▶️  Medium: {}", medium_tasks.to_string().yellow()); }
-        if low_tasks > 0 { println!("         ⬇️  Low: {}", low_tasks.to_string().green()); }
+        println!("       🎯 Priority Breakdown:");
+        if critical_tasks > 0 { println!("          🔥 Critical: {}", critical_tasks.to_string().bright_red()); }
+        if high_tasks > 0 { println!("          ⬆️  High: {}", high_tasks.to_string().red()); }
+        if medium_tasks > 0 { println!("          ▶️  Medium: {}", medium_tasks.to_string().yellow()); }
+        if low_tasks > 0 { println!("          ⬇️  Low: {}", low_tasks.to_string().green()); }
         
-        println!("      🚀 Task Status:");
-        println!("         ✅ Ready to start: {}", ready_tasks.to_string().bright_green());
+        println!("       🚀 Task Status:");
+        println!("          ✅ Ready to start: {}", ready_tasks.to_string().bright_green());
         if blocked_tasks > 0 {
-            println!("         🔒 Blocked by dependencies: {}", blocked_tasks.to_string().bright_red());
+            println!("          🔒 Blocked by dependencies: {}", blocked_tasks.to_string().bright_red());
         }
     }
 }
@@ -138,16 +138,16 @@ fn display_task_line(task: &Task, detailed: bool) {
         priority_color_fn(&task.description)
     };
     
-    // Format the main task line
-    print!("  {} {}{} #{} {}", 
-        status_color, 
-        priority_indicator,
-        if !task.tags.is_empty() { " " } else { "" },
-        format!("{:2}", task.id).bright_white(),
-        description
+    // Format the main task line with consistent spacing
+    // Using fixed-width formatting to ensure proper alignment
+    print!("  {} {} #{:2} {}", 
+        status_color,           // Status checkbox (✓ or □)
+        priority_indicator,     // Priority emoji (🔥, ⬆️, ▶️, ⬇️)
+        task.id,               // Task ID with consistent 2-digit padding
+        description            // Task description with priority coloring
     );
     
-    // Add tags if present
+    // Add tags if present, with consistent spacing
     if !task.tags.is_empty() {
         let tags_str = task.tags.iter()
             .map(|tag| format!("#{}", tag).bright_magenta().to_string())
@@ -162,14 +162,14 @@ fn display_task_line(task: &Task, detailed: bool) {
     if detailed {
         // Show priority if not default
         if task.priority != Priority::Medium {
-            println!("      {} Priority: {}", 
+            println!("       {} Priority: {}", 
                 get_priority_indicator(&task.priority),
                 format!("{}", task.priority).bright_white()
             );
         }
         
         if let Some(ref notes) = task.notes {
-            println!("      💭 {}", notes.italic().bright_black());
+            println!("       💭 {}", notes.italic().bright_black());
         }
         
         if !task.dependencies.is_empty() {
@@ -177,14 +177,14 @@ fn display_task_line(task: &Task, detailed: bool) {
                 .map(|id| id.to_string())
                 .collect::<Vec<_>>()
                 .join(", ");
-            println!("      🔗 Depends on: {}", deps_str.bright_yellow());
+            println!("       🔗 Depends on: {}", deps_str.bright_yellow());
         }
         
         // Show creation/completion info if available
         if let Some(ref created_at) = task.created_at {
             use chrono::DateTime;
             if let Ok(datetime) = DateTime::parse_from_rfc3339(created_at) {
-                println!("      📅 Created: {}", datetime.format("%Y-%m-%d %H:%M").to_string().bright_black());
+                println!("       📅 Created: {}", datetime.format("%Y-%m-%d %H:%M").to_string().bright_black());
             }
         }
     }
@@ -263,12 +263,12 @@ pub fn display_add_success_enhanced(task: &Task) {
         task.id.to_string().bright_white()
     );
     
-    println!("   📝 Task: {}", task.description.bright_white());
-    println!("   🆔 Assigned ID: {}", task.id.to_string().bright_cyan());
+    println!("    📝 Task: {}", task.description.bright_white());
+    println!("    🆔 Assigned ID: {}", task.id.to_string().bright_cyan());
     
     // Show priority if not default
     if task.priority != Priority::Medium {
-        println!("   {} Priority: {}", 
+        println!("    {} Priority: {}", 
             get_priority_indicator(&task.priority),
             format!("{}", task.priority).bright_white()
         );
@@ -280,12 +280,12 @@ pub fn display_add_success_enhanced(task: &Task) {
             .map(|tag| format!("#{}", tag).bright_magenta().to_string())
             .collect::<Vec<_>>()
             .join(" ");
-        println!("   🏷️  Tags: {}", tags_str);
+        println!("    🏷️  Tags: {}", tags_str);
     }
     
     // Show notes if present
     if let Some(ref notes) = task.notes {
-        println!("   💭 Notes: {}", notes.italic().bright_black());
+        println!("    💭 Notes: {}", notes.italic().bright_black());
     }
     
     // Show dependencies if present
@@ -294,10 +294,10 @@ pub fn display_add_success_enhanced(task: &Task) {
             .map(|id| id.to_string())
             .collect::<Vec<_>>()
             .join(", ");
-        println!("   🔗 Dependencies: {}", deps_str.bright_yellow());
+        println!("    🔗 Dependencies: {}", deps_str.bright_yellow());
     }
     
-    println!("   💡 Task added to both state and markdown file!\n");
+    println!("    💡 Task added to both state and markdown file!\n");
 }
 
 /// Displays a simple progress bar

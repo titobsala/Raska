@@ -4,7 +4,7 @@
 //! JSON, CSV, and HTML with filtering and formatting options.
 
 use crate::{
-    cli::{CliPriority, CliPhase},
+    cli::CliPriority,
     model::{TaskStatus, Priority, Phase, Task, Roadmap},
     state,
     ui
@@ -20,7 +20,7 @@ pub fn export_roadmap(
     include_completed: bool,
     tags_filter: Option<&str>,
     priority_filter: Option<&CliPriority>,
-    phase_filter: Option<&CliPhase>,
+    phase_filter: Option<&String>,
     pretty: bool,
 ) -> CommandResult {
     let roadmap = state::load_state()?;
@@ -47,15 +47,15 @@ pub fn export_roadmap(
         }
     }
     
-        // Filter by priority if specified
+    // Filter by priority if specified
     if let Some(priority_filter) = priority_filter {
         let target_priority: Priority = priority_filter.clone().into();
         tasks_to_export.retain(|task| task.priority == target_priority);
     }
 
     // Filter by phase if specified
-    if let Some(phase_filter) = phase_filter {
-        let target_phase: Phase = phase_filter.clone().into();
+    if let Some(phase_str) = phase_filter {
+        let target_phase = Phase::from_string(phase_str);
         tasks_to_export.retain(|task| task.phase == target_phase);
     }
 
@@ -118,12 +118,11 @@ fn export_to_json(roadmap: &Roadmap, tasks: &[&Task], pretty: bool) -> Result<St
                     Priority::High => "high",
                     Priority::Critical => "critical"
                 },
-                "phase": match task.phase {
-                    Phase::MVP => "mvp",
-                    Phase::Beta => "beta",
-                    Phase::Release => "release",
-                    Phase::Future => "future",
-                    Phase::Backlog => "backlog"
+                "phase": {
+                    "name": task.phase.name,
+                    "description": task.phase.description(),
+                    "emoji": task.phase.emoji(),
+                    "is_predefined": task.phase.is_predefined()
                 },
                 "tags": task.tags.iter().collect::<Vec<_>>(),
                 "notes": task.notes,
@@ -147,7 +146,7 @@ fn export_to_csv(roadmap: &Roadmap, tasks: &[&Task]) -> Result<String, Box<dyn s
     let mut csv_content = String::new();
     
     // Add header
-    csv_content.push_str("ID,Description,Status,Priority,Phase,Tags,Notes,Implementation Notes,Dependencies,Created At,Completed At\n");
+    csv_content.push_str("ID,Description,Status,Priority,Phase,Phase Type,Tags,Notes,Implementation Notes,Dependencies,Created At,Completed At\n");
     
     // Add tasks
     for task in tasks {
@@ -160,9 +159,10 @@ fn export_to_csv(roadmap: &Roadmap, tasks: &[&Task]) -> Result<String, Box<dyn s
         let impl_notes_str = task.implementation_notes.join(" | ");
         let impl_notes_escaped = impl_notes_str.replace("\"", "\"\"");
         let desc_escaped = task.description.replace("\"", "\"\"");
+        let phase_type = if task.phase.is_predefined() { "predefined" } else { "custom" };
         
         csv_content.push_str(&format!(
-            "{},\"{}\",{},{},{},\"{}\",\"{}\",\"{}\",\"{}\",{},{}\n",
+            "{},\"{}\",{},{},\"{}\",{},\"{}\",\"{}\",\"{}\",\"{}\",{},{}\n",
             task.id,
             desc_escaped,
             match task.status {
@@ -175,13 +175,8 @@ fn export_to_csv(roadmap: &Roadmap, tasks: &[&Task]) -> Result<String, Box<dyn s
                 Priority::High => "high", 
                 Priority::Critical => "critical"
             },
-            match task.phase {
-                Phase::MVP => "mvp",
-                Phase::Beta => "beta",
-                Phase::Release => "release",
-                Phase::Future => "future",
-                Phase::Backlog => "backlog"
-            },
+            task.phase.name,
+            phase_type,
             tags_str,
             notes_escaped,
             impl_notes_escaped,

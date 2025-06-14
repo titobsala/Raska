@@ -89,6 +89,7 @@ fn run_command(command: &Commands) -> commands::CommandResult {
                 PhaseCommands::Show { phase } => commands::show_phase_tasks(phase),
                 PhaseCommands::Set { task_id, phase } => commands::set_task_phase(*task_id, phase),
                 PhaseCommands::Overview => commands::show_phase_overview(),
+                PhaseCommands::Create { name, description, emoji } => commands::create_custom_phase(name, description.as_deref(), emoji.as_deref()),
             }
         },
         Commands::Config(config_command) => {

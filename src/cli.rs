@@ -35,26 +35,9 @@ impl From<CliPriority> for crate::model::Priority {
     }
 }
 
-/// Phase levels for tasks
-#[derive(Clone, Debug, ValueEnum)]
-pub enum CliPhase {
-    MVP,
-    Beta,
-    Release,
-    Future,
-    Backlog,
-}
-
-impl From<CliPhase> for crate::model::Phase {
-    fn from(cli_phase: CliPhase) -> Self {
-        match cli_phase {
-            CliPhase::MVP => crate::model::Phase::MVP,
-            CliPhase::Beta => crate::model::Phase::Beta,
-            CliPhase::Release => crate::model::Phase::Release,
-            CliPhase::Future => crate::model::Phase::Future,
-            CliPhase::Backlog => crate::model::Phase::Backlog,
-        }
-    }
+/// Helper function to parse phase from string
+pub fn parse_phase(phase_str: &str) -> crate::model::Phase {
+    crate::model::Phase::from_string(phase_str)
 }
 
 /// Available commands for the Rask CLI
@@ -94,8 +77,8 @@ pub enum Commands {
         priority: Option<CliPriority>,
         
         /// Phase for the task
-        #[arg(long, value_enum, value_name = "PHASE", help = "Phase: mvp, beta, release, future, backlog")]
-        phase: Option<CliPhase>,
+        #[arg(long, value_name = "PHASE", help = "Phase name (e.g., mvp, beta, release, future, backlog, or custom name)")]
+        phase: Option<String>,
         
         /// Additional notes for the task
         #[arg(long, value_name = "NOTES", help = "Detailed notes or description for the task")]
@@ -142,8 +125,8 @@ pub enum Commands {
         priority: Option<CliPriority>,
         
         /// Filter by phase
-        #[arg(long, value_enum, value_name = "PHASE", help = "Show only tasks in this phase")]
-        phase: Option<CliPhase>,
+        #[arg(long, value_name = "PHASE", help = "Show only tasks in this phase")]
+        phase: Option<String>,
         
         /// Filter by status
         #[arg(long, value_name = "STATUS", help = "Filter by status: pending, completed, all")]
@@ -227,8 +210,8 @@ pub enum Commands {
         priority: Option<CliPriority>,
         
         /// Include only specific phase
-        #[arg(long, value_enum, help = "Export only tasks in this phase")]
-        phase: Option<CliPhase>,
+        #[arg(long, help = "Export only tasks in this phase")]
+        phase: Option<String>,
         
         /// Pretty print JSON output
         #[arg(long, help = "Pretty print JSON output")]
@@ -284,8 +267,8 @@ pub enum PhaseCommands {
     /// Show tasks in a specific phase
     Show {
         /// Phase to show tasks for
-        #[arg(value_enum, help = "Phase to display")]
-        phase: CliPhase,
+        #[arg(help = "Phase name to display")]
+        phase: String,
     },
     
     /// Set phase for a task
@@ -295,12 +278,27 @@ pub enum PhaseCommands {
         task_id: usize,
         
         /// New phase for the task
-        #[arg(value_enum, help = "Phase to set")]
-        phase: CliPhase,
+        #[arg(help = "Phase name to set")]
+        phase: String,
     },
     
     /// Show phase overview with statistics
     Overview,
+    
+    /// Create a new custom phase
+    Create {
+        /// Name of the new phase
+        #[arg(help = "Name of the new phase")]
+        name: String,
+        
+        /// Description of the phase
+        #[arg(long, help = "Description of the phase")]
+        description: Option<String>,
+        
+        /// Emoji for the phase
+        #[arg(long, help = "Emoji for the phase")]
+        emoji: Option<String>,
+    },
 }
 
 /// Configuration management commands
@@ -474,8 +472,8 @@ pub enum BulkCommands {
         ids: String,
         
         /// Phase to set
-        #[arg(value_enum, help = "Phase level")]
-        phase: CliPhase,
+        #[arg(help = "Phase name")]
+        phase: String,
     },
     
     /// Reset multiple tasks to pending status

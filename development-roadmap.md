@@ -48,3 +48,6 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [ ] Add data import/export for project sharing
 - [ ] Add advanced configuration and customization
 - [x] Test phase functionality
+- [ ] Test custom phase functionality
+- [ ] Another custom phase task
+- [ ] Test alignment task

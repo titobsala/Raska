@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum TaskStatus {
@@ -32,59 +32,222 @@ impl std::fmt::Display for Priority {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub enum Phase {
-    MVP,        // Minimum Viable Product
-    Beta,       // Beta release features
-    Release,    // Production release features
-    Future,     // Future enhancements
-    Backlog,    // Ideas and backlog items
+#[derive(Debug, Clone, PartialEq)]
+pub struct Phase {
+    pub name: String,
+    pub description: Option<String>,
+    pub emoji: Option<String>,
+}
+
+// Custom serialization/deserialization for backward compatibility
+impl serde::Serialize for Phase {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut state = serializer.serialize_struct("Phase", 3)?;
+        state.serialize_field("name", &self.name)?;
+        state.serialize_field("description", &self.description)?;
+        state.serialize_field("emoji", &self.emoji)?;
+        state.end()
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for Phase {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::{self, Visitor};
+        use serde_json::Value;
+
+        struct PhaseVisitor;
+
+        impl<'de> Visitor<'de> for PhaseVisitor {
+            type Value = Phase;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a phase name string or phase object")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(Phase::from_string(value))
+            }
+
+            fn visit_map<M>(self, map: M) -> Result<Self::Value, M::Error>
+            where
+                M: serde::de::MapAccess<'de>,
+            {
+                // Use serde_json to deserialize the map into a Value first
+                let value = Value::deserialize(serde::de::value::MapAccessDeserializer::new(map))?;
+                
+                // Extract fields from the Value
+                let name = value.get("name")
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| de::Error::missing_field("name"))?
+                    .to_string();
+                
+                let description = value.get("description")
+                    .and_then(|v| if v.is_null() { None } else { v.as_str().map(|s| s.to_string()) });
+                
+                let emoji = value.get("emoji")
+                    .and_then(|v| if v.is_null() { None } else { v.as_str().map(|s| s.to_string()) });
+                
+                Ok(Phase {
+                    name,
+                    description,
+                    emoji,
+                })
+            }
+        }
+
+        deserializer.deserialize_any(PhaseVisitor)
+    }
+}
+
+impl Phase {
+    /// Create a new custom phase
+    pub fn new(name: String) -> Self {
+        Phase {
+            name,
+            description: None,
+            emoji: None,
+        }
+    }
+    
+    /// Create a new custom phase with description and emoji
+    pub fn with_details(name: String, description: Option<String>, emoji: Option<String>) -> Self {
+        Phase {
+            name,
+            description,
+            emoji,
+        }
+    }
+    
+    /// Create predefined MVP phase
+    pub fn mvp() -> Self {
+        Phase {
+            name: "MVP".to_string(),
+            description: Some("Core features for minimum viable product".to_string()),
+            emoji: Some("🚀".to_string()),
+        }
+    }
+    
+    /// Create predefined Beta phase
+    pub fn beta() -> Self {
+        Phase {
+            name: "Beta".to_string(),
+            description: Some("Features for beta release and testing".to_string()),
+            emoji: Some("🧪".to_string()),
+        }
+    }
+    
+    /// Create predefined Release phase
+    pub fn release() -> Self {
+        Phase {
+            name: "Release".to_string(),
+            description: Some("Features for production release".to_string()),
+            emoji: Some("🎯".to_string()),
+        }
+    }
+    
+    /// Create predefined Future phase
+    pub fn future() -> Self {
+        Phase {
+            name: "Future".to_string(),
+            description: Some("Future enhancements and improvements".to_string()),
+            emoji: Some("🔮".to_string()),
+        }
+    }
+    
+    /// Create predefined Backlog phase
+    pub fn backlog() -> Self {
+        Phase {
+            name: "Backlog".to_string(),
+            description: Some("Ideas and backlog items for consideration".to_string()),
+            emoji: Some("💡".to_string()),
+        }
+    }
+    
+    /// Get all predefined phases
+    pub fn predefined_phases() -> Vec<Phase> {
+        vec![
+            Phase::mvp(),
+            Phase::beta(),
+            Phase::release(),
+            Phase::future(),
+            Phase::backlog(),
+        ]
+    }
+    
+    /// Check if this is a predefined phase
+    pub fn is_predefined(&self) -> bool {
+        matches!(self.name.as_str(), "MVP" | "Beta" | "Release" | "Future" | "Backlog")
+    }
+    
+    /// Get phase description (returns default if none set)
+    pub fn description(&self) -> String {
+        self.description.clone().unwrap_or_else(|| {
+            if self.is_predefined() {
+                match self.name.as_str() {
+                    "MVP" => "Core features for minimum viable product".to_string(),
+                    "Beta" => "Features for beta release and testing".to_string(),
+                    "Release" => "Features for production release".to_string(),
+                    "Future" => "Future enhancements and improvements".to_string(),
+                    "Backlog" => "Ideas and backlog items for consideration".to_string(),
+                    _ => "Custom phase".to_string(),
+                }
+            } else {
+                "Custom phase".to_string()
+            }
+        })
+    }
+    
+    /// Get phase emoji (returns default if none set)
+    pub fn emoji(&self) -> String {
+        self.emoji.clone().unwrap_or_else(|| {
+            if self.is_predefined() {
+                match self.name.as_str() {
+                    "MVP" => "🚀".to_string(),
+                    "Beta" => "🧪".to_string(),
+                    "Release" => "🎯".to_string(),
+                    "Future" => "🔮".to_string(),
+                    "Backlog" => "💡".to_string(),
+                    _ => "📋".to_string(),
+                }
+            } else {
+                "📋".to_string()
+            }
+        })
+    }
+    
+    /// Parse phase from string (case-insensitive)
+    pub fn from_string(name: &str) -> Self {
+        let normalized = name.trim().to_lowercase();
+        match normalized.as_str() {
+            "mvp" => Phase::mvp(),
+            "beta" => Phase::beta(),
+            "release" => Phase::release(),
+            "future" => Phase::future(),
+            "backlog" => Phase::backlog(),
+            _ => Phase::new(name.trim().to_string()),
+        }
+    }
 }
 
 impl Default for Phase {
     fn default() -> Self {
-        Phase::MVP
+        Phase::mvp()
     }
 }
 
 impl std::fmt::Display for Phase {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Phase::MVP => write!(f, "MVP"),
-            Phase::Beta => write!(f, "Beta"),
-            Phase::Release => write!(f, "Release"),
-            Phase::Future => write!(f, "Future"),
-            Phase::Backlog => write!(f, "Backlog"),
-        }
-    }
-}
-
-impl Phase {
-    /// Get all available phases
-    pub fn all() -> Vec<Phase> {
-        vec![Phase::MVP, Phase::Beta, Phase::Release, Phase::Future, Phase::Backlog]
-    }
-    
-    /// Get phase description
-    pub fn description(&self) -> &'static str {
-        match self {
-            Phase::MVP => "Core features for minimum viable product",
-            Phase::Beta => "Features for beta release and testing",
-            Phase::Release => "Features for production release",
-            Phase::Future => "Future enhancements and improvements",
-            Phase::Backlog => "Ideas and backlog items for consideration",
-        }
-    }
-    
-    /// Get phase emoji for display
-    pub fn emoji(&self) -> &'static str {
-        match self {
-            Phase::MVP => "🚀",
-            Phase::Beta => "🧪",
-            Phase::Release => "🎯",
-            Phase::Future => "🔮",
-            Phase::Backlog => "💡",
-        }
+        write!(f, "{}", self.name)
     }
 }
 
@@ -377,13 +540,16 @@ impl Roadmap {
             (Priority::Low, self.tasks.iter().filter(|t| t.priority == Priority::Low).count()),
         ];
 
-        let by_phase = [
-            (Phase::MVP, self.tasks.iter().filter(|t| t.phase == Phase::MVP).count()),
-            (Phase::Beta, self.tasks.iter().filter(|t| t.phase == Phase::Beta).count()),
-            (Phase::Release, self.tasks.iter().filter(|t| t.phase == Phase::Release).count()),
-            (Phase::Future, self.tasks.iter().filter(|t| t.phase == Phase::Future).count()),
-            (Phase::Backlog, self.tasks.iter().filter(|t| t.phase == Phase::Backlog).count()),
-        ];
+        // Group tasks by phase name dynamically
+        let mut phase_counts: HashMap<String, usize> = HashMap::new();
+        for task in &self.tasks {
+            *phase_counts.entry(task.phase.name.clone()).or_insert(0) += 1;
+        }
+        
+        // Convert to Vec<(Phase, usize)> for compatibility
+        let by_phase: Vec<(Phase, usize)> = phase_counts.into_iter()
+            .map(|(name, count)| (Phase::from_string(&name), count))
+            .collect();
 
         let all_tags: HashSet<String> = self.tasks.iter()
             .flat_map(|t| &t.tags)
@@ -395,7 +561,7 @@ impl Roadmap {
             completed_tasks: completed,
             pending_tasks: pending,
             tasks_by_priority: by_priority.into_iter().collect(),
-            tasks_by_phase: by_phase.into_iter().collect(),
+            tasks_by_phase: by_phase,
             unique_tags: all_tags.len(),
             completion_percentage: if total > 0 { (completed * 100) / total } else { 0 },
         }
