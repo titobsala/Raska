@@ -2,7 +2,6 @@ use crate::{
     cli::{TemplateCommands, CliPriority},
     model::{TaskTemplate, TemplateCollection, TemplateCategory, Priority, Phase},
     state,
-    ui,
 };
 use std::path::Path;
 use std::fs;

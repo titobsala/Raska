@@ -3,7 +3,7 @@
 //! This module contains common validation functions and utilities
 //! used across multiple command modules.
 
-use crate::{model::{Roadmap, Task}, state, markdown_writer};
+use crate::{model::{Roadmap}, state, markdown_writer};
 use super::CommandResult;
 
 /// Enhanced input validation for task descriptions

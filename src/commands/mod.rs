@@ -29,4 +29,4 @@ pub use templates::*;
 pub type CommandResult = Result<(), Box<dyn std::error::Error>>;
 
 // Re-export CLI types for convenience
-pub use crate::cli::{CliPriority, ConfigCommands, BulkCommands, PhaseCommands, NotesCommands, TemplateCommands, ExportFormat}; 
+pub use crate::cli::{ConfigCommands, BulkCommands, ExportFormat}; 
