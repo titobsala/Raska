@@ -127,9 +127,6 @@ fn display_task_line(task: &Task, detailed: bool) {
         status_icon.bright_black() 
     };
     
-    // Priority indicator with color
-    let priority_indicator = get_priority_indicator(&task.priority);
-    
     // Apply priority-based coloring to task description
     let priority_color_fn = get_priority_color(&task.priority);
     let description = if task.status == TaskStatus::Completed {
@@ -139,13 +136,25 @@ fn display_task_line(task: &Task, detailed: bool) {
     };
     
     // Format the main task line with consistent spacing
-    // Using fixed-width formatting to ensure proper alignment
-    print!("  {} {} #{:2} {}", 
-        status_color,           // Status checkbox (✓ or □)
-        priority_indicator,     // Priority emoji (🔥, ⬆️, ▶️, ⬇️)
-        task.id,               // Task ID with consistent 2-digit padding
-        description            // Task description with priority coloring
-    );
+    // In detailed mode, we don't show priority icon here since it's shown in details below
+    // In non-detailed mode, we show the priority icon for quick reference
+    if detailed {
+        // Detailed view: no priority icon in main line (shown in details below)
+        print!("  {} #{:2} {}", 
+            status_color,       // Status checkbox (✓ or □)
+            task.id,           // Task ID with consistent 2-digit padding
+            description        // Task description with priority coloring
+        );
+    } else {
+        // List view: show priority icon for quick scanning
+        let priority_indicator = get_priority_indicator(&task.priority);
+        print!("  {} {} #{:2} {}", 
+            status_color,           // Status checkbox (✓ or □)
+            priority_indicator,     // Priority emoji (🔥, ⬆️, ▶️, ⬇️)
+            task.id,               // Task ID with consistent 2-digit padding
+            description            // Task description with priority coloring
+        );
+    }
     
     // Add tags if present, with consistent spacing
     if !task.tags.is_empty() {
@@ -160,13 +169,11 @@ fn display_task_line(task: &Task, detailed: bool) {
     
     // Show detailed info if requested
     if detailed {
-        // Show priority if not default
-        if task.priority != Priority::Medium {
-            println!("       {} Priority: {}", 
-                get_priority_indicator(&task.priority),
-                format!("{}", task.priority).bright_white()
-            );
-        }
+        // Always show priority in detailed view since we removed it from the main line
+        println!("       {} Priority: {}", 
+            get_priority_indicator(&task.priority),
+            format!("{}", task.priority).bright_white()
+        );
         
         if let Some(ref notes) = task.notes {
             println!("       💭 {}", notes.italic().bright_black());
