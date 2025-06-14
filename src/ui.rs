@@ -78,22 +78,22 @@ fn display_project_statistics(roadmap: &Roadmap) {
     let blocked_tasks = pending_tasks - ready_tasks;
     
     println!("\n  📊 {}:", "Project Statistics".bold().bright_cyan());
-    println!("      📈 Progress: {}/{} completed ({:.1}%)", 
+    println!("       📈 Progress: {}/{} completed ({:.1}%)", 
         completed_tasks, total_tasks, 
         if total_tasks > 0 { (completed_tasks as f64 / total_tasks as f64) * 100.0 } else { 0.0 }
     );
     
     if pending_tasks > 0 {
-        println!("      🎯 Priority Breakdown:");
-        if critical_tasks > 0 { println!("         🔥 Critical: {}", critical_tasks.to_string().bright_red()); }
-        if high_tasks > 0 { println!("         ⬆️  High: {}", high_tasks.to_string().red()); }
-        if medium_tasks > 0 { println!("         ▶️  Medium: {}", medium_tasks.to_string().yellow()); }
-        if low_tasks > 0 { println!("         ⬇️  Low: {}", low_tasks.to_string().green()); }
+        println!("       🎯 Priority Breakdown:");
+        if critical_tasks > 0 { println!("          🔥 Critical: {}", critical_tasks.to_string().bright_red()); }
+        if high_tasks > 0 { println!("          ⬆️  High: {}", high_tasks.to_string().red()); }
+        if medium_tasks > 0 { println!("          ▶️  Medium: {}", medium_tasks.to_string().yellow()); }
+        if low_tasks > 0 { println!("          ⬇️  Low: {}", low_tasks.to_string().green()); }
         
-        println!("      🚀 Task Status:");
-        println!("         ✅ Ready to start: {}", ready_tasks.to_string().bright_green());
+        println!("       🚀 Task Status:");
+        println!("          ✅ Ready to start: {}", ready_tasks.to_string().bright_green());
         if blocked_tasks > 0 {
-            println!("         🔒 Blocked by dependencies: {}", blocked_tasks.to_string().bright_red());
+            println!("          🔒 Blocked by dependencies: {}", blocked_tasks.to_string().bright_red());
         }
     }
 }
@@ -127,9 +127,6 @@ fn display_task_line(task: &Task, detailed: bool) {
         status_icon.bright_black() 
     };
     
-    // Priority indicator with color
-    let priority_indicator = get_priority_indicator(&task.priority);
-    
     // Apply priority-based coloring to task description
     let priority_color_fn = get_priority_color(&task.priority);
     let description = if task.status == TaskStatus::Completed {
@@ -138,16 +135,28 @@ fn display_task_line(task: &Task, detailed: bool) {
         priority_color_fn(&task.description)
     };
     
-    // Format the main task line
-    print!("  {} {}{} #{} {}", 
-        status_color, 
-        priority_indicator,
-        if !task.tags.is_empty() { " " } else { "" },
-        format!("{:2}", task.id).bright_white(),
-        description
-    );
+    // Format the main task line with consistent spacing
+    // In detailed mode, we don't show priority icon here since it's shown in details below
+    // In non-detailed mode, we show the priority icon for quick reference
+    if detailed {
+        // Detailed view: no priority icon in main line (shown in details below)
+        print!("  {} #{:2} {}", 
+            status_color,       // Status checkbox (✓ or □)
+            task.id,           // Task ID with consistent 2-digit padding
+            description        // Task description with priority coloring
+        );
+    } else {
+        // List view: show priority icon for quick scanning
+        let priority_indicator = get_priority_indicator(&task.priority);
+        print!("  {} {} #{:2} {}", 
+            status_color,           // Status checkbox (✓ or □)
+            priority_indicator,     // Priority emoji (🔥, ⬆️, ▶️, ⬇️)
+            task.id,               // Task ID with consistent 2-digit padding
+            description            // Task description with priority coloring
+        );
+    }
     
-    // Add tags if present
+    // Add tags if present, with consistent spacing
     if !task.tags.is_empty() {
         let tags_str = task.tags.iter()
             .map(|tag| format!("#{}", tag).bright_magenta().to_string())
@@ -160,16 +169,14 @@ fn display_task_line(task: &Task, detailed: bool) {
     
     // Show detailed info if requested
     if detailed {
-        // Show priority if not default
-        if task.priority != Priority::Medium {
-            println!("      {} Priority: {}", 
-                get_priority_indicator(&task.priority),
-                format!("{}", task.priority).bright_white()
-            );
-        }
+        // Always show priority in detailed view since we removed it from the main line
+        println!("       {} Priority: {}", 
+            get_priority_indicator(&task.priority),
+            format!("{}", task.priority).bright_white()
+        );
         
         if let Some(ref notes) = task.notes {
-            println!("      💭 {}", notes.italic().bright_black());
+            println!("       💭 {}", notes.italic().bright_black());
         }
         
         if !task.dependencies.is_empty() {
@@ -177,14 +184,14 @@ fn display_task_line(task: &Task, detailed: bool) {
                 .map(|id| id.to_string())
                 .collect::<Vec<_>>()
                 .join(", ");
-            println!("      🔗 Depends on: {}", deps_str.bright_yellow());
+            println!("       🔗 Depends on: {}", deps_str.bright_yellow());
         }
         
         // Show creation/completion info if available
         if let Some(ref created_at) = task.created_at {
             use chrono::DateTime;
             if let Ok(datetime) = DateTime::parse_from_rfc3339(created_at) {
-                println!("      📅 Created: {}", datetime.format("%Y-%m-%d %H:%M").to_string().bright_black());
+                println!("       📅 Created: {}", datetime.format("%Y-%m-%d %H:%M").to_string().bright_black());
             }
         }
     }
@@ -263,12 +270,12 @@ pub fn display_add_success_enhanced(task: &Task) {
         task.id.to_string().bright_white()
     );
     
-    println!("   📝 Task: {}", task.description.bright_white());
-    println!("   🆔 Assigned ID: {}", task.id.to_string().bright_cyan());
+    println!("    📝 Task: {}", task.description.bright_white());
+    println!("    🆔 Assigned ID: {}", task.id.to_string().bright_cyan());
     
     // Show priority if not default
     if task.priority != Priority::Medium {
-        println!("   {} Priority: {}", 
+        println!("    {} Priority: {}", 
             get_priority_indicator(&task.priority),
             format!("{}", task.priority).bright_white()
         );
@@ -280,12 +287,12 @@ pub fn display_add_success_enhanced(task: &Task) {
             .map(|tag| format!("#{}", tag).bright_magenta().to_string())
             .collect::<Vec<_>>()
             .join(" ");
-        println!("   🏷️  Tags: {}", tags_str);
+        println!("    🏷️  Tags: {}", tags_str);
     }
     
     // Show notes if present
     if let Some(ref notes) = task.notes {
-        println!("   💭 Notes: {}", notes.italic().bright_black());
+        println!("    💭 Notes: {}", notes.italic().bright_black());
     }
     
     // Show dependencies if present
@@ -294,10 +301,10 @@ pub fn display_add_success_enhanced(task: &Task) {
             .map(|id| id.to_string())
             .collect::<Vec<_>>()
             .join(", ");
-        println!("   🔗 Dependencies: {}", deps_str.bright_yellow());
+        println!("    🔗 Dependencies: {}", deps_str.bright_yellow());
     }
     
-    println!("   💡 Task added to both state and markdown file!\n");
+    println!("    💡 Task added to both state and markdown file!\n");
 }
 
 /// Displays a simple progress bar
@@ -761,7 +768,7 @@ pub fn display_detailed_task_view(task: &crate::model::Task, roadmap: &crate::mo
         );
     }
     
-    // Notes
+        // Notes
     if let Some(ref notes) = task.notes {
         println!("  💭 {}:", "Notes".bold());
         // Handle multi-line notes with proper indentation
@@ -769,7 +776,26 @@ pub fn display_detailed_task_view(task: &crate::model::Task, roadmap: &crate::mo
             println!("      {}", line.italic().bright_black());
         }
     }
-    
+
+    // Implementation Notes
+    if !task.implementation_notes.is_empty() {
+        println!("  🔧 {} ({}):", "Implementation Notes".bold().bright_blue(), task.implementation_notes.len());
+        for (index, note) in task.implementation_notes.iter().enumerate() {
+            println!("      {} {}:", format!("#{}", index).bright_white().bold(), "Note".bright_blue());
+            // Handle multi-line implementation notes with proper indentation
+            for line in note.lines() {
+                if line.trim().is_empty() {
+                    println!();
+                } else {
+                    println!("        {}", line.bright_cyan());
+                }
+            }
+            if index < task.implementation_notes.len() - 1 {
+                println!(); // Add spacing between notes
+            }
+        }
+    }
+
     // Creation date
     if let Some(ref created_at) = task.created_at {
         use chrono::DateTime;

@@ -35,6 +35,11 @@ impl From<CliPriority> for crate::model::Priority {
     }
 }
 
+/// Helper function to parse phase from string
+pub fn parse_phase(phase_str: &str) -> crate::model::Phase {
+    crate::model::Phase::from_string(phase_str)
+}
+
 /// Available commands for the Rask CLI
 #[derive(Subcommand)]
 pub enum Commands {
@@ -70,6 +75,10 @@ pub enum Commands {
         /// Priority level for the task
         #[arg(long, value_enum, value_name = "PRIORITY", help = "Priority level: low, medium, high, critical")]
         priority: Option<CliPriority>,
+        
+        /// Phase for the task
+        #[arg(long, value_name = "PHASE", help = "Phase name (e.g., mvp, beta, release, future, backlog, or custom name)")]
+        phase: Option<String>,
         
         /// Additional notes for the task
         #[arg(long, value_name = "NOTES", help = "Detailed notes or description for the task")]
@@ -115,6 +124,10 @@ pub enum Commands {
         #[arg(long, value_enum, value_name = "PRIORITY", help = "Show only tasks with this priority")]
         priority: Option<CliPriority>,
         
+        /// Filter by phase
+        #[arg(long, value_name = "PHASE", help = "Show only tasks in this phase")]
+        phase: Option<String>,
+        
         /// Filter by status
         #[arg(long, value_name = "STATUS", help = "Filter by status: pending, completed, all")]
         status: Option<String>,
@@ -151,6 +164,10 @@ pub enum Commands {
         show_blocked: bool,
     },
 
+    /// Manage and view project phases
+    #[command(subcommand)]
+    Phase(PhaseCommands),
+
     /// Manage configuration settings
     #[command(subcommand)]
     Config(ConfigCommands),
@@ -165,6 +182,10 @@ pub enum Commands {
     /// Perform bulk operations on multiple tasks
     #[command(subcommand)]
     Bulk(BulkCommands),
+
+    /// Manage implementation notes for tasks
+    #[command(subcommand)]
+    Notes(NotesCommands),
 
     /// Export roadmap to different formats
     Export {
@@ -187,6 +208,10 @@ pub enum Commands {
         /// Include only specific priority
         #[arg(long, value_enum, help = "Export only tasks with this priority")]
         priority: Option<CliPriority>,
+        
+        /// Include only specific phase
+        #[arg(long, help = "Export only tasks in this phase")]
+        phase: Option<String>,
         
         /// Pretty print JSON output
         #[arg(long, help = "Pretty print JSON output")]
@@ -218,6 +243,9 @@ pub enum ProjectCommands {
     /// List all projects
     List,
     
+    /// Interactive project switcher interface
+    Switcher,
+    
     /// Delete a project
     Delete {
         /// Name of the project to delete
@@ -227,6 +255,49 @@ pub enum ProjectCommands {
         /// Force deletion without confirmation
         #[arg(long, help = "Force deletion without confirmation")]
         force: bool,
+    },
+}
+
+/// Phase management commands
+#[derive(Subcommand)]
+pub enum PhaseCommands {
+    /// List all phases and their task counts
+    List,
+    
+    /// Show tasks in a specific phase
+    Show {
+        /// Phase to show tasks for
+        #[arg(help = "Phase name to display")]
+        phase: String,
+    },
+    
+    /// Set phase for a task
+    Set {
+        /// Task ID to update
+        #[arg(value_name = "TASK_ID", help = "ID of the task to update")]
+        task_id: usize,
+        
+        /// New phase for the task
+        #[arg(help = "Phase name to set")]
+        phase: String,
+    },
+    
+    /// Show phase overview with statistics
+    Overview,
+    
+    /// Create a new custom phase
+    Create {
+        /// Name of the new phase
+        #[arg(help = "Name of the new phase")]
+        name: String,
+        
+        /// Description of the phase
+        #[arg(long, help = "Description of the phase")]
+        description: Option<String>,
+        
+        /// Emoji for the phase
+        #[arg(long, help = "Emoji for the phase")]
+        emoji: Option<String>,
     },
 }
 
@@ -296,6 +367,61 @@ pub enum ConfigCommands {
     },
 }
 
+/// Implementation notes management commands
+#[derive(Subcommand)]
+pub enum NotesCommands {
+    /// Add an implementation note to a task
+    Add {
+        /// Task ID to add note to
+        #[arg(value_name = "TASK_ID", help = "ID of the task to add implementation note to")]
+        task_id: usize,
+        
+        /// Implementation note content
+        #[arg(value_name = "NOTE", help = "Implementation note content (code snippets, technical details, etc.)")]
+        note: String,
+    },
+    
+    /// List all implementation notes for a task
+    List {
+        /// Task ID to show notes for
+        #[arg(value_name = "TASK_ID", help = "ID of the task to show implementation notes for")]
+        task_id: usize,
+    },
+    
+    /// Remove an implementation note from a task
+    Remove {
+        /// Task ID to remove note from
+        #[arg(value_name = "TASK_ID", help = "ID of the task to remove implementation note from")]
+        task_id: usize,
+        
+        /// Index of the note to remove (0-based)
+        #[arg(value_name = "INDEX", help = "Index of the implementation note to remove (0-based)")]
+        index: usize,
+    },
+    
+    /// Clear all implementation notes from a task
+    Clear {
+        /// Task ID to clear notes from
+        #[arg(value_name = "TASK_ID", help = "ID of the task to clear all implementation notes from")]
+        task_id: usize,
+    },
+    
+    /// Edit an implementation note
+    Edit {
+        /// Task ID containing the note
+        #[arg(value_name = "TASK_ID", help = "ID of the task containing the implementation note")]
+        task_id: usize,
+        
+        /// Index of the note to edit (0-based)
+        #[arg(value_name = "INDEX", help = "Index of the implementation note to edit (0-based)")]
+        index: usize,
+        
+        /// New content for the note
+        #[arg(value_name = "NOTE", help = "New content for the implementation note")]
+        note: String,
+    },
+}
+
 /// Bulk operations on multiple tasks
 #[derive(Subcommand)]
 pub enum BulkCommands {
@@ -337,6 +463,17 @@ pub enum BulkCommands {
         /// Priority level to set
         #[arg(value_enum, help = "Priority level")]
         priority: CliPriority,
+    },
+    
+    /// Set phase for multiple tasks
+    SetPhase {
+        /// Comma-separated list of task IDs
+        #[arg(value_name = "IDS", help = "Task IDs separated by commas")]
+        ids: String,
+        
+        /// Phase to set
+        #[arg(help = "Phase name")]
+        phase: String,
     },
     
     /// Reset multiple tasks to pending status
