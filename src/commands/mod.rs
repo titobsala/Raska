@@ -11,6 +11,7 @@ pub mod config;
 pub mod dependencies;
 pub mod phases;
 pub mod notes;
+pub mod templates;
 pub mod utils;
 
 // Re-export all public command functions
@@ -22,9 +23,10 @@ pub use config::*;
 pub use dependencies::*;
 pub use phases::*;
 pub use notes::*;
+pub use templates::*;
 
 // Common types used across all command modules
 pub type CommandResult = Result<(), Box<dyn std::error::Error>>;
 
 // Re-export CLI types for convenience
-pub use crate::cli::{CliPriority, ConfigCommands, BulkCommands, PhaseCommands, NotesCommands, ExportFormat}; 
+pub use crate::cli::{CliPriority, ConfigCommands, BulkCommands, PhaseCommands, NotesCommands, TemplateCommands, ExportFormat}; 

@@ -33,7 +33,7 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [x] Add project switcher interface
 - [x] Create detailed task view command
 - [x] Add bulk operations (complete multiple tasks, add multiple tags)
-- [ ] Implement task templates
+- [x] Implement task templates
 - [ ] Add time estimation and tracking
 - [ ] Create progress analytics and reporting
 - [x] Add export capabilities (JSON, CSV, HTML)
@@ -51,3 +51,6 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [ ] Test custom phase functionality
 - [x] Another custom phase task
 - [ ] Test alignment task
+- [ ] Fix login authentication issue
+- [ ] Review PR #123: Add user authentication system
+- [ ] Conduct market research
