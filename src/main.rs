@@ -9,7 +9,7 @@ mod project;
 mod state;
 mod ui;
 
-use cli::{Commands, ProjectCommands, PhaseCommands, NotesCommands, TemplateCommands};
+use cli::{Commands, ProjectCommands, PhaseCommands, NotesCommands};
 use std::process;
 
 fn main() {

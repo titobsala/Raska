@@ -35,11 +35,6 @@ impl From<CliPriority> for crate::model::Priority {
     }
 }
 
-/// Helper function to parse phase from string
-pub fn parse_phase(phase_str: &str) -> crate::model::Phase {
-    crate::model::Phase::from_string(phase_str)
-}
-
 /// Available commands for the Rask CLI
 #[derive(Subcommand)]
 pub enum Commands {
