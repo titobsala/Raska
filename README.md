@@ -1,6 +1,6 @@
 # Rask 🚀 - Advanced CLI Project Planner
 
-[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)](https://github.com/tito-sala/rask)
+[![Version](https://img.shields.io/badge/version-2.3.1-blue.svg)](https://github.com/tito-sala/rask)
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -28,6 +28,8 @@
 - **Notes**: Detailed descriptions and context for each task
 - **Dependencies**: Link tasks with sophisticated dependency management
 - **Phases**: Organize tasks by development lifecycle stages
+- **Time Estimation**: Estimate completion time in hours for better planning
+- **Time Tracking**: Track actual time spent on tasks with start/stop functionality
 
 ### 🔍 **Advanced Filtering & Search**
 - Filter by tags, priority, status, phases, or any combination
@@ -55,6 +57,8 @@
 - **NEW**: Configuration system with user and project-specific settings
 - **NEW**: Enhanced dependency tree visualization
 - **NEW**: Modular architecture for better maintainability and extensibility
+- **NEW**: Time estimation and tracking with variance analysis
+- **NEW**: Session-based time tracking with optional descriptions
 
 ### 📊 **Visualization & Analysis**
 - Comprehensive dependency trees with ASCII art
@@ -110,9 +114,9 @@ rask init roadmap.md
 rask show
 ```
 
-4. **Add tasks with metadata and phases:**
+4. **Add tasks with metadata, phases, and time estimates:**
 ```bash
-rask add "Implement OAuth" --tag backend,auth --priority high --phase beta --depends-on 2
+rask add "Implement OAuth" --tag backend,auth --priority high --phase beta --depends-on 2 --estimated-hours 4.5
 ```
 
 5. **Manage phases:**
@@ -127,12 +131,25 @@ rask phase set 5 release
 rask phase show mvp
 ```
 
-6. **Complete tasks:**
+6. **Track time on tasks:**
+```bash
+rask start 1 --description "Working on OAuth integration"
+# ... work on the task ...
+rask stop
+```
+
+7. **Complete tasks:**
 ```bash
 rask complete 1
 ```
 
-7. **Export progress with phase information:**
+8. **View time tracking information:**
+```bash
+rask time 1          # View time for specific task
+rask time --summary  # Overall time tracking summary
+```
+
+9. **Export progress with phase and time information:**
 ```bash
 rask export html -o progress_report.html --include-completed
 ```
@@ -147,14 +164,17 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
 |---------|-------------|
 | `rask init <file.md>` | Initialize project from Markdown |
 | `rask show` | Display project status |
-| `rask add <desc> [options]` | Add task with metadata and phase |
+| `rask add <desc> [options]` | Add task with metadata, phase, and time estimate |
 | `rask complete <id>` | Complete a task |
 | `rask view <id>` | View detailed task information |
 | `rask list [filters]` | List and filter tasks |
 | `rask phase <operation>` | **NEW**: Manage roadmap phases |
 | `rask dependencies [options]` | Analyze dependencies |
+| `rask start <id> [options]` | **NEW**: Start time tracking for a task |
+| `rask stop` | **NEW**: Stop current time tracking session |
+| `rask time [id] [options]` | **NEW**: View time tracking information |
 | `rask bulk <operation> <ids>` | Bulk operations on multiple tasks |
-| `rask export <format> [options]` | Export to JSON/CSV/HTML with phases |
+| `rask export <format> [options]` | Export to JSON/CSV/HTML with phases and time data |
 | `rask config <operation>` | Manage configuration |
 | `rask project <operation>` | Multi-project management |
 | `rask template <operation>` | **NEW**: Manage task templates |
@@ -169,6 +189,17 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
 | `rask phase set <id> <phase>` | Set phase for individual task |
 | `rask phase create <name> [options]` | **NEW**: Create custom phases |
 | `rask bulk set-phase <ids> <phase>` | Set phase for multiple tasks |
+
+### Time Tracking Commands
+
+| Command | Description |
+|---------|-------------|
+| `rask start <id> [--description <desc>]` | Start time tracking for a specific task |
+| `rask stop` | Stop the currently active time tracking session |
+| `rask time [id]` | View time tracking info for a task (or all tasks) |
+| `rask time --summary` | Show time tracking summary across all tasks |
+| `rask time --detailed` | Show detailed time session history |
+| `rask add --estimated-hours <hours>` | Add task with time estimation |
 
 ### Template Commands
 
@@ -193,20 +224,24 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
   📋 Tasks:
   ──────────────────────────────────────────────────
   ✓ ▶️ # 1 Set up development environment 🚀
-  ✓ ⬆️ # 2 Design database schema 🚀
-  ✓ 🔥 # 3 Create API endpoints #backend 🧪
-  □ ⬆️ # 4 Implement authentication #backend #security 🧪
+  ✓ ⬆️ # 2 Design database schema 🚀 [2.5h estimated, 2.8h actual]
+  ✓ 🔥 # 3 Create API endpoints #backend 🧪 [6.0h estimated, 5.2h actual]
+  □ ⬆️ # 4 Implement authentication #backend #security 🧪 [4.5h estimated]
       🔗 Depends on: 2, 3
-  □ ▶️ # 5 Write tests #testing 🎯
-      🔗 Depends on: 4
-  □ 🔥 # 6 Deploy to production #deployment 🎯
+  ⏱️ ▶️ # 5 Write tests #testing 🎯 [3.0h estimated, 1.2h tracked]
+      🔗 Depends on: 4 | 🕐 Active since 14:30
+  □ 🔥 # 6 Deploy to production #deployment 🎯 [2.0h estimated]
       🔗 Depends on: 5
   ──────────────────────────────────────────────────
   
   📊 Phase Overview:
-  🚀 MVP: 2/3 tasks (67% complete)
-  🧪 Beta: 1/2 tasks (50% complete)  
-  🎯 Release: 0/2 tasks (0% complete)
+  🚀 MVP: 2/3 tasks (67% complete) | 8.5h estimated, 8.0h actual
+  🧪 Beta: 1/2 tasks (50% complete) | 7.5h estimated, 6.4h tracked
+  🎯 Release: 0/2 tasks (0% complete) | 2.0h estimated
+  
+  ⏱️ Time Tracking:
+  📈 Total estimated: 18.0h | 🕐 Total tracked: 14.4h | ✅ Efficiency: 125%
+  🔥 Currently tracking: Task #5 (1.2h active session)
   
   🎯 Great progress! Focus on Beta phase next.
 ```
@@ -368,10 +403,12 @@ src/
 - [x] **Roadmap phases system (MVP, Beta, Release, Future, Backlog)**
 - [x] **Custom phase creation with personalized names, descriptions, and emojis**
 - [x] **Task templates system with built-in and custom templates**
+- [x] **Time estimation and tracking with variance analysis**
+- [x] **Session-based time tracking with start/stop functionality**
 
 ### 🚧 In Progress
-- [ ] Time estimation and tracking
-- [ ] Progress analytics and reporting
+- [ ] Advanced time analytics and reporting
+- [ ] Time-based productivity insights
 
 ### 🔮 Future Plans
 - [ ] Plugin system for extensibility
