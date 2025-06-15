@@ -34,7 +34,7 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [x] Create detailed task view command
 - [x] Add bulk operations (complete multiple tasks, add multiple tags)
 - [x] Implement task templates
-- [ ] Add time estimation and tracking
+- [x] Add time estimation and tracking
 - [ ] Create progress analytics and reporting
 - [x] Add export capabilities (JSON, CSV, HTML)
 - [ ] Write comprehensive unit tests for all new features
@@ -54,3 +54,4 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [ ] Fix login authentication issue
 - [ ] Review PR #123: Add user authentication system
 - [ ] Conduct market research
+- [ ] Test time tracking feature

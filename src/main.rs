@@ -52,8 +52,8 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         Commands::Init { filepath } => commands::init_project(filepath),
         Commands::Show => commands::show_project(),
         Commands::Complete { id } => commands::complete_task(*id),
-        Commands::Add { description, tag, priority, phase, note, dependencies } => {
-            commands::add_task_enhanced(description, tag, priority, phase, note, dependencies)
+        Commands::Add { description, tag, priority, phase, note, dependencies, estimated_hours } => {
+            commands::add_task_enhanced(description, tag, priority, phase, note, dependencies, estimated_hours)
         },
         Commands::Remove { id } => commands::remove_task(*id),
         Commands::Edit { id, description } => commands::edit_task(*id, description),
@@ -109,6 +109,15 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         },
         Commands::Template(template_command) => {
             commands::handle_template_command(template_command.clone())
+        },
+        Commands::Start { id, description } => {
+            commands::start_time_tracking(*id, description.as_deref())
+        },
+        Commands::Stop => {
+            commands::stop_time_tracking()
+        },
+        Commands::Time { task_id, summary, detailed } => {
+            commands::show_time_tracking(task_id, *summary, *detailed)
         },
     }
 }
