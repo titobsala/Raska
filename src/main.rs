@@ -107,6 +107,9 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         Commands::Export { format, output, include_completed, tags, priority, phase, pretty } => {
             commands::export_roadmap(format, output.as_deref(), *include_completed, tags.as_deref(), priority.as_ref(), phase.as_ref(), *pretty)
         },
+        Commands::Template(template_command) => {
+            commands::handle_template_command(template_command.clone())
+        },
     }
 }
 

@@ -4,7 +4,7 @@
 //! listing phases, showing tasks by phase, setting task phases, creating custom phases,
 //! and displaying phase overviews.
 
-use crate::model::{Phase, Roadmap};
+use crate::model::{Phase};
 use crate::state;
 use crate::ui;
 use super::CommandResult;
@@ -212,7 +212,7 @@ pub fn show_phase_overview() -> CommandResult {
     }
     
     // Suggest predefined phases if none are being used
-    let predefined_phases = Phase::predefined_phases();
+    let _predefined_phases = Phase::predefined_phases();
     let used_predefined: Vec<_> = stats.tasks_by_phase.iter()
         .filter(|(phase, count)| phase.is_predefined() && *count > 0)
         .collect();

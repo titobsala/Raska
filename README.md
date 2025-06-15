@@ -16,6 +16,7 @@
 
 ### 🏗️ **Roadmap Phases System**
 - **NEW**: Organize tasks by development lifecycle phases (MVP, Beta, Release, Future, Backlog)
+- **NEW**: Create custom phases with personalized names, descriptions, and emojis
 - Phase-based filtering and visualization with emoji indicators
 - Smart phase recommendations and progress tracking
 - Comprehensive phase overview with statistics and insights
@@ -62,6 +63,15 @@
 - Project overview dashboards
 - **NEW**: Beautiful HTML exports with responsive design
 - **NEW**: Phase-based progress tracking and recommendations
+
+### 📋 **Task Templates System**
+- **NEW**: Pre-configured task patterns for consistent task creation
+- Built-in templates for common development scenarios (Bug Fix, Feature Implementation, etc.)
+- Custom template creation with full metadata support
+- Template categories (Development, Testing, Documentation, DevOps, Design, etc.)
+- AI integration examples for automated roadmap generation
+- Template export/import for team sharing
+- Smart placeholders and implementation notes
 
 ## 🚀 Quick Start
 
@@ -147,6 +157,7 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
 | `rask export <format> [options]` | Export to JSON/CSV/HTML with phases |
 | `rask config <operation>` | Manage configuration |
 | `rask project <operation>` | Multi-project management |
+| `rask template <operation>` | **NEW**: Manage task templates |
 
 ### Phase Commands
 
@@ -156,7 +167,19 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
 | `rask phase list` | List all phases with descriptions |
 | `rask phase show <phase>` | Display tasks in specific phase |
 | `rask phase set <id> <phase>` | Set phase for individual task |
+| `rask phase create <name> [options]` | **NEW**: Create custom phases |
 | `rask bulk set-phase <ids> <phase>` | Set phase for multiple tasks |
+
+### Template Commands
+
+| Command | Description |
+|---------|-------------|
+| `rask template list [--category <cat>]` | List all available templates |
+| `rask template show <name>` | Show detailed template information |
+| `rask template use <name> [description]` | Create task from template |
+| `rask template create <name> <desc> [options]` | Create custom template |
+| `rask template delete <name>` | Delete custom template |
+| `rask template examples` | Show help and AI integration examples |
 
 ## 🎨 Terminal UI Preview
 
@@ -187,6 +210,108 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
   
   🎯 Great progress! Focus on Beta phase next.
 ```
+
+## 🤖 AI-Assisted Roadmap Generation
+
+Rask provides comprehensive templates and examples that work perfectly with AI assistants like ChatGPT, Claude, or any other AI tool. While Rask doesn't have built-in AI integration yet, it's designed to work seamlessly with AI-generated content, dramatically speeding up project planning and ensuring consistent task structure.
+
+### 📝 Copy-Paste Template for AI Assistants
+
+Use this template with any AI assistant to generate a complete roadmap that works perfectly with Rask:
+
+```markdown
+Create a development roadmap for a [PROJECT_TYPE] with the following structure. 
+Each task should include appropriate tags, priorities, phases, and implementation notes:
+
+# Project: [PROJECT_NAME]
+
+## MVP Phase
+- [ ] Task description #tag1 #tag2 (Priority: High)
+  Notes: Implementation details and considerations
+  
+- [ ] Another MVP task #backend #database (Priority: Medium)
+  Notes: Database setup and configuration requirements
+
+## Beta Phase  
+- [ ] Beta feature #frontend #ui (Priority: High)
+  Notes: User interface improvements and testing
+  
+- [ ] Integration testing #testing #qa (Priority: Medium)
+  Notes: End-to-end testing scenarios and acceptance criteria
+
+## Release Phase
+- [ ] Production deployment #devops #deployment (Priority: Critical)
+  Notes: Deployment checklist and rollback procedures
+  
+- [ ] Performance optimization #performance (Priority: High)
+  Notes: Profiling and optimization targets
+
+## Future Phase
+- [ ] Advanced features #enhancement (Priority: Low)
+  Notes: Future improvements and feature requests
+
+## Custom Phases (Optional)
+You can also request custom phases for specific project needs:
+
+## Planning Phase
+- [ ] Market research #research #planning (Priority: High)
+  Notes: Competitive analysis and user research
+
+## Design Phase  
+- [ ] UI/UX mockups #design #frontend (Priority: High)
+  Notes: User interface design and prototyping
+
+Please format it as a markdown file that I can use with 'rask init roadmap.md'
+```
+
+### 🎯 Example AI Prompts
+
+**For Web Applications:**
+```
+Create a development roadmap for a web application with user authentication, 
+real-time chat, and file sharing capabilities. Include MVP, Beta, Release, 
+and Future phases with appropriate priorities and implementation notes.
+```
+
+**For Mobile Apps:**
+```
+Generate a roadmap for a mobile fitness tracking app with social features. 
+Include tasks for iOS/Android development, backend API, user onboarding, 
+and analytics integration.
+```
+
+**For API Projects:**
+```
+Create a roadmap for a RESTful API with authentication, rate limiting, 
+documentation, and monitoring. Focus on scalability and security.
+```
+
+**For Custom Phases:**
+```
+Create a development roadmap with custom phases for a [PROJECT_TYPE]. 
+Include these phases: Planning, Design, Development, Testing, Deployment, Maintenance.
+Each phase should have appropriate tasks with tags, priorities, and implementation notes.
+```
+
+### ✨ AI-Assisted Roadmap Benefits
+
+- **Comprehensive Coverage**: AI assistants help ensure no critical tasks are missed
+- **Proper Prioritization**: Smart priority assignment based on dependencies
+- **Phase Organization**: Logical grouping of tasks by development lifecycle
+- **Implementation Notes**: Detailed technical considerations for each task
+- **Consistent Tagging**: Standardized tags for better organization
+- **Time-Saving**: Generate complete roadmaps in seconds instead of hours
+- **Template Integration**: Use Rask's task templates to standardize recurring tasks
+
+### 🔄 Workflow Integration
+
+1. **Generate**: Use AI assistants with our templates to create your initial roadmap
+2. **Initialize**: `rask init ai-generated-roadmap.md`
+3. **Enhance**: Use `rask template` commands to add standardized tasks
+4. **Execute**: Track progress with Rask's powerful features
+5. **Iterate**: Export progress and feed back to AI for roadmap updates
+
+> **Future Enhancement**: Direct AI integration is planned for future releases, which will automate this workflow even further.
 
 ## 🏗️ Architecture
 
@@ -241,9 +366,10 @@ src/
 - [x] Enhanced dependency tree visualization
 - [x] **Modular architecture for better maintainability**
 - [x] **Roadmap phases system (MVP, Beta, Release, Future, Backlog)**
+- [x] **Custom phase creation with personalized names, descriptions, and emojis**
+- [x] **Task templates system with built-in and custom templates**
 
 ### 🚧 In Progress
-- [ ] Task templates and automation
 - [ ] Time estimation and tracking
 - [ ] Progress analytics and reporting
 

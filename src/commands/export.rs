@@ -142,7 +142,7 @@ fn export_to_json(roadmap: &Roadmap, tasks: &[&Task], pretty: bool) -> Result<St
 }
 
 /// Export roadmap to CSV format
-fn export_to_csv(roadmap: &Roadmap, tasks: &[&Task]) -> Result<String, Box<dyn std::error::Error>> {
+fn export_to_csv(_roadmap: &Roadmap, tasks: &[&Task]) -> Result<String, Box<dyn std::error::Error>> {
     let mut csv_content = String::new();
     
     // Add header
