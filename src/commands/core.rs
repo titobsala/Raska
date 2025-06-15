@@ -5,8 +5,7 @@
 
 use crate::{
     cli::CliPriority,
-    markdown_writer, 
-    model::{TaskStatus, Priority, Phase, Task, Roadmap}, 
+    model::{TaskStatus, Priority, Phase, Task}, 
     parser, 
     state, 
     ui

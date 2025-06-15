@@ -1,5 +1,5 @@
-use crate::model::{Roadmap, Task};
-use crate::{state, ui};
+use crate::model::{Task};
+use crate::{state};
 use super::{CommandResult, utils};
 use colored::*;
 use std::io::{self, Write};

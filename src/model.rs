@@ -1,6 +1,248 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{HashSet, HashMap};
 
+/// Task template for creating reusable task patterns
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct TaskTemplate {
+    pub name: String,
+    pub description: String,
+    pub tags: HashSet<String>,
+    pub priority: Priority,
+    pub phase: Phase,
+    pub notes: Option<String>,
+    pub implementation_notes: Vec<String>,
+    pub created_at: String,
+    pub category: TemplateCategory,
+}
+
+/// Categories for organizing templates
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub enum TemplateCategory {
+    Development,
+    Testing,
+    Documentation,
+    DevOps,
+    Design,
+    Research,
+    Meeting,
+    Bug,
+    Feature,
+    Custom(String),
+}
+
+impl std::fmt::Display for TemplateCategory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TemplateCategory::Development => write!(f, "Development"),
+            TemplateCategory::Testing => write!(f, "Testing"),
+            TemplateCategory::Documentation => write!(f, "Documentation"),
+            TemplateCategory::DevOps => write!(f, "DevOps"),
+            TemplateCategory::Design => write!(f, "Design"),
+            TemplateCategory::Research => write!(f, "Research"),
+            TemplateCategory::Meeting => write!(f, "Meeting"),
+            TemplateCategory::Bug => write!(f, "Bug"),
+            TemplateCategory::Feature => write!(f, "Feature"),
+            TemplateCategory::Custom(name) => write!(f, "{}", name),
+        }
+    }
+}
+
+impl TaskTemplate {
+    /// Create a new task template
+    pub fn new(name: String, description: String) -> Self {
+        TaskTemplate {
+            name,
+            description,
+            tags: HashSet::new(),
+            priority: Priority::Medium,
+            phase: Phase::default(),
+            notes: None,
+            implementation_notes: Vec::new(),
+            created_at: chrono::Utc::now().to_rfc3339(),
+            category: TemplateCategory::Development,
+        }
+    }
+
+    /// Create a task from this template
+    pub fn create_task(&self, id: usize, custom_description: Option<String>) -> Task {
+        Task {
+            id,
+            description: custom_description.unwrap_or_else(|| self.description.clone()),
+            status: TaskStatus::Pending,
+            tags: self.tags.clone(),
+            priority: self.priority.clone(),
+            phase: self.phase.clone(),
+            notes: self.notes.clone(),
+            implementation_notes: self.implementation_notes.clone(),
+            dependencies: Vec::new(),
+            created_at: Some(chrono::Utc::now().to_rfc3339()),
+            completed_at: None,
+        }
+    }
+
+    /// Get predefined development templates
+    pub fn predefined_templates() -> Vec<TaskTemplate> {
+        vec![
+            // Development Templates
+            TaskTemplate {
+                name: "Feature Implementation".to_string(),
+                description: "Implement new feature: [FEATURE_NAME]".to_string(),
+                tags: ["feature", "development"].iter().map(|s| s.to_string()).collect(),
+                priority: Priority::Medium,
+                phase: Phase::mvp(),
+                notes: Some("Remember to:\n- Write unit tests\n- Update documentation\n- Consider edge cases\n- Review security implications".to_string()),
+                implementation_notes: vec![
+                    "// TODO: Add implementation details".to_string(),
+                    "// Consider performance implications".to_string(),
+                    "// Add error handling".to_string(),
+                ],
+                created_at: chrono::Utc::now().to_rfc3339(),
+                category: TemplateCategory::Feature,
+            },
+            TaskTemplate {
+                name: "Bug Fix".to_string(),
+                description: "Fix bug: [BUG_DESCRIPTION]".to_string(),
+                tags: ["bug", "fix"].iter().map(|s| s.to_string()).collect(),
+                priority: Priority::High,
+                phase: Phase::mvp(),
+                notes: Some("Steps to fix:\n1. Reproduce the issue\n2. Identify root cause\n3. Implement fix\n4. Test thoroughly\n5. Update tests if needed".to_string()),
+                implementation_notes: vec![
+                    "// Reproduction steps:".to_string(),
+                    "// Root cause analysis:".to_string(),
+                    "// Fix implementation:".to_string(),
+                ],
+                created_at: chrono::Utc::now().to_rfc3339(),
+                category: TemplateCategory::Bug,
+            },
+            // Testing Templates
+            TaskTemplate {
+                name: "Unit Tests".to_string(),
+                description: "Write unit tests for [MODULE_NAME]".to_string(),
+                tags: ["testing", "unit-tests"].iter().map(|s| s.to_string()).collect(),
+                priority: Priority::Medium,
+                phase: Phase::mvp(),
+                notes: Some("Test coverage should include:\n- Happy path scenarios\n- Edge cases\n- Error conditions\n- Boundary values".to_string()),
+                implementation_notes: vec![
+                    "// Test cases to implement:".to_string(),
+                    "// Mock dependencies:".to_string(),
+                    "// Assertions to verify:".to_string(),
+                ],
+                created_at: chrono::Utc::now().to_rfc3339(),
+                category: TemplateCategory::Testing,
+            },
+            // Documentation Templates
+            TaskTemplate {
+                name: "API Documentation".to_string(),
+                description: "Document API endpoints for [API_NAME]".to_string(),
+                tags: ["documentation", "api"].iter().map(|s| s.to_string()).collect(),
+                priority: Priority::Medium,
+                phase: Phase::beta(),
+                notes: Some("Documentation should include:\n- Endpoint descriptions\n- Request/response examples\n- Error codes\n- Authentication requirements".to_string()),
+                implementation_notes: vec![
+                    "// Endpoints to document:".to_string(),
+                    "// Example requests:".to_string(),
+                    "// Example responses:".to_string(),
+                ],
+                created_at: chrono::Utc::now().to_rfc3339(),
+                category: TemplateCategory::Documentation,
+            },
+            // DevOps Templates
+            TaskTemplate {
+                name: "CI/CD Pipeline".to_string(),
+                description: "Set up CI/CD pipeline for [PROJECT_NAME]".to_string(),
+                tags: ["devops", "ci-cd", "automation"].iter().map(|s| s.to_string()).collect(),
+                priority: Priority::High,
+                phase: Phase::mvp(),
+                notes: Some("Pipeline should include:\n- Automated testing\n- Code quality checks\n- Security scanning\n- Deployment automation".to_string()),
+                implementation_notes: vec![
+                    "// Pipeline stages:".to_string(),
+                    "// Required tools:".to_string(),
+                    "// Deployment targets:".to_string(),
+                ],
+                created_at: chrono::Utc::now().to_rfc3339(),
+                category: TemplateCategory::DevOps,
+            },
+            // Research Templates
+            TaskTemplate {
+                name: "Technology Research".to_string(),
+                description: "Research [TECHNOLOGY_NAME] for [USE_CASE]".to_string(),
+                tags: ["research", "analysis"].iter().map(|s| s.to_string()).collect(),
+                priority: Priority::Low,
+                phase: Phase::future(),
+                notes: Some("Research areas:\n- Technical capabilities\n- Performance characteristics\n- Integration requirements\n- Cost implications\n- Learning curve".to_string()),
+                implementation_notes: vec![
+                    "// Key questions to answer:".to_string(),
+                    "// Evaluation criteria:".to_string(),
+                    "// Proof of concept plan:".to_string(),
+                ],
+                created_at: chrono::Utc::now().to_rfc3339(),
+                category: TemplateCategory::Research,
+            },
+        ]
+    }
+}
+
+/// Template storage and management
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TemplateCollection {
+    pub templates: Vec<TaskTemplate>,
+    pub created_at: String,
+    pub last_modified: String,
+}
+
+impl Default for TemplateCollection {
+    fn default() -> Self {
+        TemplateCollection {
+            templates: TaskTemplate::predefined_templates(),
+            created_at: chrono::Utc::now().to_rfc3339(),
+            last_modified: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+}
+
+impl TemplateCollection {
+    /// Create a new template collection
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Add a template to the collection
+    pub fn add_template(&mut self, template: TaskTemplate) {
+        self.templates.push(template);
+        self.update_last_modified();
+    }
+
+    /// Remove a template by name
+    pub fn remove_template(&mut self, name: &str) -> Option<TaskTemplate> {
+        if let Some(pos) = self.templates.iter().position(|t| t.name == name) {
+            self.update_last_modified();
+            Some(self.templates.remove(pos))
+        } else {
+            None
+        }
+    }
+
+    /// Find a template by name
+    pub fn find_template(&self, name: &str) -> Option<&TaskTemplate> {
+        self.templates.iter().find(|t| t.name == name)
+    }
+
+    /// Get templates by category
+    pub fn get_templates_by_category(&self, category: &TemplateCategory) -> Vec<&TaskTemplate> {
+        self.templates.iter().filter(|t| &t.category == category).collect()
+    }
+
+    /// Get all template names
+    pub fn get_template_names(&self) -> Vec<&String> {
+        self.templates.iter().map(|t| &t.name).collect()
+    }
+
+    /// Update last modified timestamp
+    fn update_last_modified(&mut self) {
+        self.last_modified = chrono::Utc::now().to_rfc3339();
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum TaskStatus {
     Pending,
