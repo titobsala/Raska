@@ -211,9 +211,9 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
   🎯 Great progress! Focus on Beta phase next.
 ```
 
-## 🤖 AI Integration & Automated Roadmap Generation
+## 🤖 AI-Assisted Roadmap Generation
 
-Rask includes powerful AI integration capabilities that allow you to generate comprehensive project roadmaps using AI assistants like ChatGPT, Claude, or any other AI tool. This feature dramatically speeds up project planning and ensures consistent task structure.
+Rask provides comprehensive templates and examples that work perfectly with AI assistants like ChatGPT, Claude, or any other AI tool. While Rask doesn't have built-in AI integration yet, it's designed to work seamlessly with AI-generated content, dramatically speeding up project planning and ensuring consistent task structure.
 
 ### 📝 Copy-Paste Template for AI Assistants
 
@@ -293,22 +293,25 @@ Include these phases: Planning, Design, Development, Testing, Deployment, Mainte
 Each phase should have appropriate tasks with tags, priorities, and implementation notes.
 ```
 
-### ✨ AI-Generated Roadmap Benefits
+### ✨ AI-Assisted Roadmap Benefits
 
-- **Comprehensive Coverage**: AI ensures no critical tasks are missed
+- **Comprehensive Coverage**: AI assistants help ensure no critical tasks are missed
 - **Proper Prioritization**: Smart priority assignment based on dependencies
 - **Phase Organization**: Logical grouping of tasks by development lifecycle
 - **Implementation Notes**: Detailed technical considerations for each task
 - **Consistent Tagging**: Standardized tags for better organization
 - **Time-Saving**: Generate complete roadmaps in seconds instead of hours
+- **Template Integration**: Use Rask's task templates to standardize recurring tasks
 
 ### 🔄 Workflow Integration
 
-1. **Generate**: Use AI to create your initial roadmap
+1. **Generate**: Use AI assistants with our templates to create your initial roadmap
 2. **Initialize**: `rask init ai-generated-roadmap.md`
-3. **Customize**: Use templates to add recurring tasks
+3. **Enhance**: Use `rask template` commands to add standardized tasks
 4. **Execute**: Track progress with Rask's powerful features
 5. **Iterate**: Export progress and feed back to AI for roadmap updates
+
+> **Future Enhancement**: Direct AI integration is planned for future releases, which will automate this workflow even further.
 
 ## 🏗️ Architecture
 
