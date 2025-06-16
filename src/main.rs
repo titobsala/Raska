@@ -104,8 +104,21 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         Commands::Notes(notes_command) => {
             handle_notes_command(notes_command)
         },
-        Commands::Export { format, output, include_completed, tags, priority, phase, pretty } => {
-            commands::export_roadmap(format, output.as_deref(), *include_completed, tags.as_deref(), priority.as_ref(), phase.as_ref(), *pretty)
+        Commands::Export { 
+            format, output, include_completed, tags, priority, phase, pretty,
+            created_after, created_before, min_estimated_hours, max_estimated_hours,
+            min_actual_hours, max_actual_hours, with_time_data, active_sessions_only,
+            over_estimated_only, under_estimated_only
+        } => {
+            commands::export_roadmap_enhanced(
+                format, output.as_deref(), *include_completed, tags.as_deref(), 
+                priority.as_ref(), phase.as_ref(), *pretty,
+                created_after.as_deref(), created_before.as_deref(),
+                *min_estimated_hours, *max_estimated_hours,
+                *min_actual_hours, *max_actual_hours,
+                *with_time_data, *active_sessions_only,
+                *over_estimated_only, *under_estimated_only
+            )
         },
         Commands::Template(template_command) => {
             commands::handle_template_command(template_command.clone())

@@ -184,7 +184,7 @@ pub enum Commands {
     #[command(subcommand)]
     Notes(NotesCommands),
 
-    /// Export roadmap to different formats
+    /// Export roadmap to different formats with advanced time-based filtering
     Export {
         /// Output format
         #[arg(value_enum, help = "Export format: json, csv, or html")]
@@ -213,6 +213,47 @@ pub enum Commands {
         /// Pretty print JSON output
         #[arg(long, help = "Pretty print JSON output")]
         pretty: bool,
+        
+        // NEW: Time-based filtering options for Phase 3 enhancement
+        /// Filter tasks created after this date (YYYY-MM-DD format)
+        #[arg(long, value_name = "DATE", help = "Include only tasks created after this date (YYYY-MM-DD)")]
+        created_after: Option<String>,
+        
+        /// Filter tasks created before this date (YYYY-MM-DD format)
+        #[arg(long, value_name = "DATE", help = "Include only tasks created before this date (YYYY-MM-DD)")]
+        created_before: Option<String>,
+        
+        /// Filter tasks with estimated hours greater than threshold
+        #[arg(long, value_name = "HOURS", help = "Include only tasks with estimated hours greater than this value")]
+        min_estimated_hours: Option<f64>,
+        
+        /// Filter tasks with estimated hours less than threshold
+        #[arg(long, value_name = "HOURS", help = "Include only tasks with estimated hours less than this value")]
+        max_estimated_hours: Option<f64>,
+        
+        /// Filter tasks with actual hours greater than threshold
+        #[arg(long, value_name = "HOURS", help = "Include only tasks with actual hours greater than this value")]
+        min_actual_hours: Option<f64>,
+        
+        /// Filter tasks with actual hours less than threshold
+        #[arg(long, value_name = "HOURS", help = "Include only tasks with actual hours less than this value")]
+        max_actual_hours: Option<f64>,
+        
+        /// Include only tasks with time tracking data
+        #[arg(long, help = "Include only tasks that have time tracking data (estimates or actual time)")]
+        with_time_data: bool,
+        
+        /// Include only tasks with active time sessions
+        #[arg(long, help = "Include only tasks with currently active time tracking sessions")]
+        active_sessions_only: bool,
+        
+        /// Include only over-estimated tasks
+        #[arg(long, help = "Include only tasks that took longer than estimated")]
+        over_estimated_only: bool,
+        
+        /// Include only under-estimated tasks
+        #[arg(long, help = "Include only tasks that took less time than estimated")]
+        under_estimated_only: bool,
     },
 
     /// Manage task templates for quick task creation
