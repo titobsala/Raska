@@ -460,6 +460,10 @@ fn show_template_help() -> Result<(), Box<dyn std::error::Error>> {
     println!("     {}", "- [ ] Another task #testing (Priority: Medium)".dimmed());
     println!("     {}", "  Notes: Testing requirements and acceptance criteria".dimmed());
     println!();
+    println!("     {}", "IMPORTANT: Avoid using list formatting in Notes sections.".dimmed());
+    println!("     {}", "Use plain text descriptions instead of bullet points or".dimmed());
+    println!("     {}", "numbered lists to prevent parsing issues.".dimmed());
+    println!();
     println!("     {}", "Please format it as a markdown file that I can use with 'rask init'\"".dimmed());
     
     println!("\n  {} Pro Tips:", "💡".bright_green().bold());

@@ -93,7 +93,7 @@ impl TaskTemplate {
                 tags: ["feature", "development"].iter().map(|s| s.to_string()).collect(),
                 priority: Priority::Medium,
                 phase: Phase::mvp(),
-                notes: Some("Remember to:\n- Write unit tests\n- Update documentation\n- Consider edge cases\n- Review security implications".to_string()),
+                notes: Some("Remember to write unit tests, update documentation, consider edge cases, and review security implications".to_string()),
                 implementation_notes: vec![
                     "// TODO: Add implementation details".to_string(),
                     "// Consider performance implications".to_string(),
@@ -108,7 +108,7 @@ impl TaskTemplate {
                 tags: ["bug", "fix"].iter().map(|s| s.to_string()).collect(),
                 priority: Priority::High,
                 phase: Phase::mvp(),
-                notes: Some("Steps to fix:\n1. Reproduce the issue\n2. Identify root cause\n3. Implement fix\n4. Test thoroughly\n5. Update tests if needed".to_string()),
+                notes: Some("Steps to fix: 1) Reproduce the issue, 2) Identify root cause, 3) Implement fix, 4) Test thoroughly, 5) Update tests if needed".to_string()),
                 implementation_notes: vec![
                     "// Reproduction steps:".to_string(),
                     "// Root cause analysis:".to_string(),
@@ -124,7 +124,7 @@ impl TaskTemplate {
                 tags: ["testing", "unit-tests"].iter().map(|s| s.to_string()).collect(),
                 priority: Priority::Medium,
                 phase: Phase::mvp(),
-                notes: Some("Test coverage should include:\n- Happy path scenarios\n- Edge cases\n- Error conditions\n- Boundary values".to_string()),
+                notes: Some("Test coverage should include happy path scenarios, edge cases, error conditions, and boundary values".to_string()),
                 implementation_notes: vec![
                     "// Test cases to implement:".to_string(),
                     "// Mock dependencies:".to_string(),
@@ -140,7 +140,7 @@ impl TaskTemplate {
                 tags: ["documentation", "api"].iter().map(|s| s.to_string()).collect(),
                 priority: Priority::Medium,
                 phase: Phase::beta(),
-                notes: Some("Documentation should include:\n- Endpoint descriptions\n- Request/response examples\n- Error codes\n- Authentication requirements".to_string()),
+                notes: Some("Documentation should include endpoint descriptions, request/response examples, error codes, and authentication requirements".to_string()),
                 implementation_notes: vec![
                     "// Endpoints to document:".to_string(),
                     "// Example requests:".to_string(),
@@ -156,7 +156,7 @@ impl TaskTemplate {
                 tags: ["devops", "ci-cd", "automation"].iter().map(|s| s.to_string()).collect(),
                 priority: Priority::High,
                 phase: Phase::mvp(),
-                notes: Some("Pipeline should include:\n- Automated testing\n- Code quality checks\n- Security scanning\n- Deployment automation".to_string()),
+                notes: Some("Pipeline should include automated testing, code quality checks, security scanning, and deployment automation".to_string()),
                 implementation_notes: vec![
                     "// Pipeline stages:".to_string(),
                     "// Required tools:".to_string(),
@@ -172,7 +172,7 @@ impl TaskTemplate {
                 tags: ["research", "analysis"].iter().map(|s| s.to_string()).collect(),
                 priority: Priority::Low,
                 phase: Phase::future(),
-                notes: Some("Research areas:\n- Technical capabilities\n- Performance characteristics\n- Integration requirements\n- Cost implications\n- Learning curve".to_string()),
+                notes: Some("Research areas: technical capabilities, performance characteristics, integration requirements, cost implications, and learning curve".to_string()),
                 implementation_notes: vec![
                     "// Key questions to answer:".to_string(),
                     "// Evaluation criteria:".to_string(),
