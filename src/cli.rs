@@ -23,7 +23,7 @@ pub use template::TemplateCommands;
 #[derive(ClapParser)]
 #[command(
     name = "rask",
-    version = "2.4.1",
+    version = "2.5.0",
     about = "An advanced CLI project planner with tags, priorities, dependencies, phases, and templates",
     long_about = "Rask is a powerful command-line project planner that helps you track tasks defined in Markdown files. \
                   It supports tags, priorities, task dependencies, custom phases, task templates, and advanced filtering capabilities."
@@ -287,6 +287,38 @@ pub enum Commands {
         /// Show detailed time session history
         #[arg(long, help = "Show detailed time session history")]
         detailed: bool,
+    },
+
+    /// View comprehensive project analytics and progress reports
+    #[command(alias = "stats")]
+    Analytics {
+        /// Show overview analytics (default)
+        #[arg(long, help = "Show comprehensive analytics overview")]
+        overview: bool,
+        
+        /// Show detailed time tracking analytics
+        #[arg(long, help = "Show detailed time tracking analytics")]
+        time: bool,
+        
+        /// Show phase-based analytics
+        #[arg(long, help = "Show analytics broken down by phases")]
+        phases: bool,
+        
+        /// Show priority-based analytics
+        #[arg(long, help = "Show analytics broken down by priorities")]
+        priorities: bool,
+        
+        /// Show trend analytics and velocity metrics
+        #[arg(long, help = "Show trend analytics and project velocity")]
+        trends: bool,
+        
+        /// Export analytics to file
+        #[arg(long, value_name = "FILE", help = "Export analytics summary to file")]
+        export: Option<PathBuf>,
+        
+        /// Show all analytics sections
+        #[arg(long, help = "Show all available analytics sections")]
+        all: bool,
     },
 }
 
