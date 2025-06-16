@@ -296,6 +296,10 @@ You can also request custom phases for specific project needs:
 - [ ] UI/UX mockups #design #frontend (Priority: High)
   Notes: User interface design and prototyping
 
+IMPORTANT: When generating Notes sections, use plain text descriptions 
+instead of bullet points or numbered lists to prevent parsing issues.
+Use comma-separated items or flowing text instead.
+
 Please format it as a markdown file that I can use with 'rask init roadmap.md'
 ```
 

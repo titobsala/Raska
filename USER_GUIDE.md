@@ -46,6 +46,12 @@ cargo install --path .
 - [ ] Deploy to production
 ```
 
+**⚠️ Important Formatting Guidelines:**
+- Use simple task descriptions without complex nested lists
+- Avoid bullet points or numbered lists in Notes sections
+- Use plain text descriptions or comma-separated items instead
+- This prevents parsing issues and ensures clean task import
+
 2. **Initialize your project:**
 ```bash
 rask init roadmap.md
@@ -1259,7 +1265,32 @@ Rask provides a beautiful, intuitive terminal interface with:
    rask add "Voice interface" --phase backlog --priority low
    ```
 
-3. **Set up logical dependencies:**
+3. **Markdown formatting best practices:**
+   ```bash
+   # Good: Simple, clean formatting
+   - [ ] Implement user authentication #backend #security (Priority: High)
+     Notes: Use OAuth 2.0 with JWT tokens, implement rate limiting, add session management
+   
+   # Avoid: Complex nested lists in Notes
+   - [ ] Implement user authentication #backend #security (Priority: High)
+     Notes: 
+     - Use OAuth 2.0 with JWT tokens
+     - Implement rate limiting  
+     - Add session management
+   ```
+
+4. **Template usage guidelines:**
+   ```bash
+   # Use templates for consistency
+   rask template use "Feature Implementation" "User authentication system"
+   rask template use "Bug Fix" "Login form validation error"
+   
+   # Create custom templates for recurring patterns
+   rask template create "Code Review" "Review pull request for [PR_NAME]" \
+     --tags "review,quality" --priority high --phase mvp
+   ```
+
+5. **Set up logical dependencies:**
    ```bash
    # Good: logical flow across phases
    rask add "Database schema" --phase mvp --priority high
