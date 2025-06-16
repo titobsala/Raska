@@ -36,6 +36,33 @@ pub fn show_project() -> CommandResult {
     Ok(())
 }
 
+/// Show the current project status with enhanced phase-based display options
+pub fn show_project_enhanced(
+    group_by_phase: bool,
+    phase_filter: Option<&str>,
+    detailed: bool,
+    collapse_completed: bool,
+) -> CommandResult {
+    let roadmap = state::load_state()?;
+    
+    if group_by_phase {
+        ui::display_roadmap_grouped_by_phase(&roadmap, detailed, collapse_completed);
+    } else if let Some(phase) = phase_filter {
+        ui::display_roadmap_filtered_by_phase(&roadmap, phase, detailed);
+    } else {
+        ui::display_roadmap_enhanced(&roadmap, detailed);
+    }
+    
+    Ok(())
+}
+
+/// Show project timeline with phase-based horizontal layout
+pub fn show_timeline(detailed: bool, active_only: bool, compact: bool) -> CommandResult {
+    let roadmap = state::load_state()?;
+    ui::display_project_timeline(&roadmap, detailed, active_only, compact);
+    Ok(())
+}
+
 /// Mark a task as completed
 pub fn complete_task(task_id: usize) -> CommandResult {
     // Load current state

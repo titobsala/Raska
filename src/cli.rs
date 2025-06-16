@@ -45,7 +45,23 @@ pub enum Commands {
     
     /// Show the current project status and task list
     #[command(alias = "status")]
-    Show,
+    Show {
+        /// Group tasks by phase for better organization
+        #[arg(long, help = "Group tasks by phase (MVP, Beta, Release, etc.)")]
+        group_by_phase: bool,
+        
+        /// Show only tasks from a specific phase
+        #[arg(long, value_name = "PHASE", help = "Show only tasks from this phase")]
+        phase: Option<String>,
+        
+        /// Show detailed information including notes and dependencies
+        #[arg(long, help = "Show detailed task information including notes and dependencies")]
+        detailed: bool,
+        
+        /// Collapse completed phases to focus on active work
+        #[arg(long, help = "Collapse completed phases to reduce visual clutter")]
+        collapse_completed: bool,
+    },
     
     /// Mark a task as completed
     #[command(alias = "done")]
@@ -319,6 +335,21 @@ pub enum Commands {
         /// Show all analytics sections
         #[arg(long, help = "Show all available analytics sections")]
         all: bool,
+    },
+
+    /// Show project timeline with phase-based horizontal layout
+    Timeline {
+        /// Show detailed task information in timeline
+        #[arg(long, help = "Show detailed task information in timeline view")]
+        detailed: bool,
+        
+        /// Show only active phases (hide empty phases)
+        #[arg(long, help = "Show only phases that contain tasks")]
+        active_only: bool,
+        
+        /// Compact view with fewer details per task
+        #[arg(long, help = "Use compact view to fit more information")]
+        compact: bool,
     },
 }
 
