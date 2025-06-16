@@ -23,7 +23,7 @@ pub use template::TemplateCommands;
 #[derive(ClapParser)]
 #[command(
     name = "rask",
-    version = "2.6.1",
+    version = "2.6.2",
     about = "An advanced CLI project planner with tags, priorities, dependencies, phases, and templates",
     long_about = "Rask is a powerful command-line project planner that helps you track tasks defined in Markdown files. \
                   It supports tags, priorities, task dependencies, custom phases, task templates, and advanced filtering capabilities."
@@ -350,6 +350,14 @@ pub enum Commands {
         /// Compact view with fewer details per task
         #[arg(long, help = "Use compact view to fit more information")]
         compact: bool,
+        
+        /// Page number for pagination (default: 1, shows 5 phases per page)
+        #[arg(long, short, value_name = "PAGE", help = "Page number for pagination (shows 5 phases per page)")]
+        page: Option<usize>,
+        
+        /// Number of phases to show per page (default: 5)
+        #[arg(long, value_name = "SIZE", help = "Number of phases to show per page (default: 5)")]
+        page_size: Option<usize>,
     },
 }
 

@@ -144,8 +144,8 @@ fn run_command(command: &Commands) -> commands::CommandResult {
                 export.as_ref().map(|p| p.to_string_lossy().to_string())
             )
         },
-        Commands::Timeline { detailed, active_only, compact } => {
-            commands::show_timeline(*detailed, *active_only, *compact)
+        Commands::Timeline { detailed, active_only, compact, page, page_size } => {
+            commands::show_timeline(*detailed, *active_only, *compact, *page, *page_size)
         },
     }
 }
