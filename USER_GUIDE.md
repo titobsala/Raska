@@ -8,16 +8,17 @@ Welcome to the comprehensive Rask user guide! This document covers all features,
 2. [Core Commands](#core-commands)
 3. [Advanced Task Management](#advanced-task-management)
 4. [Roadmap Phases System](#roadmap-phases-system)
-5. [Time Estimation and Tracking](#time-estimation-and-tracking)
-6. [Filtering & Search](#filtering--search)
-7. [Project Management](#project-management)
-8. [Dependency Management](#dependency-management)
-9. [Configuration System](#configuration-system)
-10. [Bulk Operations](#bulk-operations)
-11. [Export Capabilities](#export-capabilities)
-12. [Usage Examples](#usage-examples)
-13. [Terminal UI Features](#terminal-ui-features)
-14. [Tips & Best Practices](#tips--best-practices)
+5. [Timeline Visualization & Pagination](#timeline-visualization--pagination)
+6. [Time Estimation and Tracking](#time-estimation-and-tracking)
+7. [Filtering & Search](#filtering--search)
+8. [Project Management](#project-management)
+9. [Dependency Management](#dependency-management)
+10. [Configuration System](#configuration-system)
+11. [Bulk Operations](#bulk-operations)
+12. [Export Capabilities](#export-capabilities)
+13. [Usage Examples](#usage-examples)
+14. [Terminal UI Features](#terminal-ui-features)
+15. [Tips & Best Practices](#tips--best-practices)
 
 ## Getting Started
 
@@ -353,6 +354,286 @@ rask export html --phase release -o release_tasks.html
 
 # Move completed beta features to release
 rask bulk set-phase 20,21,22 release
+```
+
+## Timeline Visualization & Pagination
+
+**NEW**: Rask includes a powerful timeline visualization system that displays your project phases horizontally with pagination support for managing large numbers of phases.
+
+### Timeline Overview
+
+The timeline view provides a horizontal layout showing all your project phases with their tasks, progress bars, and dependencies in a clean, organized format.
+
+#### `rask timeline [OPTIONS]`
+Display project timeline with horizontal phase layout.
+
+```bash
+# Basic timeline view (shows first 5 phases)
+rask timeline
+
+# Navigate between pages
+rask timeline --page 2
+rask timeline --page 1
+
+# Customize page size
+rask timeline --page-size 10    # Show all phases on one page
+rask timeline --page-size 3     # Show only 3 phases per page
+
+# Compact view for more information
+rask timeline --compact
+
+# Show only phases with tasks
+rask timeline --active-only
+
+# Combine options
+rask timeline --page 2 --compact --active-only
+```
+
+### Timeline Features
+
+#### **Pagination System**
+- **Default**: 5 phases per page for optimal readability
+- **Navigation**: Clear page indicators and navigation tips
+- **Flexible**: Customizable page sizes from 1 to all phases
+- **Smart**: No pagination info when all phases fit on one page
+
+#### **Visual Layout**
+- **Horizontal progression**: Phases flow left to right showing development timeline
+- **Progress bars**: Individual progress bars for each phase
+- **Task boxes**: Visual task representation with status and priority icons
+- **Dependency flow**: Shows phase relationships and dependencies
+
+#### **Interactive Navigation**
+- **Page indicators**: "📄 Page 1 of 2 (showing 5 of 10 phases)"
+- **Navigation tips**: Shows previous/next page commands
+- **Error handling**: Clear messages for invalid page numbers
+- **Size suggestions**: Recommends page-size adjustments
+
+### Timeline Options
+
+#### **`--page <PAGE>`**
+Navigate to specific page number.
+
+```bash
+rask timeline --page 1    # First page (default)
+rask timeline --page 2    # Second page
+rask timeline --page 3    # Third page (if exists)
+```
+
+**Features:**
+- Default page is 1
+- Shows error for invalid page numbers
+- Provides navigation guidance
+
+#### **`--page-size <SIZE>`**
+Set number of phases to show per page.
+
+```bash
+rask timeline --page-size 3     # Show 3 phases per page
+rask timeline --page-size 5     # Default: 5 phases per page
+rask timeline --page-size 10    # Show all phases (if ≤10)
+```
+
+**Benefits:**
+- Customize display density
+- Adapt to terminal width
+- Show all phases when needed
+
+#### **`--compact`**
+Use compact view with less detail per task.
+
+```bash
+rask timeline --compact
+rask timeline --compact --page 2
+```
+
+**Compact features:**
+- Shorter task descriptions
+- Task IDs only (no descriptions)
+- More tasks visible per phase
+- Better for overview
+
+#### **`--active-only`**
+Show only phases that contain tasks.
+
+```bash
+rask timeline --active-only
+rask timeline --active-only --page-size 8
+```
+
+**Benefits:**
+- Hide empty phases
+- Focus on active development
+- Cleaner display
+
+#### **`--detailed`**
+Show detailed task information in timeline.
+
+```bash
+rask timeline --detailed
+rask timeline --detailed --page 1
+```
+
+### Phase-Grouped Display
+
+#### `rask show --group-by-phase`
+Display tasks organized by phases with individual progress bars.
+
+```bash
+# Group all tasks by phase
+rask show --group-by-phase
+
+# Group with detailed task information
+rask show --group-by-phase --detailed
+
+# Collapse completed phases
+rask show --group-by-phase --collapse-completed
+
+# Combine options
+rask show --group-by-phase --detailed --collapse-completed
+```
+
+**Features:**
+- **Phase sections**: Each phase displayed as a separate section
+- **Progress bars**: Individual progress tracking per phase
+- **Phase statistics**: Completion percentages and task counts
+- **Collapsible**: Hide completed phases to reduce clutter
+- **Dynamic phases**: Shows your actual custom phases, not hardcoded ones
+
+#### `rask show --phase <PHASE>`
+Filter display to show only tasks from a specific phase.
+
+```bash
+# Show only MVP tasks
+rask show --phase mvp
+
+# Show beta phase with details
+rask show --phase beta --detailed
+
+# Show custom phase
+rask show --phase "Architecture"
+```
+
+**Benefits:**
+- **Focused view**: See only relevant tasks
+- **Phase-specific stats**: Progress for that phase only
+- **Custom phases**: Works with your custom phase names
+- **Detailed context**: Full task information for the phase
+
+### Timeline Workflow Examples
+
+#### **Daily Development Review**
+```bash
+# Start day with timeline overview
+rask timeline
+
+# Focus on current phase
+rask show --phase mvp
+
+# Check what's ready to work on
+rask dependencies --ready
+
+# Navigate to next phase for planning
+rask timeline --page 2
+```
+
+#### **Sprint Planning with Timeline**
+```bash
+# Review overall project timeline
+rask timeline --active-only
+
+# Focus on current sprint phase
+rask show --phase beta --detailed
+
+# Plan next sprint
+rask timeline --page 2 --compact
+
+# Export sprint plan
+rask export html --phase beta -o sprint_plan.html
+```
+
+#### **Large Project Management**
+```bash
+# Overview of all phases (paginated)
+rask timeline
+
+# Navigate through phases
+rask timeline --page 1  # Foundation phases
+rask timeline --page 2  # Development phases  
+rask timeline --page 3  # Release phases
+
+# Adjust view for team meeting
+rask timeline --page-size 8 --compact
+
+# Focus on active development
+rask timeline --active-only --detailed
+```
+
+#### **Phase Transition Management**
+```bash
+# Review completed phases (collapsed)
+rask show --group-by-phase --collapse-completed
+
+# Check current phase progress
+rask show --phase mvp
+
+# Plan next phase
+rask show --phase beta --detailed
+
+# Timeline view for stakeholder presentation
+rask timeline --page-size 10
+```
+
+### Timeline Navigation Tips
+
+#### **Efficient Navigation**
+- Use `--page` to jump to specific sections of your roadmap
+- Use `--page-size` to adjust information density
+- Combine `--compact` with larger page sizes for overviews
+- Use `--active-only` to focus on phases with work
+
+#### **Display Optimization**
+- Default 5 phases per page works well for most terminals
+- Use `--page-size 3` for narrow terminals or detailed review
+- Use `--page-size 10+` for wide terminals or presentations
+- Combine `--compact` with larger page sizes for maximum information
+
+#### **Team Collaboration**
+- Share specific page views: `rask timeline --page 2`
+- Use consistent page sizes for team meetings
+- Export timeline views for documentation
+- Use phase-specific views for focused discussions
+
+### Timeline Integration
+
+#### **With Phase Management**
+```bash
+# Timeline shows your actual custom phases
+rask timeline  # Shows Foundation, Architecture, Export, etc.
+
+# Not hardcoded MVP, Beta, Release phases
+# Dynamic detection from your roadmap data
+```
+
+#### **With Filtering**
+```bash
+# Timeline respects active-only filtering
+rask timeline --active-only
+
+# Phase-grouped view shows all your phases
+rask show --group-by-phase
+
+# Phase-specific filtering
+rask show --phase "Export" --detailed
+```
+
+#### **With Export**
+```bash
+# Export timeline data
+rask export html --include-completed -o timeline_report.html
+
+# Export specific phases shown in timeline
+rask export json --phase "Foundation,Architecture" --pretty
 ```
 
 ## Time Estimation and Tracking
@@ -1206,6 +1487,8 @@ Rask provides a beautiful, intuitive terminal interface with:
 - **⏱️ Time Tracking**: Active time tracking indicator
 - **🕐 Active Session**: Currently tracking time on task
 - **📊 Time Data**: Shows estimated vs actual time
+- **📄 Pagination**: Page indicators for timeline navigation
+- **🔗 Dependencies**: Phase dependency flow visualization
 
 ### Phase Indicators
 - **🚀 MVP**: Core features for minimum viable product
@@ -1220,6 +1503,8 @@ Rask provides a beautiful, intuitive terminal interface with:
 - **Statistics**: Completed vs total task counts
 - **Ready indicators**: Tasks available to start
 - **Dependency trees**: ASCII art visualization
+- **Timeline view**: Horizontal phase progression with pagination
+- **Phase-grouped displays**: Individual progress bars per phase
 
 ### Smart Formatting
 - **Responsive layout**: Adapts to terminal width
@@ -1236,6 +1521,8 @@ Rask provides a beautiful, intuitive terminal interface with:
 - **Search highlighting**: Emphasize search terms
 - **Time summaries**: Estimated vs actual time at task and phase levels
 - **Active tracking**: Real-time session duration display
+- **Paginated timeline**: Manageable display of large phase collections
+- **Navigation tips**: Clear guidance for timeline navigation
 
 ## Tips & Best Practices
 
@@ -1329,11 +1616,13 @@ Rask provides a beautiful, intuitive terminal interface with:
 
 ### Workflow Optimization
 
-1. **Start each day with phase and dependency analysis:**
+1. **Start each day with timeline and phase analysis:**
    ```bash
-   rask phase overview
-   rask dependencies --ready
-   rask phase show mvp  # or current focus phase
+   rask timeline                    # Overview of all phases
+   rask timeline --active-only      # Focus on active phases
+   rask phase overview              # Detailed phase statistics
+   rask dependencies --ready        # Ready tasks
+   rask show --phase mvp            # Current focus phase
    ```
 
 2. **Use bulk operations for phase transitions:**
@@ -1345,13 +1634,16 @@ Rask provides a beautiful, intuitive terminal interface with:
    rask bulk set-phase 20,21,22 release
    ```
 
-3. **Regular progress exports:**
+3. **Regular progress exports and timeline reviews:**
    ```bash
    # Weekly team report with phases
    rask export html --include-completed -o weekly_report.html
    
    # Phase-specific burndown data
    rask export csv --phase beta -o beta_progress.csv
+   
+   # Timeline view for stakeholder presentations
+   rask timeline --page-size 10 --compact
    ```
 
 ### Configuration Management
@@ -1485,6 +1777,60 @@ Rask provides a beautiful, intuitive terminal interface with:
    rask config set behavior.default_time_estimate 4.0
    rask config set export.default_time_format detailed
    rask config set behavior.track_break_time false
+   ```
+
+### Timeline Navigation & Visualization
+
+1. **Optimize timeline display for your workflow:**
+   ```bash
+   # Daily development review
+   rask timeline --active-only              # Focus on active phases
+   rask timeline --page 1 --compact         # Current work overview
+   
+   # Sprint planning
+   rask timeline --page-size 8              # See more phases at once
+   rask show --group-by-phase --detailed    # Detailed phase breakdown
+   
+   # Stakeholder presentations
+   rask timeline --page-size 10 --compact   # Full project overview
+   ```
+
+2. **Use pagination effectively:**
+   ```bash
+   # Navigate large projects systematically
+   rask timeline --page 1                   # Foundation & core phases
+   rask timeline --page 2                   # Development phases
+   rask timeline --page 3                   # Release & future phases
+   
+   # Adjust page size based on context
+   rask timeline --page-size 3              # Detailed review
+   rask timeline --page-size 8              # Team meetings
+   rask timeline --page-size 15             # Executive overview
+   ```
+
+3. **Combine timeline with phase management:**
+   ```bash
+   # Phase transition workflow
+   rask timeline --active-only              # See current state
+   rask show --phase mvp --detailed         # Focus on current phase
+   rask bulk set-phase 10,11,12 beta        # Move completed tasks
+   rask timeline --page 2                   # Review next phases
+   
+   # Progress tracking
+   rask show --group-by-phase --collapse-completed  # Hide completed work
+   rask timeline --compact                  # Quick progress overview
+   ```
+
+4. **Timeline configuration for teams:**
+   ```bash
+   # Set consistent timeline defaults
+   rask config set ui.default_page_size 5
+   rask config set ui.timeline_compact_mode false
+   rask config set ui.show_phase_dependencies true
+   
+   # Project-specific timeline settings
+   rask config set ui.default_page_size 8 --project    # Larger projects
+   rask config set ui.timeline_compact_mode true --project  # Dense info
    ```
 
 ---

@@ -1,6 +1,6 @@
 # Rask 🚀 - Advanced CLI Project Planner
 
-[![Version](https://img.shields.io/badge/version-2.3.1-blue.svg)](https://github.com/tito-sala/rask)
+[![Version](https://img.shields.io/badge/version-2.6.2-blue.svg)](https://github.com/tito-sala/rask)
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -67,6 +67,8 @@
 - Project overview dashboards
 - **NEW**: Beautiful HTML exports with responsive design
 - **NEW**: Phase-based progress tracking and recommendations
+- **NEW**: Timeline view with horizontal phase progression and pagination
+- **NEW**: Phase-grouped displays with individual progress bars
 
 ### 📋 **Task Templates System**
 - **NEW**: Pre-configured task patterns for consistent task creation
@@ -163,7 +165,8 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
 | Command | Description |
 |---------|-------------|
 | `rask init <file.md>` | Initialize project from Markdown |
-| `rask show` | Display project status |
+| `rask show [options]` | Display project status with phase grouping and filtering |
+| `rask timeline [options]` | **NEW**: Show horizontal timeline with phase progression and pagination |
 | `rask add <desc> [options]` | Add task with metadata, phase, and time estimate |
 | `rask complete <id>` | Complete a task |
 | `rask view <id>` | View detailed task information |
@@ -189,6 +192,19 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
 | `rask phase set <id> <phase>` | Set phase for individual task |
 | `rask phase create <name> [options]` | **NEW**: Create custom phases |
 | `rask bulk set-phase <ids> <phase>` | Set phase for multiple tasks |
+
+### Timeline & Visualization Commands
+
+| Command | Description |
+|---------|-------------|
+| `rask timeline` | Show horizontal timeline with all phases (paginated) |
+| `rask timeline --page <n>` | **NEW**: Navigate to specific page (default: 5 phases per page) |
+| `rask timeline --page-size <n>` | **NEW**: Set number of phases per page |
+| `rask timeline --compact` | Use compact view for more information |
+| `rask timeline --active-only` | Show only phases containing tasks |
+| `rask show --group-by-phase` | **NEW**: Group tasks by phase with progress bars |
+| `rask show --phase <name>` | **NEW**: Filter display to specific phase |
+| `rask show --collapse-completed` | **NEW**: Collapse completed phases |
 
 ### Time Tracking Commands
 
@@ -393,7 +409,7 @@ src/
 
 ## 📈 Roadmap
 
-### ✅ Completed Features (v2.3.1)
+### ✅ Completed Features (v2.6.2)
 - [x] Core task management with Markdown sync
 - [x] Enhanced filtering and search capabilities
 - [x] Multi-project workspace system
@@ -409,8 +425,23 @@ src/
 - [x] **Task templates system with built-in and custom templates**
 - [x] **Time estimation and tracking with variance analysis**
 - [x] **Session-based time tracking with start/stop functionality**
+- [x] **Phase-based task organization with dynamic phase detection**
+- [x] **Timeline view with horizontal phase progression**
+- [x] **Timeline pagination for managing large numbers of phases**
+- [x] **Phase-grouped displays with individual progress bars**
+- [x] **Phase-specific filtering and visualization options**
 
-### 🚧 Phase 3: Enhanced Export Capabilities 📤 (v2.4.0 - Current Focus)
+### ✅ Phase 4: Advanced Phase Visualization 📊 (v2.6.2 - Recently Completed)
+- [x] **Phase-grouped task displays with individual progress bars**
+- [x] **Timeline view showing horizontal phase progression**
+- [x] **Dynamic phase detection from roadmap data (no hardcoded phases)**
+- [x] **Timeline pagination for managing large numbers of phases**
+- [x] **Phase-specific filtering options**
+- [x] **Collapsible completed phases to reduce visual clutter**
+- [x] **Enhanced UI layouts with multi-column sectioned displays**
+- [x] **Comprehensive phase statistics and navigation**
+
+### 🚧 Phase 5: Enhanced Export Capabilities 📤 (v2.7.0 - Current Focus)
 - [ ] Time data integration in all export formats (JSON, CSV, HTML)
 - [ ] Advanced filtering in exports (date ranges, time thresholds)
 - [ ] Report templates (sprint reports, time tracking reports)
@@ -420,23 +451,23 @@ src/
 
 ### 🔮 Future Development Phases
 
-**Phase 4: Plugin System Foundation 🔌 (v3.0.0)**
+**Phase 6: Plugin System Foundation 🔌 (v3.0.0)**
 - Plugin architecture design and safe sandbox environment
 - Hook system for extending functionality
 - Custom command plugins and integration plugins
 
-**Phase 5: Web Dashboard Interface 🌐 (v3.1.0)**
+**Phase 7: Web Dashboard Interface 🌐 (v3.1.0)**
 - Local web server for dashboard with REST API
 - Real-time project visualization and interactive time tracking
 - Team collaboration features and multi-user support
 
-**Phase 6: External Tool Integration 🔗 (v3.2.0)**
+**Phase 8: External Tool Integration 🔗 (v3.2.0)**
 - GitHub integration (sync with issues, PRs, commits)
 - Git integration (link commits to tasks)
 - Calendar integration (time blocking, meeting tracking)
 - Slack/Discord notifications and custom slash commands
 
-**Phase 7+: Advanced Features 🚀 (v4.0.0+)**
+**Phase 9+: Advanced Features 🚀 (v4.0.0+)**
 - AI-powered task estimation and scheduling
 - Mobile companion app with offline sync
 - Enterprise features and multi-tenant architecture
