@@ -134,22 +134,13 @@ pub fn display_roadmap_grouped_by_phase(roadmap: &Roadmap, detailed: bool, colla
         phase_groups.entry(phase_name).or_insert_with(Vec::new).push(task);
     }
     
-    // Get predefined phases in order
-    let predefined_phases = Phase::predefined_phases();
-    let mut displayed_phases = std::collections::HashSet::new();
+    // Get all phases from roadmap in proper order (predefined first, then custom alphabetically)
+    let all_phases = roadmap.get_all_phases();
     
-    // Display predefined phases first
-    for phase in &predefined_phases {
+    // Display phases in order
+    for phase in &all_phases {
         if let Some(tasks) = phase_groups.get(&phase.name) {
             display_phase_section(&phase.name, &phase.emoji(), tasks, detailed, collapse_completed);
-            displayed_phases.insert(phase.name.clone());
-        }
-    }
-    
-    // Display custom phases
-    for (phase_name, tasks) in &phase_groups {
-        if !displayed_phases.contains(phase_name) {
-            display_phase_section(phase_name, "📋", tasks, detailed, collapse_completed);
         }
     }
     
@@ -182,9 +173,9 @@ pub fn display_roadmap_filtered_by_phase(roadmap: &Roadmap, phase_filter: &str, 
     // Phase-specific progress bar
     display_progress_bar(completed_tasks, total_tasks);
     
-    // Find the phase emoji
-    let phase_emoji = if let Some(predefined) = Phase::predefined_phases().iter().find(|p| p.name.to_lowercase() == phase_filter.to_lowercase()) {
-        predefined.emoji()
+    // Find the phase emoji from actual roadmap phases
+    let phase_emoji = if let Some(phase) = roadmap.get_all_phases().iter().find(|p| p.name.to_lowercase() == phase_filter.to_lowercase()) {
+        phase.emoji()
     } else {
         "📋".to_string()
     };
@@ -241,12 +232,12 @@ pub fn display_project_timeline(roadmap: &Roadmap, detailed: bool, active_only: 
         phase_groups.entry(phase_name).or_insert_with(Vec::new).push(task);
     }
     
-    // Filter out empty phases if active_only is true
-    let predefined_phases = Phase::predefined_phases();
+    // Get actual phases from roadmap instead of hardcoded predefined phases
+    let all_phases = roadmap.get_all_phases();
     let phases_to_show: Vec<&Phase> = if active_only {
-        predefined_phases.iter().filter(|p| phase_groups.contains_key(&p.name)).collect()
+        all_phases.iter().filter(|p| phase_groups.contains_key(&p.name)).collect()
     } else {
-        predefined_phases.iter().collect()
+        all_phases.iter().collect()
     };
     
     if phases_to_show.is_empty() {
@@ -338,13 +329,23 @@ pub fn display_project_timeline(roadmap: &Roadmap, detailed: bool, active_only: 
         println!();
     }
     
-    // Dependencies flow
-    println!("\n  🔗 Dependencies: {} → {} → {} → {}", 
-        "MVP".bright_cyan(), 
-        "Beta".bright_yellow(), 
-        "Release".bright_green(),
-        "Future".bright_magenta()
-    );
+    // Dependencies flow - show actual phases
+    if phases_to_show.len() > 1 {
+        print!("\n  🔗 Dependencies: ");
+        for (i, phase) in phases_to_show.iter().enumerate() {
+            let color = match i % 4 {
+                0 => phase.name.bright_cyan(),
+                1 => phase.name.bright_yellow(),
+                2 => phase.name.bright_green(),
+                _ => phase.name.bright_magenta(),
+            };
+            print!("{}", color);
+            if i < phases_to_show.len() - 1 {
+                print!(" → ");
+            }
+        }
+        println!();
+    }
     
     // Ready tasks summary
     let ready_tasks = roadmap.tasks.iter()

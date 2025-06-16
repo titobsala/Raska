@@ -1137,6 +1137,47 @@ impl Roadmap {
             is_circular: false,
         }
     }
+
+    /// Get all unique phases from the roadmap tasks
+    pub fn get_all_phases(&self) -> Vec<Phase> {
+        let mut phase_names: HashSet<String> = HashSet::new();
+        let mut phases: Vec<Phase> = Vec::new();
+        
+        // Collect unique phases from tasks
+        for task in &self.tasks {
+            if phase_names.insert(task.phase.name.clone()) {
+                phases.push(task.phase.clone());
+            }
+        }
+        
+        // Sort phases: predefined phases first in their natural order, then custom phases alphabetically
+        phases.sort_by(|a, b| {
+            let a_predefined = a.is_predefined();
+            let b_predefined = b.is_predefined();
+            
+            match (a_predefined, b_predefined) {
+                (true, true) => {
+                    // Both predefined - use predefined order
+                    let predefined_order = ["MVP", "Beta", "Release", "Future", "Backlog"];
+                    let a_index = predefined_order.iter().position(|&x| x == a.name).unwrap_or(999);
+                    let b_index = predefined_order.iter().position(|&x| x == b.name).unwrap_or(999);
+                    a_index.cmp(&b_index)
+                }
+                (true, false) => std::cmp::Ordering::Less,  // Predefined comes first
+                (false, true) => std::cmp::Ordering::Greater, // Custom comes after
+                (false, false) => a.name.cmp(&b.name), // Both custom - alphabetical
+            }
+        });
+        
+        phases
+    }
+
+    /// Get phases that have tasks (non-empty phases)
+    pub fn get_active_phases(&self) -> Vec<Phase> {
+        self.get_all_phases().into_iter()
+            .filter(|phase| self.tasks.iter().any(|task| task.phase.name == phase.name))
+            .collect()
+    }
 }
 
 #[derive(Debug, Clone)]
