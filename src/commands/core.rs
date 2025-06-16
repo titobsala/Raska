@@ -99,6 +99,7 @@ pub fn add_task_enhanced(
     phase: &Option<String>,
     notes: &Option<String>,
     dependencies: &Option<String>,
+    estimated_hours: &Option<f64>,
 ) -> CommandResult {
     // Enhanced input validation
     if let Err(validation_error) = utils::validate_task_description(description) {
@@ -169,6 +170,17 @@ pub fn add_task_enhanced(
     
     if !parsed_deps.is_empty() {
         new_task = new_task.with_dependencies(parsed_deps);
+    }
+    
+    // Set estimated hours if provided
+    if let Some(hours) = estimated_hours {
+        if *hours <= 0.0 {
+            return Err("Estimated hours must be greater than 0".into());
+        }
+        if *hours > 1000.0 {
+            return Err("Estimated hours cannot exceed 1000 hours".into());
+        }
+        new_task.set_estimated_hours(*hours);
     }
     
     // Add task to roadmap
@@ -366,6 +378,151 @@ pub fn view_task(task_id: usize) -> CommandResult {
     
     // Display detailed task information
     ui::display_detailed_task_view(task, &roadmap);
+    
+    Ok(())
+}
+
+/// Start time tracking for a task
+pub fn start_time_tracking(task_id: usize, description: Option<&str>) -> CommandResult {
+    let mut roadmap = state::load_state()?;
+    
+    // Check if any task already has an active time session
+    for task in &roadmap.tasks {
+        if task.has_active_time_session() {
+            return Err(format!(
+                "Task #{} already has an active time session. Stop it first with 'rask stop'", 
+                task.id
+            ).into());
+        }
+    }
+    
+    // Find the task to start tracking
+    let task = roadmap.find_task_by_id_mut(task_id)
+        .ok_or_else(|| format!("Task #{} not found", task_id))?;
+    
+    // Get task description before borrowing mutably
+    let task_description = task.description.clone();
+    
+    // Start time tracking
+    match task.start_time_session(description.map(|s| s.to_string())) {
+        Ok(()) => {
+            // Save the updated state
+            state::save_state(&roadmap)?;
+            
+            ui::display_info(&format!("🕐 Started time tracking for task #{}: {}", task_id, task_description));
+            if let Some(desc) = description {
+                ui::display_info(&format!("📝 Session description: {}", desc));
+            }
+            ui::display_info("💡 Use 'rask stop' to end this session");
+            Ok(())
+        },
+        Err(e) => Err(e.into()),
+    }
+}
+
+/// Stop time tracking for the currently active task
+pub fn stop_time_tracking() -> CommandResult {
+    let mut roadmap = state::load_state()?;
+    
+    // Find the task with active time session
+    let mut active_task_id = None;
+    for task in &roadmap.tasks {
+        if task.has_active_time_session() {
+            active_task_id = Some(task.id);
+            break;
+        }
+    }
+    
+    let task_id = active_task_id.ok_or("No active time tracking session found")?;
+    
+    // Stop time tracking
+    let task = roadmap.find_task_by_id_mut(task_id).unwrap();
+    let task_description = task.description.clone();
+    
+    match task.end_current_time_session() {
+        Ok(duration_hours) => {
+            let estimated_hours = task.estimated_hours;
+            let total_tracked = task.get_total_tracked_hours();
+            
+            // Save the updated state
+            state::save_state(&roadmap)?;
+            
+            ui::display_info(&format!("⏱️  Stopped time tracking for task #{}: {}", task_id, task_description));
+            ui::display_info(&format!("⏰ Session duration: {:.2} hours", duration_hours));
+            
+            // Show updated totals
+            if let Some(estimated) = estimated_hours {
+                let variance = total_tracked - estimated;
+                let percentage = (variance / estimated) * 100.0;
+                
+                ui::display_info(&format!("📊 Total tracked: {:.2}h | Estimated: {:.2}h | Variance: {:.2}h ({:+.1}%)", 
+                    total_tracked, estimated, variance, percentage));
+            } else {
+                ui::display_info(&format!("📊 Total tracked time: {:.2} hours", total_tracked));
+            }
+            
+            Ok(())
+        },
+        Err(e) => Err(e.into()),
+    }
+}
+
+/// Show time tracking information
+pub fn show_time_tracking(task_id: &Option<usize>, summary: bool, detailed: bool) -> CommandResult {
+    let roadmap = state::load_state()?;
+    
+    if let Some(id) = task_id {
+        // Show time info for specific task
+        let task = roadmap.find_task_by_id(*id)
+            .ok_or_else(|| format!("Task #{} not found", id))?;
+        
+        // TODO: Implement proper time info display
+        ui::display_info(&format!("⏰ Time tracking for task #{}: {}", id, task.description));
+        
+        if let Some(est) = task.estimated_hours {
+            ui::display_info(&format!("📊 Estimated: {:.2} hours", est));
+        }
+        
+        if let Some(actual) = task.actual_hours {
+            ui::display_info(&format!("📊 Actual: {:.2} hours", actual));
+        }
+        
+        if task.has_active_time_session() {
+            ui::display_info("🕐 Active time session running");
+        }
+        
+        ui::display_info(&format!("📈 Total sessions: {}", task.time_sessions.len()));
+        
+    } else if summary {
+        // Show summary across all tasks
+        let total_estimated: f64 = roadmap.tasks.iter().filter_map(|t| t.estimated_hours).sum();
+        let total_actual: f64 = roadmap.tasks.iter().filter_map(|t| t.actual_hours).sum();
+        let tasks_with_estimates = roadmap.tasks.iter().filter(|t| t.estimated_hours.is_some()).count();
+        let tasks_with_time = roadmap.tasks.iter().filter(|t| t.actual_hours.is_some()).count();
+        
+        ui::display_info("📊 Time Tracking Summary");
+        ui::display_info(&format!("Total estimated time: {:.2} hours ({} tasks)", total_estimated, tasks_with_estimates));
+        ui::display_info(&format!("Total tracked time: {:.2} hours ({} tasks)", total_actual, tasks_with_time));
+        
+        if total_estimated > 0.0 {
+            let variance = total_actual - total_estimated;
+            let percentage = (variance / total_estimated) * 100.0;
+            ui::display_info(&format!("Variance: {:.2} hours ({:+.1}%)", variance, percentage));
+        }
+    } else {
+        // Show time info for all tasks with time data
+        ui::display_info("📊 Time Tracking Overview");
+        for task in &roadmap.tasks {
+            if task.estimated_hours.is_some() || task.actual_hours.is_some() || !task.time_sessions.is_empty() {
+                let est = task.estimated_hours.map_or("--".to_string(), |h| format!("{:.2}h", h));
+                let actual = task.actual_hours.map_or("--".to_string(), |h| format!("{:.2}h", h));
+                let status = if task.has_active_time_session() { "🕐" } else { "  " };
+                
+                ui::display_info(&format!("{} #{}: {} | Est: {} | Actual: {}", 
+                    status, task.id, task.description, est, actual));
+            }
+        }
+    }
     
     Ok(())
 } 

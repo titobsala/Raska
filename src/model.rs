@@ -77,6 +77,9 @@ impl TaskTemplate {
             dependencies: Vec::new(),
             created_at: Some(chrono::Utc::now().to_rfc3339()),
             completed_at: None,
+            estimated_hours: None,
+            actual_hours: None,
+            time_sessions: Vec::new(),
         }
     }
 
@@ -493,10 +496,56 @@ impl std::fmt::Display for Phase {
     }
 }
 
+/// Represents a time tracking session for a task
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TimeSession {
+    pub start_time: String, // ISO 8601 timestamp
+    pub end_time: Option<String>, // ISO 8601 timestamp, None if session is active
+    pub duration_minutes: Option<u32>, // Duration in minutes, calculated when session ends
+    pub description: Option<String>, // Optional description of what was worked on
+}
+
+impl TimeSession {
+    /// Create a new time session starting now
+    pub fn start_now(description: Option<String>) -> Self {
+        TimeSession {
+            start_time: chrono::Utc::now().to_rfc3339(),
+            end_time: None,
+            duration_minutes: None,
+            description,
+        }
+    }
+
+    /// End the current session
+    pub fn end_now(&mut self) {
+        let now = chrono::Utc::now().to_rfc3339();
+        self.end_time = Some(now.clone());
+        
+        // Calculate duration
+        if let (Ok(start), Ok(end)) = (
+            chrono::DateTime::parse_from_rfc3339(&self.start_time),
+            chrono::DateTime::parse_from_rfc3339(&now)
+        ) {
+            let duration = end - start;
+            self.duration_minutes = Some(duration.num_minutes() as u32);
+        }
+    }
+
+    /// Check if session is currently active
+    pub fn is_active(&self) -> bool {
+        self.end_time.is_none()
+    }
+
+    /// Get duration in hours
+    pub fn duration_hours(&self) -> Option<f64> {
+        self.duration_minutes.map(|m| m as f64 / 60.0)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
     pub id: usize,
-    pub description: String,
+    pub description: String,  
     pub status: TaskStatus,
     #[serde(default)]
     pub tags: HashSet<String>,
@@ -514,6 +563,12 @@ pub struct Task {
     pub created_at: Option<String>, // ISO 8601 timestamp
     #[serde(default)]
     pub completed_at: Option<String>, // ISO 8601 timestamp
+    #[serde(default)]
+    pub estimated_hours: Option<f64>, // Estimated time in hours
+    #[serde(default)]
+    pub actual_hours: Option<f64>, // Actual time spent in hours
+    #[serde(default)]
+    pub time_sessions: Vec<TimeSession>, // Individual time tracking sessions
 }
 
 impl Task {
@@ -530,6 +585,9 @@ impl Task {
             dependencies: Vec::new(),
             created_at: Some(chrono::Utc::now().to_rfc3339()),
             completed_at: None,
+            estimated_hours: None,
+            actual_hours: None,
+            time_sessions: Vec::new(),
         }
     }
 
@@ -602,6 +660,83 @@ impl Task {
 
     pub fn has_implementation_notes(&self) -> bool {
         !self.implementation_notes.is_empty()
+    }
+
+    // Time tracking methods
+    pub fn set_estimated_hours(&mut self, hours: f64) {
+        self.estimated_hours = Some(hours);
+    }
+
+    pub fn start_time_session(&mut self, description: Option<String>) -> Result<(), String> {
+        // Check if there's already an active session
+        if self.has_active_time_session() {
+            return Err("Task already has an active time session".to_string());
+        }
+        
+        let session = TimeSession::start_now(description);
+        self.time_sessions.push(session);
+        Ok(())
+    }
+
+    pub fn end_current_time_session(&mut self) -> Result<f64, String> {
+        // Find the active session index
+        let active_index = self.time_sessions.iter().position(|s| s.is_active());
+        
+        if let Some(index) = active_index {
+            // End the session
+            self.time_sessions[index].end_now();
+            
+            // Update actual hours
+            self.update_actual_hours();
+            
+            // Return session duration
+            Ok(self.time_sessions[index].duration_hours().unwrap_or(0.0))
+        } else {
+            Err("No active time session found".to_string())
+        }
+    }
+
+    pub fn has_active_time_session(&self) -> bool {
+        self.time_sessions.iter().any(|s| s.is_active())
+    }
+
+    pub fn get_active_time_session(&self) -> Option<&TimeSession> {
+        self.time_sessions.iter().find(|s| s.is_active())
+    }
+
+    pub fn get_total_tracked_hours(&self) -> f64 {
+        self.time_sessions
+            .iter()
+            .map(|s| s.duration_hours().unwrap_or(0.0))
+            .sum()
+    }
+
+    fn update_actual_hours(&mut self) {
+        self.actual_hours = Some(self.get_total_tracked_hours());
+    }
+
+    pub fn get_time_variance(&self) -> Option<f64> {
+        match (self.estimated_hours, self.actual_hours) {
+            (Some(estimated), Some(actual)) => Some(actual - estimated),
+            _ => None,
+        }
+    }
+
+    pub fn get_time_variance_percentage(&self) -> Option<f64> {
+        match (self.estimated_hours, self.actual_hours) {
+            (Some(estimated), Some(actual)) if estimated > 0.0 => {
+                Some(((actual - estimated) / estimated) * 100.0)
+            },
+            _ => None,
+        }
+    }
+
+    pub fn is_over_estimated(&self) -> bool {
+        self.get_time_variance().map_or(false, |v| v > 0.0)
+    }
+
+    pub fn is_under_estimated(&self) -> bool {
+        self.get_time_variance().map_or(false, |v| v < 0.0)
     }
 }
 

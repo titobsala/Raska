@@ -8,15 +8,16 @@ Welcome to the comprehensive Rask user guide! This document covers all features,
 2. [Core Commands](#core-commands)
 3. [Advanced Task Management](#advanced-task-management)
 4. [Roadmap Phases System](#roadmap-phases-system)
-5. [Filtering & Search](#filtering--search)
-6. [Project Management](#project-management)
-7. [Dependency Management](#dependency-management)
-8. [Configuration System](#configuration-system)
-9. [Bulk Operations](#bulk-operations)
-10. [Export Capabilities](#export-capabilities)
-11. [Usage Examples](#usage-examples)
-12. [Terminal UI Features](#terminal-ui-features)
-13. [Tips & Best Practices](#tips--best-practices)
+5. [Time Estimation and Tracking](#time-estimation-and-tracking)
+6. [Filtering & Search](#filtering--search)
+7. [Project Management](#project-management)
+8. [Dependency Management](#dependency-management)
+9. [Configuration System](#configuration-system)
+10. [Bulk Operations](#bulk-operations)
+11. [Export Capabilities](#export-capabilities)
+12. [Usage Examples](#usage-examples)
+13. [Terminal UI Features](#terminal-ui-features)
+14. [Tips & Best Practices](#tips--best-practices)
 
 ## Getting Started
 
@@ -113,13 +114,14 @@ Add a new task with rich metadata.
 # Basic task
 rask add "Implement user authentication"
 
-# Advanced task with metadata and phase
+# Advanced task with metadata, phase, and time estimation
 rask add "Deploy to production" \
   --tag deployment,critical \
   --priority high \
   --phase release \
   --depends-on 8,9,10 \
-  --note "Requires database migration and SSL certificates"
+  --note "Requires database migration and SSL certificates" \
+  --estimated-hours 3.5
 ```
 
 **Options:**
@@ -128,6 +130,7 @@ rask add "Deploy to production" \
 - `--phase <PHASE>`: mvp, beta, release, future, backlog
 - `--note <TEXT>`: Detailed description or context
 - `--depends-on <IDS>`: Comma-separated task IDs this task depends on
+- `--estimated-hours <HOURS>`: Time estimation in hours (e.g., 2.5)
 
 ### `rask view <task_id>`
 View detailed information about a specific task.
@@ -345,6 +348,238 @@ rask export html --phase release -o release_tasks.html
 # Move completed beta features to release
 rask bulk set-phase 20,21,22 release
 ```
+
+## Time Estimation and Tracking
+
+**NEW**: Rask includes comprehensive time estimation and tracking capabilities to help you plan better and analyze your productivity.
+
+### Time Estimation
+
+#### Adding Tasks with Time Estimates
+```bash
+# Add task with time estimation
+rask add "Implement user authentication" --estimated-hours 4.5
+
+# Combine with other metadata
+rask add "Design API endpoints" \
+  --tag backend,api \
+  --priority high \
+  --phase mvp \
+  --estimated-hours 6.0 \
+  --note "RESTful API with JWT authentication"
+```
+
+#### Benefits of Time Estimation
+- **Better planning**: Understand scope and effort required
+- **Resource allocation**: Plan sprints and iterations effectively
+- **Progress tracking**: Compare estimates vs actual time
+- **Learning**: Improve estimation accuracy over time
+
+### Time Tracking
+
+#### `rask start <task_id> [--description <desc>]`
+Start time tracking for a specific task.
+
+```bash
+# Start tracking a task
+rask start 5
+
+# Start with work session description
+rask start 5 --description "Implementing OAuth integration with Google"
+
+# Start with detailed context
+rask start 12 --description "Bug fixing: resolving race condition in user registration"
+```
+
+**Features:**
+- Only one task can be tracked at a time
+- Automatic session timestamp recording
+- Optional work session descriptions
+- Validates task exists before starting
+
+#### `rask stop`
+Stop the currently active time tracking session.
+
+```bash
+# Stop current session
+rask stop
+```
+
+**What happens:**
+- Records session end time
+- Calculates session duration
+- Updates total time tracked for the task
+- Shows session summary
+- Clears active tracking state
+
+#### `rask time [task_id] [OPTIONS]`
+View time tracking information and analysis.
+
+```bash
+# View time info for specific task
+rask time 5
+
+# View time summary for all tasks
+rask time --summary
+
+# View detailed session history
+rask time --detailed
+
+# Combine options
+rask time --summary --detailed
+```
+
+**Options:**
+- No arguments: Shows time info for all tasks with time data
+- `<task_id>`: Shows detailed time info for specific task
+- `--summary`: Shows project-wide time tracking statistics
+- `--detailed`: Shows individual time sessions with timestamps
+
+### Time Analysis Features
+
+#### Variance Analysis
+Rask automatically calculates time variance between estimates and actual time:
+
+```bash
+# View task with time variance
+rask view 5
+```
+
+**Shows:**
+- **Estimated time**: Original time estimate
+- **Actual time**: Total time tracked
+- **Variance**: Difference between estimate and actual
+- **Efficiency**: Percentage (actual/estimated * 100)
+- **Status**: Over/under estimated indicators
+
+#### Session Management
+```bash
+# View active session
+rask time
+
+# View session history for task
+rask time 5 --detailed
+
+# Check overall tracking summary
+rask time --summary
+```
+
+### Time Tracking Workflow Examples
+
+#### Daily Work Session
+```bash
+# Start your work day
+rask start 3 --description "Morning: implementing user registration"
+
+# Take a break (stop tracking)
+rask stop
+
+# Resume after lunch
+rask start 3 --description "Afternoon: adding email verification"
+
+# End of day
+rask stop
+
+# Review time spent
+rask time 3
+```
+
+#### Sprint Time Tracking
+```bash
+# Plan sprint with estimates
+rask add "Feature A" --estimated-hours 8.0 --priority high --phase mvp
+rask add "Feature B" --estimated-hours 12.0 --priority medium --phase mvp
+rask add "Bug fixes" --estimated-hours 4.0 --priority high --phase mvp
+
+# Track work during sprint
+rask start 1 --description "Initial implementation of Feature A"
+# ... work on Feature A ...
+rask stop
+
+rask start 3 --description "Critical bug fix in user authentication"
+# ... fix bugs ...
+rask stop
+
+# Sprint review
+rask time --summary
+rask time --detailed
+```
+
+#### Time Estimation Improvement
+```bash
+# Add tasks with initial estimates
+rask add "Database migration" --estimated-hours 2.0
+rask add "API integration" --estimated-hours 6.0
+rask add "UI components" --estimated-hours 4.0
+
+# Track actual time
+rask start 1 --description "Setting up migration scripts"
+# ... work ...
+rask stop
+
+# Analyze variance to improve future estimates
+rask time 1  # Shows: estimated 2.0h, actual 3.5h, 175% of estimate
+```
+
+### Time Tracking Integration
+
+#### With Phases
+```bash
+# Add time estimates by phase
+rask add "Core API" --phase mvp --estimated-hours 8.0
+rask add "Advanced features" --phase beta --estimated-hours 12.0
+rask add "Performance optimization" --phase release --estimated-hours 6.0
+
+# Track time per phase
+rask phase show mvp  # Shows estimated vs tracked time
+rask time --summary  # Shows time breakdown by phase
+```
+
+#### With Dependencies
+```bash
+# Add dependent tasks with time estimates
+rask add "Database schema" --estimated-hours 3.0 --phase mvp
+rask add "API endpoints" --estimated-hours 5.0 --depends-on 1 --phase mvp
+rask add "Frontend integration" --estimated-hours 4.0 --depends-on 2 --phase beta
+
+# Track critical path timing
+rask start 1 --description "Designing user tables"
+rask stop
+rask start 2 --description "Building REST API"
+rask stop
+
+# Analyze dependency timing impact
+rask dependencies --task-id 3
+rask time 1,2,3
+```
+
+#### With Export
+```bash
+# Export time tracking data
+rask export json --include-completed --pretty -o time_report.json
+rask export html --include-completed -o time_dashboard.html
+rask export csv -o time_analysis.csv
+```
+
+### Time Tracking Best Practices
+
+#### Estimation Guidelines
+- **Start with ranges**: Use pessimistic estimates initially
+- **Break down large tasks**: Estimate smaller chunks more accurately
+- **Include buffer time**: Add 20-30% for unknowns and interruptions
+- **Learn from variance**: Analyze over/under estimates to improve
+
+#### Tracking Workflow
+- **Track consistently**: Start/stop tracking for all significant work
+- **Use descriptive sessions**: Add context to understand time spent
+- **Take breaks**: Stop tracking during meetings, breaks, and context switches
+- **Review regularly**: Analyze time data weekly or per sprint
+
+#### Integration Tips
+- **Combine with phases**: Track time spent per development phase
+- **Use with priorities**: Focus time tracking on high-priority tasks
+- **Export for reporting**: Generate time reports for stakeholders
+- **Learn and adapt**: Use variance data to improve future estimates
 
 ## Filtering & Search
 
@@ -761,34 +996,45 @@ rask export html --phase release --priority high --tag deployment --include-comp
 
 ## Usage Examples
 
-### Scenario 1: Web Development Project with Phases
+### Scenario 1: Web Development Project with Phases and Time Tracking
 
 ```bash
 # Initialize from roadmap
 rask init web-project.md
 
-# Add MVP tasks
-rask add "Set up database" --tag backend,infrastructure --priority high --phase mvp
-rask add "Create user model" --tag backend,database --phase mvp --depends-on 1
-rask add "Basic authentication" --tag backend,security --phase mvp --depends-on 2
+# Add MVP tasks with time estimates
+rask add "Set up database" --tag backend,infrastructure --priority high --phase mvp --estimated-hours 4.0
+rask add "Create user model" --tag backend,database --phase mvp --depends-on 1 --estimated-hours 3.0
+rask add "Basic authentication" --tag backend,security --phase mvp --depends-on 2 --estimated-hours 6.0
 
-# Add Beta features
-rask add "Advanced user profiles" --tag backend,features --phase beta --depends-on 3
-rask add "Social login integration" --tag backend,auth --phase beta --depends-on 3
+# Add Beta features with estimates
+rask add "Advanced user profiles" --tag backend,features --phase beta --depends-on 3 --estimated-hours 8.0
+rask add "Social login integration" --tag backend,auth --phase beta --depends-on 3 --estimated-hours 5.0
 
-# Add Release features
-rask add "Performance optimization" --tag backend,performance --phase release --depends-on 4,5
-rask add "Production deployment" --tag deployment,infrastructure --phase release --depends-on 6
+# Add Release features with estimates
+rask add "Performance optimization" --tag backend,performance --phase release --depends-on 4,5 --estimated-hours 12.0
+rask add "Production deployment" --tag deployment,infrastructure --phase release --depends-on 6 --estimated-hours 3.0
 
-# Check phase overview
+# Check phase overview with time estimates
 rask phase overview
 
-# Work on MVP first
+# Work on MVP first with time tracking
 rask phase show mvp
+rask start 1 --description "Setting up PostgreSQL database"
+# ... work on database setup ...
+rask stop
+
 rask complete 1  # Database setup
+rask start 2 --description "Designing user schema and models"
+# ... work on user model ...
+rask stop
 rask complete 2  # User model (now unblocked)
 
-# Export MVP progress
+# Analyze time variance
+rask time 1  # Compare estimated vs actual time
+rask time 2
+
+# Export MVP progress with time data
 rask export html --phase mvp -o mvp_progress.html
 ```
 
@@ -854,32 +1100,88 @@ rask bulk add-tags 1,2,3,4 sprint-1
 rask export json --include-completed --pretty -o full_analysis.json
 ```
 
-### Scenario 4: Team Collaboration with Phases
+### Scenario 4: Sprint Planning and Time Tracking
 
 ```bash
-# Set up team configuration
+# Initialize sprint with time estimates
+rask add "User authentication API" --tag backend,auth --priority critical --phase mvp --estimated-hours 8.0
+rask add "Login/logout endpoints" --tag backend,api --priority high --phase mvp --estimated-hours 4.0 --depends-on 1
+rask add "Password reset flow" --tag backend,auth --priority medium --phase mvp --estimated-hours 6.0 --depends-on 1
+rask add "Frontend login form" --tag frontend,ui --priority high --phase mvp --estimated-hours 5.0 --depends-on 2
+
+# Sprint planning analysis
+rask phase overview  # See total estimated time
+rask time --summary  # Sprint capacity planning
+
+# Daily time tracking workflow
+rask start 1 --description "Setting up JWT authentication middleware"
+# ... work for 2 hours ...
+rask stop
+
+rask start 1 --description "Adding password hashing and validation"
+# ... work for 3 hours ...
+rask stop
+
+rask complete 1  # Authentication API done
+
+# Track dependent task
+rask start 2 --description "Implementing login endpoint with JWT tokens"
+# ... work for 4 hours ...
+rask stop
+rask complete 2
+
+# Sprint review with time analysis
+rask time --summary --detailed
+rask export html --include-completed -o sprint_report.html
+
+# Analyze estimation accuracy for next sprint
+rask time 1  # 8.0h estimated, 5.2h actual - better than expected
+rask time 2  # 4.0h estimated, 4.1h actual - accurate estimate
+```
+
+### Scenario 5: Team Collaboration with Phases and Time Tracking
+
+```bash
+# Set up team configuration with time tracking defaults
 rask config set behavior.default_phase mvp
 rask config set behavior.confirm_destructive true
 rask config set export.include_phases true
 
-# Create detailed tasks with phase planning
+# Create detailed tasks with phase planning and time estimates
 rask add "Payment system integration" \
   --tag backend,payments,critical \
   --priority critical \
   --phase beta \
+  --estimated-hours 16.0 \
   --note "Integrate with Stripe API. Requires PCI compliance review."
 
-# Phase-based team planning
-rask phase overview  # Get overall status
-rask phase show mvp  # Current sprint focus
-rask phase show beta # Next sprint planning
+rask add "Payment UI components" \
+  --tag frontend,payments \
+  --priority high \
+  --phase beta \
+  --estimated-hours 8.0 \
+  --depends-on 1
 
-# Generate team reports by phase
-rask export html --phase mvp -o current_sprint.html
-rask export html --phase beta -o next_sprint.html
-rask export csv --phase release -o release_planning.csv
+# Phase-based team planning with time estimates
+rask phase overview  # Get overall status with time breakdown
+rask phase show mvp  # Current sprint focus with time estimates
+rask phase show beta # Next sprint planning with capacity
 
-# Bulk update after team meeting
+# Track team work across features
+rask start 1 --description "Team member A: Stripe API integration"
+# ... distributed work tracking ...
+rask stop
+
+# Generate comprehensive team reports with time data
+rask export html --phase mvp --include-completed -o current_sprint_time.html
+rask export html --phase beta -o next_sprint_planning.html
+rask export csv --include-completed -o team_time_analysis.csv
+
+# Team retrospective with time insights
+rask time --summary  # Overall team productivity
+rask time --detailed # Individual task time analysis
+
+# Bulk update after team meeting with time learnings
 rask bulk set-priority 10,11,12,13 high
 rask bulk set-phase 14,15,16 beta
 ```
@@ -895,6 +1197,9 @@ Rask provides a beautiful, intuitive terminal interface with:
 - **⬇️ Low**: Gray, low priority tasks
 - **✅ Completed**: Green checkmarks
 - **🔒 Blocked**: Tasks waiting on dependencies
+- **⏱️ Time Tracking**: Active time tracking indicator
+- **🕐 Active Session**: Currently tracking time on task
+- **📊 Time Data**: Shows estimated vs actual time
 
 ### Phase Indicators
 - **🚀 MVP**: Core features for minimum viable product
@@ -919,10 +1224,12 @@ Rask provides a beautiful, intuitive terminal interface with:
 
 ### Information Density
 - **Compact view**: Essential information only
-- **Detailed view**: Full metadata display
+- **Detailed view**: Full metadata display including time data
 - **Filtered views**: Show only relevant tasks
-- **Phase views**: Organized by development stage
+- **Phase views**: Organized by development stage with time estimates
 - **Search highlighting**: Emphasize search terms
+- **Time summaries**: Estimated vs actual time at task and phase levels
+- **Active tracking**: Real-time session duration display
 
 ## Tips & Best Practices
 
@@ -1084,6 +1391,69 @@ Rask provides a beautiful, intuitive terminal interface with:
    
    # Promote promising ideas
    rask bulk set-phase 40,41 future
+   ```
+
+### Time Tracking Workflows
+
+1. **Daily time tracking routine:**
+   ```bash
+   # Start day with time tracking review
+   rask time --summary
+   
+   # Begin focused work
+   rask start 5 --description "Morning: core feature implementation"
+   
+   # Track context switches
+   rask stop
+   rask start 8 --description "Bug fix: critical authentication issue"
+   
+   # End day review
+   rask stop
+   rask time --detailed
+   ```
+
+2. **Sprint time management:**
+   ```bash
+   # Sprint planning with capacity
+   rask time --summary  # Check team velocity
+   rask phase overview  # Review estimated hours by phase
+   
+   # Daily standups with time data
+   rask time --summary
+   rask list --phase mvp --detailed  # Current sprint progress
+   
+   # Sprint retrospective
+   rask export csv --include-completed -o sprint_time_analysis.csv
+   ```
+
+3. **Estimation improvement workflow:**
+   ```bash
+   # Regular estimation review
+   rask time --summary --detailed  # Analyze variance patterns
+   
+   # Categorize estimation accuracy
+   rask list --detailed | grep "estimated"  # Review all estimates
+   
+   # Update future estimates based on learnings
+   # Use historical data to improve new task estimates
+   ```
+
+### Time Tracking Configuration
+
+1. **Project-specific time settings:**
+   ```bash
+   # Set time tracking preferences per project
+   rask config set behavior.auto_start_tracking true --project
+   rask config set behavior.require_time_estimates true --project
+   rask config set export.include_time_data true --project
+   ```
+
+2. **Team time tracking standards:**
+   ```bash
+   # Standardize time tracking across team
+   rask config set behavior.default_time_estimate 4.0
+   rask config set export.default_time_format detailed
+   rask config set behavior.track_break_time false
    ```
 
 ---

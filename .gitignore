@@ -44,6 +44,9 @@ tramp
 .LSOverride
 ._*
 
+/.claude
+.claude/
+
 # Windows
 Thumbs.db
 ehthumbs.db
