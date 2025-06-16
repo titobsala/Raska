@@ -50,7 +50,9 @@ fn initialize_rask() -> Result<(), Box<dyn std::error::Error>> {
 fn run_command(command: &Commands) -> commands::CommandResult {
     match command {
         Commands::Init { filepath } => commands::init_project(filepath),
-        Commands::Show => commands::show_project(),
+        Commands::Show { group_by_phase, phase, detailed, collapse_completed } => {
+            commands::show_project_enhanced(*group_by_phase, phase.as_deref(), *detailed, *collapse_completed)
+        },
         Commands::Complete { id } => commands::complete_task(*id),
         Commands::Add { description, tag, priority, phase, note, dependencies, estimated_hours } => {
             commands::add_task_enhanced(description, tag, priority, phase, note, dependencies, estimated_hours)
@@ -141,6 +143,9 @@ fn run_command(command: &Commands) -> commands::CommandResult {
                 *trends || *all, 
                 export.as_ref().map(|p| p.to_string_lossy().to_string())
             )
+        },
+        Commands::Timeline { detailed, active_only, compact } => {
+            commands::show_timeline(*detailed, *active_only, *compact)
         },
     }
 }
