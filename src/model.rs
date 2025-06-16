@@ -77,6 +77,9 @@ impl TaskTemplate {
             dependencies: Vec::new(),
             created_at: Some(chrono::Utc::now().to_rfc3339()),
             completed_at: None,
+            estimated_hours: None,
+            actual_hours: None,
+            time_sessions: Vec::new(),
         }
     }
 
@@ -90,7 +93,7 @@ impl TaskTemplate {
                 tags: ["feature", "development"].iter().map(|s| s.to_string()).collect(),
                 priority: Priority::Medium,
                 phase: Phase::mvp(),
-                notes: Some("Remember to:\n- Write unit tests\n- Update documentation\n- Consider edge cases\n- Review security implications".to_string()),
+                notes: Some("Remember to write unit tests, update documentation, consider edge cases, and review security implications".to_string()),
                 implementation_notes: vec![
                     "// TODO: Add implementation details".to_string(),
                     "// Consider performance implications".to_string(),
@@ -105,7 +108,7 @@ impl TaskTemplate {
                 tags: ["bug", "fix"].iter().map(|s| s.to_string()).collect(),
                 priority: Priority::High,
                 phase: Phase::mvp(),
-                notes: Some("Steps to fix:\n1. Reproduce the issue\n2. Identify root cause\n3. Implement fix\n4. Test thoroughly\n5. Update tests if needed".to_string()),
+                notes: Some("Steps to fix: 1) Reproduce the issue, 2) Identify root cause, 3) Implement fix, 4) Test thoroughly, 5) Update tests if needed".to_string()),
                 implementation_notes: vec![
                     "// Reproduction steps:".to_string(),
                     "// Root cause analysis:".to_string(),
@@ -121,7 +124,7 @@ impl TaskTemplate {
                 tags: ["testing", "unit-tests"].iter().map(|s| s.to_string()).collect(),
                 priority: Priority::Medium,
                 phase: Phase::mvp(),
-                notes: Some("Test coverage should include:\n- Happy path scenarios\n- Edge cases\n- Error conditions\n- Boundary values".to_string()),
+                notes: Some("Test coverage should include happy path scenarios, edge cases, error conditions, and boundary values".to_string()),
                 implementation_notes: vec![
                     "// Test cases to implement:".to_string(),
                     "// Mock dependencies:".to_string(),
@@ -137,7 +140,7 @@ impl TaskTemplate {
                 tags: ["documentation", "api"].iter().map(|s| s.to_string()).collect(),
                 priority: Priority::Medium,
                 phase: Phase::beta(),
-                notes: Some("Documentation should include:\n- Endpoint descriptions\n- Request/response examples\n- Error codes\n- Authentication requirements".to_string()),
+                notes: Some("Documentation should include endpoint descriptions, request/response examples, error codes, and authentication requirements".to_string()),
                 implementation_notes: vec![
                     "// Endpoints to document:".to_string(),
                     "// Example requests:".to_string(),
@@ -153,7 +156,7 @@ impl TaskTemplate {
                 tags: ["devops", "ci-cd", "automation"].iter().map(|s| s.to_string()).collect(),
                 priority: Priority::High,
                 phase: Phase::mvp(),
-                notes: Some("Pipeline should include:\n- Automated testing\n- Code quality checks\n- Security scanning\n- Deployment automation".to_string()),
+                notes: Some("Pipeline should include automated testing, code quality checks, security scanning, and deployment automation".to_string()),
                 implementation_notes: vec![
                     "// Pipeline stages:".to_string(),
                     "// Required tools:".to_string(),
@@ -169,7 +172,7 @@ impl TaskTemplate {
                 tags: ["research", "analysis"].iter().map(|s| s.to_string()).collect(),
                 priority: Priority::Low,
                 phase: Phase::future(),
-                notes: Some("Research areas:\n- Technical capabilities\n- Performance characteristics\n- Integration requirements\n- Cost implications\n- Learning curve".to_string()),
+                notes: Some("Research areas: technical capabilities, performance characteristics, integration requirements, cost implications, and learning curve".to_string()),
                 implementation_notes: vec![
                     "// Key questions to answer:".to_string(),
                     "// Evaluation criteria:".to_string(),
@@ -228,11 +231,13 @@ impl TemplateCollection {
     }
 
     /// Get templates by category
+    #[allow(dead_code)]
     pub fn get_templates_by_category(&self, category: &TemplateCategory) -> Vec<&TaskTemplate> {
         self.templates.iter().filter(|t| &t.category == category).collect()
     }
 
     /// Get all template names
+    #[allow(dead_code)]
     pub fn get_template_names(&self) -> Vec<&String> {
         self.templates.iter().map(|t| &t.name).collect()
     }
@@ -493,10 +498,56 @@ impl std::fmt::Display for Phase {
     }
 }
 
+/// Represents a time tracking session for a task
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TimeSession {
+    pub start_time: String, // ISO 8601 timestamp
+    pub end_time: Option<String>, // ISO 8601 timestamp, None if session is active
+    pub duration_minutes: Option<u32>, // Duration in minutes, calculated when session ends
+    pub description: Option<String>, // Optional description of what was worked on
+}
+
+impl TimeSession {
+    /// Create a new time session starting now
+    pub fn start_now(description: Option<String>) -> Self {
+        TimeSession {
+            start_time: chrono::Utc::now().to_rfc3339(),
+            end_time: None,
+            duration_minutes: None,
+            description,
+        }
+    }
+
+    /// End the current session
+    pub fn end_now(&mut self) {
+        let now = chrono::Utc::now().to_rfc3339();
+        self.end_time = Some(now.clone());
+        
+        // Calculate duration
+        if let (Ok(start), Ok(end)) = (
+            chrono::DateTime::parse_from_rfc3339(&self.start_time),
+            chrono::DateTime::parse_from_rfc3339(&now)
+        ) {
+            let duration = end - start;
+            self.duration_minutes = Some(duration.num_minutes() as u32);
+        }
+    }
+
+    /// Check if session is currently active
+    pub fn is_active(&self) -> bool {
+        self.end_time.is_none()
+    }
+
+    /// Get duration in hours
+    pub fn duration_hours(&self) -> Option<f64> {
+        self.duration_minutes.map(|m| m as f64 / 60.0)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
     pub id: usize,
-    pub description: String,
+    pub description: String,  
     pub status: TaskStatus,
     #[serde(default)]
     pub tags: HashSet<String>,
@@ -514,6 +565,12 @@ pub struct Task {
     pub created_at: Option<String>, // ISO 8601 timestamp
     #[serde(default)]
     pub completed_at: Option<String>, // ISO 8601 timestamp
+    #[serde(default)]
+    pub estimated_hours: Option<f64>, // Estimated time in hours
+    #[serde(default)]
+    pub actual_hours: Option<f64>, // Actual time spent in hours
+    #[serde(default)]
+    pub time_sessions: Vec<TimeSession>, // Individual time tracking sessions
 }
 
 impl Task {
@@ -530,6 +587,9 @@ impl Task {
             dependencies: Vec::new(),
             created_at: Some(chrono::Utc::now().to_rfc3339()),
             completed_at: None,
+            estimated_hours: None,
+            actual_hours: None,
+            time_sessions: Vec::new(),
         }
     }
 
@@ -568,10 +628,12 @@ impl Task {
         self.completed_at = None;
     }
 
+    #[allow(dead_code)]
     pub fn add_tag(&mut self, tag: String) {
         self.tags.insert(tag);
     }
 
+    #[allow(dead_code)]
     pub fn remove_tag(&mut self, tag: &str) {
         self.tags.remove(tag);
     }
@@ -600,8 +662,87 @@ impl Task {
         self.implementation_notes.clear();
     }
 
+    #[allow(dead_code)]
     pub fn has_implementation_notes(&self) -> bool {
         !self.implementation_notes.is_empty()
+    }
+
+    // Time tracking methods
+    pub fn set_estimated_hours(&mut self, hours: f64) {
+        self.estimated_hours = Some(hours);
+    }
+
+    pub fn start_time_session(&mut self, description: Option<String>) -> Result<(), String> {
+        // Check if there's already an active session
+        if self.has_active_time_session() {
+            return Err("Task already has an active time session".to_string());
+        }
+        
+        let session = TimeSession::start_now(description);
+        self.time_sessions.push(session);
+        Ok(())
+    }
+
+    pub fn end_current_time_session(&mut self) -> Result<f64, String> {
+        // Find the active session index
+        let active_index = self.time_sessions.iter().position(|s| s.is_active());
+        
+        if let Some(index) = active_index {
+            // End the session
+            self.time_sessions[index].end_now();
+            
+            // Update actual hours
+            self.update_actual_hours();
+            
+            // Return session duration
+            Ok(self.time_sessions[index].duration_hours().unwrap_or(0.0))
+        } else {
+            Err("No active time session found".to_string())
+        }
+    }
+
+    pub fn has_active_time_session(&self) -> bool {
+        self.time_sessions.iter().any(|s| s.is_active())
+    }
+
+    #[allow(dead_code)]
+    pub fn get_active_time_session(&self) -> Option<&TimeSession> {
+        self.time_sessions.iter().find(|s| s.is_active())
+    }
+
+    pub fn get_total_tracked_hours(&self) -> f64 {
+        self.time_sessions
+            .iter()
+            .map(|s| s.duration_hours().unwrap_or(0.0))
+            .sum()
+    }
+
+    fn update_actual_hours(&mut self) {
+        self.actual_hours = Some(self.get_total_tracked_hours());
+    }
+
+    pub fn get_time_variance(&self) -> Option<f64> {
+        match (self.estimated_hours, self.actual_hours) {
+            (Some(estimated), Some(actual)) => Some(actual - estimated),
+            _ => None,
+        }
+    }
+
+    pub fn get_time_variance_percentage(&self) -> Option<f64> {
+        match (self.estimated_hours, self.actual_hours) {
+            (Some(estimated), Some(actual)) if estimated > 0.0 => {
+                Some(((actual - estimated) / estimated) * 100.0)
+            },
+            _ => None,
+        }
+    }
+
+    pub fn is_over_estimated(&self) -> bool {
+        self.get_time_variance().map_or(false, |v| v > 0.0)
+    }
+
+    pub fn is_under_estimated(&self) -> bool {
+        self.get_time_variance().map_or(false, |v| v < 0.0)
     }
 }
 
@@ -657,6 +798,7 @@ impl Roadmap {
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_project_id(mut self, project_id: String) -> Self {
         self.project_id = Some(project_id);
         self
@@ -726,6 +868,7 @@ impl Roadmap {
         }
     }
 
+    #[allow(dead_code)]
     pub fn filter_by_tags(&self, tags: &[String]) -> Vec<&Task> {
         self.tasks
             .iter()
@@ -733,6 +876,7 @@ impl Roadmap {
             .collect()
     }
 
+    #[allow(dead_code)]
     pub fn filter_by_priority(&self, priority: &Priority) -> Vec<&Task> {
         self.tasks
             .iter()
@@ -740,6 +884,7 @@ impl Roadmap {
             .collect()
     }
 
+    #[allow(dead_code)]
     pub fn filter_by_status(&self, status: &TaskStatus) -> Vec<&Task> {
         self.tasks
             .iter()
@@ -992,6 +1137,47 @@ impl Roadmap {
             is_circular: false,
         }
     }
+
+    /// Get all unique phases from the roadmap tasks
+    pub fn get_all_phases(&self) -> Vec<Phase> {
+        let mut phase_names: HashSet<String> = HashSet::new();
+        let mut phases: Vec<Phase> = Vec::new();
+        
+        // Collect unique phases from tasks
+        for task in &self.tasks {
+            if phase_names.insert(task.phase.name.clone()) {
+                phases.push(task.phase.clone());
+            }
+        }
+        
+        // Sort phases: predefined phases first in their natural order, then custom phases alphabetically
+        phases.sort_by(|a, b| {
+            let a_predefined = a.is_predefined();
+            let b_predefined = b.is_predefined();
+            
+            match (a_predefined, b_predefined) {
+                (true, true) => {
+                    // Both predefined - use predefined order
+                    let predefined_order = ["MVP", "Beta", "Release", "Future", "Backlog"];
+                    let a_index = predefined_order.iter().position(|&x| x == a.name).unwrap_or(999);
+                    let b_index = predefined_order.iter().position(|&x| x == b.name).unwrap_or(999);
+                    a_index.cmp(&b_index)
+                }
+                (true, false) => std::cmp::Ordering::Less,  // Predefined comes first
+                (false, true) => std::cmp::Ordering::Greater, // Custom comes after
+                (false, false) => a.name.cmp(&b.name), // Both custom - alphabetical
+            }
+        });
+        
+        phases
+    }
+
+    /// Get phases that have tasks (non-empty phases)
+    pub fn get_active_phases(&self) -> Vec<Phase> {
+        self.get_all_phases().into_iter()
+            .filter(|phase| self.tasks.iter().any(|task| task.phase.name == phase.name))
+            .collect()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -1037,8 +1223,10 @@ pub struct RoadmapStatistics {
     pub total_tasks: usize,
     pub completed_tasks: usize,
     pub pending_tasks: usize,
+    #[allow(dead_code)]
     pub tasks_by_priority: Vec<(Priority, usize)>,
     pub tasks_by_phase: Vec<(Phase, usize)>,
+    #[allow(dead_code)]
     pub unique_tags: usize,
     pub completion_percentage: usize,
 }

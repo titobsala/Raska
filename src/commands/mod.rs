@@ -3,6 +3,7 @@
 //! This module provides a clean, modular interface for all Rask commands.
 //! Each command category is organized into its own submodule for better maintainability.
 
+pub mod analytics;
 pub mod core;
 pub mod project;
 pub mod bulk;
@@ -15,6 +16,7 @@ pub mod templates;
 pub mod utils;
 
 // Re-export all public command functions
+pub use analytics::*;
 pub use core::*;
 pub use project::*;
 pub use bulk::*;

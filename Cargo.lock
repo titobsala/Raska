@@ -385,7 +385,7 @@ dependencies = [
 
 [[package]]
 name = "rask"
-version = "2.3.0"
+version = "2.6.2"
 dependencies = [
  "chrono",
  "clap",

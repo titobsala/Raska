@@ -1,4 +1,3 @@
-use crate::model::{Task};
 use crate::{state};
 use super::{CommandResult, utils};
 use colored::*;
@@ -202,29 +201,4 @@ pub fn edit_implementation_note(
     Ok(())
 }
 
-/// Show implementation notes in task view (helper function for other modules)
-pub fn display_implementation_notes_for_task(task: &Task) {
-    if !task.implementation_notes.is_empty() {
-        println!("\n{} {} implementation note(s):", 
-                 "🔧".bright_blue(), 
-                 task.implementation_notes.len());
-        
-        for (index, note) in task.implementation_notes.iter().enumerate() {
-            println!("   {} {}: {}", 
-                     "📌".bright_blue(),
-                     format!("#{}", index).bright_white().bold(),
-                     note.lines().next().unwrap_or("").bright_cyan());
-            
-            // Show additional lines if it's a multi-line note
-            let lines: Vec<&str> = note.lines().collect();
-            if lines.len() > 1 {
-                for line in lines.iter().skip(1).take(2) { // Show up to 2 more lines
-                    println!("      {}", line.dimmed());
-                }
-                if lines.len() > 3 {
-                    println!("      {} ({} more lines)", "...".dimmed(), lines.len() - 3);
-                }
-            }
-        }
-    }
-} 
+ 
