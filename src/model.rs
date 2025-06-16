@@ -231,11 +231,13 @@ impl TemplateCollection {
     }
 
     /// Get templates by category
+    #[allow(dead_code)]
     pub fn get_templates_by_category(&self, category: &TemplateCategory) -> Vec<&TaskTemplate> {
         self.templates.iter().filter(|t| &t.category == category).collect()
     }
 
     /// Get all template names
+    #[allow(dead_code)]
     pub fn get_template_names(&self) -> Vec<&String> {
         self.templates.iter().map(|t| &t.name).collect()
     }
@@ -626,10 +628,12 @@ impl Task {
         self.completed_at = None;
     }
 
+    #[allow(dead_code)]
     pub fn add_tag(&mut self, tag: String) {
         self.tags.insert(tag);
     }
 
+    #[allow(dead_code)]
     pub fn remove_tag(&mut self, tag: &str) {
         self.tags.remove(tag);
     }
@@ -658,6 +662,7 @@ impl Task {
         self.implementation_notes.clear();
     }
 
+    #[allow(dead_code)]
     pub fn has_implementation_notes(&self) -> bool {
         !self.implementation_notes.is_empty()
     }
@@ -700,6 +705,7 @@ impl Task {
         self.time_sessions.iter().any(|s| s.is_active())
     }
 
+    #[allow(dead_code)]
     pub fn get_active_time_session(&self) -> Option<&TimeSession> {
         self.time_sessions.iter().find(|s| s.is_active())
     }
@@ -792,6 +798,7 @@ impl Roadmap {
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_project_id(mut self, project_id: String) -> Self {
         self.project_id = Some(project_id);
         self
@@ -861,6 +868,7 @@ impl Roadmap {
         }
     }
 
+    #[allow(dead_code)]
     pub fn filter_by_tags(&self, tags: &[String]) -> Vec<&Task> {
         self.tasks
             .iter()
@@ -868,6 +876,7 @@ impl Roadmap {
             .collect()
     }
 
+    #[allow(dead_code)]
     pub fn filter_by_priority(&self, priority: &Priority) -> Vec<&Task> {
         self.tasks
             .iter()
@@ -875,6 +884,7 @@ impl Roadmap {
             .collect()
     }
 
+    #[allow(dead_code)]
     pub fn filter_by_status(&self, status: &TaskStatus) -> Vec<&Task> {
         self.tasks
             .iter()
@@ -1172,8 +1182,10 @@ pub struct RoadmapStatistics {
     pub total_tasks: usize,
     pub completed_tasks: usize,
     pub pending_tasks: usize,
+    #[allow(dead_code)]
     pub tasks_by_priority: Vec<(Priority, usize)>,
     pub tasks_by_phase: Vec<(Phase, usize)>,
+    #[allow(dead_code)]
     pub unique_tags: usize,
     pub completion_percentage: usize,
 }

@@ -23,7 +23,7 @@ pub use template::TemplateCommands;
 #[derive(ClapParser)]
 #[command(
     name = "rask",
-    version = "2.3.1",
+    version = "2.4.1",
     about = "An advanced CLI project planner with tags, priorities, dependencies, phases, and templates",
     long_about = "Rask is a powerful command-line project planner that helps you track tasks defined in Markdown files. \
                   It supports tags, priorities, task dependencies, custom phases, task templates, and advanced filtering capabilities."

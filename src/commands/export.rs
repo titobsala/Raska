@@ -166,22 +166,7 @@ pub fn export_roadmap_enhanced(
     Ok(())
 }
 
-/// Legacy export function for backward compatibility
-pub fn export_roadmap(
-    format: &ExportFormat,
-    output_path: Option<&Path>,
-    include_completed: bool,
-    tags_filter: Option<&str>,
-    priority_filter: Option<&CliPriority>,
-    phase_filter: Option<&String>,
-    pretty: bool,
-) -> CommandResult {
-    // Call the enhanced version with default values for new parameters
-    export_roadmap_enhanced(
-        format, output_path, include_completed, tags_filter, priority_filter, phase_filter, pretty,
-        None, None, None, None, None, None, false, false, false, false
-    )
-}
+
 
 /// Export roadmap to JSON format with comprehensive time tracking data
 fn export_to_json(roadmap: &Roadmap, tasks: &[&Task], pretty: bool) -> Result<String, Box<dyn std::error::Error>> {
@@ -251,7 +236,7 @@ fn export_to_json(roadmap: &Roadmap, tasks: &[&Task], pretty: bool) -> Result<St
                     "under_estimated_tasks": tasks.iter().filter(|t| t.is_under_estimated()).count(),
                     "accurate_estimates_count": tasks.iter().filter(|t| {
                         if let (Some(est), Some(actual)) = (t.estimated_hours, t.actual_hours) {
-                            let variance_pct = ((actual - est).abs() / est * 100.0);
+                            let variance_pct = (actual - est).abs() / est * 100.0;
                             variance_pct <= 20.0  // Within 20% is considered accurate
                         } else {
                             false

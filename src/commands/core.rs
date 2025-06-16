@@ -468,7 +468,7 @@ pub fn stop_time_tracking() -> CommandResult {
 }
 
 /// Show time tracking information
-pub fn show_time_tracking(task_id: &Option<usize>, summary: bool, detailed: bool) -> CommandResult {
+pub fn show_time_tracking(task_id: &Option<usize>, summary: bool, _detailed: bool) -> CommandResult {
     let roadmap = state::load_state()?;
     
     if let Some(id) = task_id {
