@@ -389,7 +389,7 @@ src/
 
 ## 📈 Roadmap
 
-### ✅ Completed Features
+### ✅ Completed Features (v2.3.1)
 - [x] Core task management with Markdown sync
 - [x] Enhanced filtering and search capabilities
 - [x] Multi-project workspace system
@@ -406,17 +406,38 @@ src/
 - [x] **Time estimation and tracking with variance analysis**
 - [x] **Session-based time tracking with start/stop functionality**
 
-### 🚧 In Progress
-- [ ] Advanced time analytics and reporting
-- [ ] Time-based productivity insights
+### 🚧 Phase 3: Enhanced Export Capabilities 📤 (v2.4.0 - Current Focus)
+- [ ] Time data integration in all export formats (JSON, CSV, HTML)
+- [ ] Advanced filtering in exports (date ranges, time thresholds)
+- [ ] Report templates (sprint reports, time tracking reports)
+- [ ] Export scheduling and automation
+- [ ] Interactive HTML reports with charts and visualizations
+- [ ] Custom export configurations and profiles
 
-### 🔮 Future Plans
-- [ ] Plugin system for extensibility
-- [ ] Web dashboard interface
-- [ ] Team collaboration features
-- [ ] Integration with external tools (GitHub, Jira, etc.)
-- [ ] Advanced reporting and analytics
-- [ ] Mobile companion app
+### 🔮 Future Development Phases
+
+**Phase 4: Plugin System Foundation 🔌 (v3.0.0)**
+- Plugin architecture design and safe sandbox environment
+- Hook system for extending functionality
+- Custom command plugins and integration plugins
+
+**Phase 5: Web Dashboard Interface 🌐 (v3.1.0)**
+- Local web server for dashboard with REST API
+- Real-time project visualization and interactive time tracking
+- Team collaboration features and multi-user support
+
+**Phase 6: External Tool Integration 🔗 (v3.2.0)**
+- GitHub integration (sync with issues, PRs, commits)
+- Git integration (link commits to tasks)
+- Calendar integration (time blocking, meeting tracking)
+- Slack/Discord notifications and custom slash commands
+
+**Phase 7+: Advanced Features 🚀 (v4.0.0+)**
+- AI-powered task estimation and scheduling
+- Mobile companion app with offline sync
+- Enterprise features and multi-tenant architecture
+
+> 📋 **Complete Development Plan**: See [roadmap.md](roadmap.md) for detailed phase breakdown, timelines, and technical specifications.
 
 ## 🤝 Contributing
 

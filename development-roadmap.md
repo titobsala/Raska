@@ -55,3 +55,4 @@ This file outlines the tasks required to build the MVP for the Rask application.
 - [ ] Review PR #123: Add user authentication system
 - [ ] Conduct market research
 - [ ] Test time tracking feature
+- [ ] Test enhanced export functionality
