@@ -208,7 +208,7 @@ pub fn display_roadmap_filtered_by_phase(roadmap: &Roadmap, phase_filter: &str, 
 }
 
 /// Display project timeline with horizontal phase layout
-pub fn display_project_timeline(roadmap: &Roadmap, detailed: bool, active_only: bool, compact: bool) {
+pub fn display_project_timeline(roadmap: &Roadmap, detailed: bool, active_only: bool, compact: bool, page: Option<usize>, page_size: Option<usize>) {
     let total_tasks = roadmap.tasks.len();
     let completed_tasks = roadmap.tasks.iter().filter(|t| t.status == TaskStatus::Completed).count();
     
@@ -234,7 +234,7 @@ pub fn display_project_timeline(roadmap: &Roadmap, detailed: bool, active_only: 
     
     // Get actual phases from roadmap instead of hardcoded predefined phases
     let all_phases = roadmap.get_all_phases();
-    let phases_to_show: Vec<&Phase> = if active_only {
+    let mut phases_to_show: Vec<&Phase> = if active_only {
         all_phases.iter().filter(|p| phase_groups.contains_key(&p.name)).collect()
     } else {
         all_phases.iter().collect()
@@ -243,6 +243,36 @@ pub fn display_project_timeline(roadmap: &Roadmap, detailed: bool, active_only: 
     if phases_to_show.is_empty() {
         println!("\n  {} No active phases found", "ℹ️".bright_blue());
         return;
+    }
+    
+    // Pagination logic
+    let page_size = page_size.unwrap_or(5); // Default to 5 phases per page
+    let current_page = page.unwrap_or(1).max(1); // Default to page 1, minimum 1
+    let total_phases = phases_to_show.len();
+    let total_pages = (total_phases + page_size - 1) / page_size; // Ceiling division
+    
+    // Calculate pagination bounds
+    let start_idx = (current_page - 1) * page_size;
+    let end_idx = std::cmp::min(start_idx + page_size, total_phases);
+    
+    // Check if page is valid
+    if start_idx >= total_phases {
+        println!("\n  {} Page {} not found. Total pages: {}", "❌".bright_red(), current_page, total_pages);
+        println!("  Use --page 1 to {} or omit --page for page 1", total_pages);
+        return;
+    }
+    
+    // Slice the phases for current page
+    phases_to_show = phases_to_show[start_idx..end_idx].to_vec();
+    
+    // Show pagination info if there are multiple pages
+    if total_pages > 1 {
+        println!("  📄 Page {} of {} (showing {} of {} phases)", 
+            current_page.to_string().bright_cyan(),
+            total_pages.to_string().bright_cyan(),
+            phases_to_show.len().to_string().bright_yellow(),
+            total_phases.to_string().bright_yellow()
+        );
     }
     
     println!("\n");
@@ -356,6 +386,19 @@ pub fn display_project_timeline(roadmap: &Roadmap, detailed: bool, active_only: 
     
     println!("\n  💡 {} Use 'rask show --group-by-phase' for detailed phase view", "Tip:".bright_green().bold());
     println!("     Use 'rask show --phase <name>' to focus on specific phase");
+    
+    // Show navigation tips for pagination
+    if total_pages > 1 {
+        println!("  📖 {} Navigation:", "Pages:".bright_blue().bold());
+        if current_page > 1 {
+            println!("     Previous: rask timeline --page {}", current_page - 1);
+        }
+        if current_page < total_pages {
+            println!("     Next: rask timeline --page {}", current_page + 1);
+        }
+        println!("     All pages: --page 1 to --page {} (or --page-size {} to show more per page)", total_pages, page_size + 5);
+    }
+    
     println!();
 }
 

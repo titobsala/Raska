@@ -57,9 +57,9 @@ pub fn show_project_enhanced(
 }
 
 /// Show project timeline with phase-based horizontal layout
-pub fn show_timeline(detailed: bool, active_only: bool, compact: bool) -> CommandResult {
+pub fn show_timeline(detailed: bool, active_only: bool, compact: bool, page: Option<usize>, page_size: Option<usize>) -> CommandResult {
     let roadmap = state::load_state()?;
-    ui::display_project_timeline(&roadmap, detailed, active_only, compact);
+    ui::display_project_timeline(&roadmap, detailed, active_only, compact, page, page_size);
     Ok(())
 }
 
