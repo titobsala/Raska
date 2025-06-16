@@ -132,6 +132,16 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         Commands::Time { task_id, summary, detailed } => {
             commands::show_time_tracking(task_id, *summary, *detailed)
         },
+        Commands::Analytics { overview, time, phases, priorities, trends, export, all } => {
+            commands::show_analytics(
+                *overview || *all, 
+                *time || *all, 
+                *phases || *all, 
+                *priorities || *all, 
+                *trends || *all, 
+                export.as_ref().map(|p| p.to_string_lossy().to_string())
+            )
+        },
     }
 }
 

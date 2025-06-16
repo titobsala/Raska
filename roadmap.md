@@ -214,23 +214,23 @@
 ## 📊 Development Metrics
 
 ### Complexity Estimates
-- **Phase 3** (Enhanced Export): ~40-50 hours
-- **Phase 4** (Plugin System): ~120-150 hours
-- **Phase 5** (Web Dashboard): ~150-200 hours
-- **Phase 6** (Integrations): ~100-120 hours
+**Phase 3** (Enhanced Export): ~40-50 hours  
+**Phase 4** (Plugin System): ~120-150 hours  
+**Phase 5** (Web Dashboard): ~150-200 hours  
+**Phase 6** (Integrations): ~100-120 hours  
 
 ### Dependencies
-- Phase 3 → Independent (can start immediately)
-- Phase 4 → Requires Phase 3 export foundation
-- Phase 5 → Requires Phase 4 plugin architecture
-- Phase 6 → Can run parallel with Phase 5
+**Phase 3** → Independent (can start immediately)  
+**Phase 4** → Requires Phase 3 export foundation  
+**Phase 5** → Requires Phase 4 plugin architecture  
+**Phase 6** → Can run parallel with Phase 5  
 
 ### Technology Stack Evolution
-- **Current**: Rust CLI with TOML/JSON/Markdown
-- **Phase 4**: Plugin system with dynamic loading
-- **Phase 5**: Web stack (likely Axum + React/Vue)
-- **Phase 6**: External API integrations
-- **Future**: Mobile (React Native/Flutter) + Cloud
+**Current**: Rust CLI with TOML/JSON/Markdown  
+**Phase 4**: Plugin system with dynamic loading  
+**Phase 5**: Web stack (likely Axum + React/Vue)  
+**Phase 6**: External API integrations  
+**Future**: Mobile (React Native/Flutter) + Cloud  
 
 ---
 
@@ -238,10 +238,10 @@
 
 To begin Phase 3 (Enhanced Export Capabilities), the next steps are:
 
-1. **Export System Analysis** - Review current export architecture
-2. **Time Data Integration** - Extend export models with time tracking
-3. **Advanced Filtering** - Implement date/time-based filtering
-4. **Report Templates** - Create configurable report generation
-5. **Automation Framework** - Build export scheduling system
+**1. Export System Analysis** - Review current export architecture  
+**2. Time Data Integration** - Extend export models with time tracking  
+**3. Advanced Filtering** - Implement date/time-based filtering  
+**4. Report Templates** - Create configurable report generation  
+**5. Automation Framework** - Build export scheduling system  
 
 **Ready to enhance our export capabilities!** 📤
