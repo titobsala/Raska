@@ -215,6 +215,7 @@ impl ProjectsConfig {
     }
     
     /// Get a mutable reference to a project configuration
+    #[allow(dead_code)]
     pub fn get_project_mut(&mut self, name: &str) -> Option<&mut ProjectConfig> {
         self.projects.get_mut(name)
     }
@@ -230,6 +231,7 @@ impl ProjectsConfig {
     }
     
     /// Get projects sorted by last accessed (most recent first)
+    #[allow(dead_code)]
     pub fn get_recent_projects(&self) -> Vec<(&String, &ProjectConfig)> {
         let mut projects: Vec<_> = self.projects.iter().collect();
         projects.sort_by(|a, b| b.1.last_accessed.cmp(&a.1.last_accessed));
@@ -238,6 +240,7 @@ impl ProjectsConfig {
     }
     
     /// Set the source file for a project (when initialized with markdown)
+    #[allow(dead_code)]
     pub fn set_project_source_file(&mut self, project_name: &str, source_file: &str) -> Result<(), Error> {
         if let Some(project) = self.projects.get_mut(project_name) {
             project.source_file = Some(source_file.to_string());

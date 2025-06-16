@@ -1,11 +1,29 @@
-use clap::{Parser as ClapParser, Subcommand, ValueEnum};
+use clap::{Parser as ClapParser, Subcommand};
 use std::path::PathBuf;
+
+// Import all the modularized CLI components
+pub mod types;
+pub mod project;
+pub mod phase;
+pub mod config;
+pub mod notes;
+pub mod bulk;
+pub mod template;
+
+// Re-export the types for easier access
+pub use types::{CliPriority, ExportFormat};
+pub use project::ProjectCommands;
+pub use phase::PhaseCommands;
+pub use config::ConfigCommands;
+pub use notes::NotesCommands;
+pub use bulk::BulkCommands;
+pub use template::TemplateCommands;
 
 /// Main CLI structure for the Rask application
 #[derive(ClapParser)]
 #[command(
     name = "rask",
-    version = "2.3.0",
+    version = "2.6.2",
     about = "An advanced CLI project planner with tags, priorities, dependencies, phases, and templates",
     long_about = "Rask is a powerful command-line project planner that helps you track tasks defined in Markdown files. \
                   It supports tags, priorities, task dependencies, custom phases, task templates, and advanced filtering capabilities."
@@ -13,26 +31,6 @@ use std::path::PathBuf;
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
-}
-
-/// Priority levels for tasks
-#[derive(Clone, Debug, ValueEnum)]
-pub enum CliPriority {
-    Low,
-    Medium,
-    High,
-    Critical,
-}
-
-impl From<CliPriority> for crate::model::Priority {
-    fn from(cli_priority: CliPriority) -> Self {
-        match cli_priority {
-            CliPriority::Low => crate::model::Priority::Low,
-            CliPriority::Medium => crate::model::Priority::Medium,
-            CliPriority::High => crate::model::Priority::High,
-            CliPriority::Critical => crate::model::Priority::Critical,
-        }
-    }
 }
 
 /// Available commands for the Rask CLI
@@ -47,7 +45,23 @@ pub enum Commands {
     
     /// Show the current project status and task list
     #[command(alias = "status")]
-    Show,
+    Show {
+        /// Group tasks by phase for better organization
+        #[arg(long, help = "Group tasks by phase (MVP, Beta, Release, etc.)")]
+        group_by_phase: bool,
+        
+        /// Show only tasks from a specific phase
+        #[arg(long, value_name = "PHASE", help = "Show only tasks from this phase")]
+        phase: Option<String>,
+        
+        /// Show detailed information including notes and dependencies
+        #[arg(long, help = "Show detailed task information including notes and dependencies")]
+        detailed: bool,
+        
+        /// Collapse completed phases to focus on active work
+        #[arg(long, help = "Collapse completed phases to reduce visual clutter")]
+        collapse_completed: bool,
+    },
     
     /// Mark a task as completed
     #[command(alias = "done")]
@@ -82,6 +96,10 @@ pub enum Commands {
         /// Task IDs this task depends on (comma-separated)
         #[arg(long = "depends-on", value_name = "TASK_IDS", help = "Comma-separated task IDs this task depends on")]
         dependencies: Option<String>,
+        
+        /// Estimated time to complete the task in hours
+        #[arg(long, value_name = "HOURS", help = "Estimated time to complete the task in hours (e.g., 2.5)")]
+        estimated_hours: Option<f64>,
     },
 
     /// Remove a task from the project
@@ -182,7 +200,7 @@ pub enum Commands {
     #[command(subcommand)]
     Notes(NotesCommands),
 
-    /// Export roadmap to different formats
+    /// Export roadmap to different formats with advanced time-based filtering
     Export {
         /// Output format
         #[arg(value_enum, help = "Export format: json, csv, or html")]
@@ -211,410 +229,136 @@ pub enum Commands {
         /// Pretty print JSON output
         #[arg(long, help = "Pretty print JSON output")]
         pretty: bool,
+        
+        // NEW: Time-based filtering options for Phase 3 enhancement
+        /// Filter tasks created after this date (YYYY-MM-DD format)
+        #[arg(long, value_name = "DATE", help = "Include only tasks created after this date (YYYY-MM-DD)")]
+        created_after: Option<String>,
+        
+        /// Filter tasks created before this date (YYYY-MM-DD format)
+        #[arg(long, value_name = "DATE", help = "Include only tasks created before this date (YYYY-MM-DD)")]
+        created_before: Option<String>,
+        
+        /// Filter tasks with estimated hours greater than threshold
+        #[arg(long, value_name = "HOURS", help = "Include only tasks with estimated hours greater than this value")]
+        min_estimated_hours: Option<f64>,
+        
+        /// Filter tasks with estimated hours less than threshold
+        #[arg(long, value_name = "HOURS", help = "Include only tasks with estimated hours less than this value")]
+        max_estimated_hours: Option<f64>,
+        
+        /// Filter tasks with actual hours greater than threshold
+        #[arg(long, value_name = "HOURS", help = "Include only tasks with actual hours greater than this value")]
+        min_actual_hours: Option<f64>,
+        
+        /// Filter tasks with actual hours less than threshold
+        #[arg(long, value_name = "HOURS", help = "Include only tasks with actual hours less than this value")]
+        max_actual_hours: Option<f64>,
+        
+        /// Include only tasks with time tracking data
+        #[arg(long, help = "Include only tasks that have time tracking data (estimates or actual time)")]
+        with_time_data: bool,
+        
+        /// Include only tasks with active time sessions
+        #[arg(long, help = "Include only tasks with currently active time tracking sessions")]
+        active_sessions_only: bool,
+        
+        /// Include only over-estimated tasks
+        #[arg(long, help = "Include only tasks that took longer than estimated")]
+        over_estimated_only: bool,
+        
+        /// Include only under-estimated tasks
+        #[arg(long, help = "Include only tasks that took less time than estimated")]
+        under_estimated_only: bool,
     },
 
     /// Manage task templates for quick task creation
     #[command(subcommand)]
     Template(TemplateCommands),
-}
 
-/// Project management commands
-#[derive(Subcommand)]
-pub enum ProjectCommands {
-    /// Create a new project
-    Create {
-        /// Name of the project
-        #[arg(value_name = "NAME", help = "Name of the new project")]
-        name: String,
+    /// Start time tracking for a task
+    Start {
+        /// ID of the task to start tracking time for
+        #[arg(value_name = "TASK_ID", help = "The ID number of the task to start time tracking")]
+        id: usize,
         
-        /// Description of the project
-        #[arg(long, value_name = "DESCRIPTION", help = "Description of the project")]
+        /// Optional description of what will be worked on
+        #[arg(long, value_name = "DESCRIPTION", help = "Description of what will be worked on during this session")]
         description: Option<String>,
     },
-    
-    /// Switch to a different project
-    Switch {
-        /// Name of the project to switch to
-        #[arg(value_name = "NAME", help = "Name of the project to switch to")]
-        name: String,
-    },
-    
-    /// List all projects
-    List,
-    
-    /// Interactive project switcher interface
-    Switcher,
-    
-    /// Delete a project
-    Delete {
-        /// Name of the project to delete
-        #[arg(value_name = "NAME", help = "Name of the project to delete")]
-        name: String,
-        
-        /// Force deletion without confirmation
-        #[arg(long, help = "Force deletion without confirmation")]
-        force: bool,
-    },
-}
 
-/// Phase management commands
-#[derive(Subcommand)]
-pub enum PhaseCommands {
-    /// List all phases and their task counts
-    List,
-    
-    /// Show tasks in a specific phase
-    Show {
-        /// Phase to show tasks for
-        #[arg(help = "Phase name to display")]
-        phase: String,
-    },
-    
-    /// Set phase for a task
-    Set {
-        /// Task ID to update
-        #[arg(value_name = "TASK_ID", help = "ID of the task to update")]
-        task_id: usize,
-        
-        /// New phase for the task
-        #[arg(help = "Phase name to set")]
-        phase: String,
-    },
-    
-    /// Show phase overview with statistics
-    Overview,
-    
-    /// Create a new custom phase
-    Create {
-        /// Name of the new phase
-        #[arg(help = "Name of the new phase")]
-        name: String,
-        
-        /// Description of the phase
-        #[arg(long, help = "Description of the phase")]
-        description: Option<String>,
-        
-        /// Emoji for the phase
-        #[arg(long, help = "Emoji for the phase")]
-        emoji: Option<String>,
-    },
-}
+    /// Stop time tracking for the currently active task
+    Stop,
 
-/// Configuration management commands
-#[derive(Subcommand)]
-pub enum ConfigCommands {
-    /// Show current configuration
-    Show {
-        /// Show configuration for a specific section
-        #[arg(value_name = "SECTION", help = "Configuration section to show (ui, behavior, export, advanced, theme)")]
-        section: Option<String>,
-    },
-    
-    /// Set a configuration value
-    Set {
-        /// Configuration key in format 'section.key'
-        #[arg(value_name = "KEY", help = "Configuration key (e.g., ui.color_scheme, behavior.default_priority)")]
-        key: String,
+    /// View time tracking information for tasks
+    Time {
+        /// Show time information for a specific task
+        #[arg(value_name = "TASK_ID", help = "Show time information for a specific task")]
+        task_id: Option<usize>,
         
-        /// Value to set
-        #[arg(value_name = "VALUE", help = "Value to set for the configuration key")]
-        value: String,
+        /// Show summary of time tracking across all tasks
+        #[arg(long, help = "Show time tracking summary for all tasks")]
+        summary: bool,
         
-        /// Set in project config instead of user config
-        #[arg(long, help = "Set in project-specific configuration")]
-        project: bool,
-    },
-    
-    /// Get a configuration value
-    Get {
-        /// Configuration key in format 'section.key'
-        #[arg(value_name = "KEY", help = "Configuration key to get")]
-        key: String,
-    },
-    
-    /// Edit configuration in your default editor
-    Edit {
-        /// Edit project config instead of user config
-        #[arg(long, help = "Edit project-specific configuration")]
-        project: bool,
-    },
-    
-    /// Initialize configuration files
-    Init {
-        /// Initialize project config
-        #[arg(long, help = "Initialize project-specific configuration")]
-        project: bool,
-        
-        /// Initialize user config
-        #[arg(long, help = "Initialize user configuration")]
-        user: bool,
-    },
-    
-    /// Reset configuration to defaults
-    Reset {
-        /// Reset project config
-        #[arg(long, help = "Reset project-specific configuration")]
-        project: bool,
-        
-        /// Reset user config
-        #[arg(long, help = "Reset user configuration")]
-        user: bool,
-        
-        /// Force reset without confirmation
-        #[arg(long, help = "Force reset without confirmation")]
-        force: bool,
-    },
-}
-
-/// Implementation notes management commands
-#[derive(Subcommand)]
-pub enum NotesCommands {
-    /// Add an implementation note to a task
-    Add {
-        /// Task ID to add note to
-        #[arg(value_name = "TASK_ID", help = "ID of the task to add implementation note to")]
-        task_id: usize,
-        
-        /// Implementation note content
-        #[arg(value_name = "NOTE", help = "Implementation note content (code snippets, technical details, etc.)")]
-        note: String,
-    },
-    
-    /// List all implementation notes for a task
-    List {
-        /// Task ID to show notes for
-        #[arg(value_name = "TASK_ID", help = "ID of the task to show implementation notes for")]
-        task_id: usize,
-    },
-    
-    /// Remove an implementation note from a task
-    Remove {
-        /// Task ID to remove note from
-        #[arg(value_name = "TASK_ID", help = "ID of the task to remove implementation note from")]
-        task_id: usize,
-        
-        /// Index of the note to remove (0-based)
-        #[arg(value_name = "INDEX", help = "Index of the implementation note to remove (0-based)")]
-        index: usize,
-    },
-    
-    /// Clear all implementation notes from a task
-    Clear {
-        /// Task ID to clear notes from
-        #[arg(value_name = "TASK_ID", help = "ID of the task to clear all implementation notes from")]
-        task_id: usize,
-    },
-    
-    /// Edit an implementation note
-    Edit {
-        /// Task ID containing the note
-        #[arg(value_name = "TASK_ID", help = "ID of the task containing the implementation note")]
-        task_id: usize,
-        
-        /// Index of the note to edit (0-based)
-        #[arg(value_name = "INDEX", help = "Index of the implementation note to edit (0-based)")]
-        index: usize,
-        
-        /// New content for the note
-        #[arg(value_name = "NOTE", help = "New content for the implementation note")]
-        note: String,
-    },
-}
-
-/// Bulk operations on multiple tasks
-#[derive(Subcommand)]
-pub enum BulkCommands {
-    /// Complete multiple tasks at once
-    Complete {
-        /// Comma-separated list of task IDs to complete
-        #[arg(value_name = "IDS", help = "Task IDs separated by commas (e.g., 1,2,3)")]
-        ids: String,
-    },
-    
-    /// Add tags to multiple tasks
-    AddTags {
-        /// Comma-separated list of task IDs
-        #[arg(value_name = "IDS", help = "Task IDs separated by commas")]
-        ids: String,
-        
-        /// Comma-separated list of tags to add
-        #[arg(value_name = "TAGS", help = "Tags separated by commas")]
-        tags: String,
-    },
-    
-    /// Remove tags from multiple tasks
-    RemoveTags {
-        /// Comma-separated list of task IDs
-        #[arg(value_name = "IDS", help = "Task IDs separated by commas")]
-        ids: String,
-        
-        /// Comma-separated list of tags to remove
-        #[arg(value_name = "TAGS", help = "Tags separated by commas")]
-        tags: String,
-    },
-    
-    /// Set priority for multiple tasks
-    SetPriority {
-        /// Comma-separated list of task IDs
-        #[arg(value_name = "IDS", help = "Task IDs separated by commas")]
-        ids: String,
-        
-        /// Priority level to set
-        #[arg(value_enum, help = "Priority level")]
-        priority: CliPriority,
-    },
-    
-    /// Set phase for multiple tasks
-    SetPhase {
-        /// Comma-separated list of task IDs
-        #[arg(value_name = "IDS", help = "Task IDs separated by commas")]
-        ids: String,
-        
-        /// Phase to set
-        #[arg(help = "Phase name")]
-        phase: String,
-    },
-    
-    /// Reset multiple tasks to pending status
-    Reset {
-        /// Comma-separated list of task IDs to reset
-        #[arg(value_name = "IDS", help = "Task IDs separated by commas")]
-        ids: String,
-    },
-    
-    /// Remove multiple tasks (with dependency validation)
-    Remove {
-        /// Comma-separated list of task IDs to remove
-        #[arg(value_name = "IDS", help = "Task IDs separated by commas")]
-        ids: String,
-        
-        /// Force removal even if other tasks depend on these
-        #[arg(long, help = "Force removal even with dependencies")]
-        force: bool,
-    },
-}
-
-/// Export format options
-#[derive(ValueEnum, Clone)]
-pub enum ExportFormat {
-    /// JSON format
-    Json,
-    /// CSV format  
-    Csv,
-    /// HTML format
-    Html,
-}
-
-/// Template management commands
-#[derive(Subcommand, Clone)]
-pub enum TemplateCommands {
-    /// List all available templates
-    List {
-        /// Filter by category
-        #[arg(long, value_name = "CATEGORY", help = "Filter templates by category")]
-        category: Option<String>,
-        
-        /// Show detailed template information
-        #[arg(long, help = "Show detailed template information")]
+        /// Show detailed time session history
+        #[arg(long, help = "Show detailed time session history")]
         detailed: bool,
     },
-    
-    /// Show details of a specific template
-    Show {
-        /// Name of the template to show
-        #[arg(value_name = "NAME", help = "Name of the template to show")]
-        name: String,
+
+    /// View comprehensive project analytics and progress reports
+    #[command(alias = "stats")]
+    Analytics {
+        /// Show overview analytics (default)
+        #[arg(long, help = "Show comprehensive analytics overview")]
+        overview: bool,
+        
+        /// Show detailed time tracking analytics
+        #[arg(long, help = "Show detailed time tracking analytics")]
+        time: bool,
+        
+        /// Show phase-based analytics
+        #[arg(long, help = "Show analytics broken down by phases")]
+        phases: bool,
+        
+        /// Show priority-based analytics
+        #[arg(long, help = "Show analytics broken down by priorities")]
+        priorities: bool,
+        
+        /// Show trend analytics and velocity metrics
+        #[arg(long, help = "Show trend analytics and project velocity")]
+        trends: bool,
+        
+        /// Export analytics to file
+        #[arg(long, value_name = "FILE", help = "Export analytics summary to file")]
+        export: Option<PathBuf>,
+        
+        /// Show all analytics sections
+        #[arg(long, help = "Show all available analytics sections")]
+        all: bool,
     },
-    
-    /// Create a new task from a template
-    Use {
-        /// Name of the template to use
-        #[arg(value_name = "TEMPLATE_NAME", help = "Name of the template to use")]
-        template_name: String,
+
+    /// Show project timeline with phase-based horizontal layout
+    Timeline {
+        /// Show detailed task information in timeline
+        #[arg(long, help = "Show detailed task information in timeline view")]
+        detailed: bool,
         
-        /// Custom description for the task (overrides template description)
-        #[arg(value_name = "DESCRIPTION", help = "Custom description for the task")]
-        description: Option<String>,
+        /// Show only active phases (hide empty phases)
+        #[arg(long, help = "Show only phases that contain tasks")]
+        active_only: bool,
         
-        /// Additional tags to add (comma-separated)
-        #[arg(long, value_name = "TAGS", help = "Additional tags to add to the task")]
-        add_tags: Option<String>,
+        /// Compact view with fewer details per task
+        #[arg(long, help = "Use compact view to fit more information")]
+        compact: bool,
         
-        /// Override template priority
-        #[arg(long, value_enum, help = "Override template priority")]
-        priority: Option<CliPriority>,
+        /// Page number for pagination (default: 1, shows 5 phases per page)
+        #[arg(long, short, value_name = "PAGE", help = "Page number for pagination (shows 5 phases per page)")]
+        page: Option<usize>,
         
-        /// Override template phase
-        #[arg(long, help = "Override template phase")]
-        phase: Option<String>,
+        /// Number of phases to show per page (default: 5)
+        #[arg(long, value_name = "SIZE", help = "Number of phases to show per page (default: 5)")]
+        page_size: Option<usize>,
     },
-    
-    /// Create a new custom template
-    Create {
-        /// Name of the new template
-        #[arg(value_name = "NAME", help = "Name of the new template")]
-        name: String,
-        
-        /// Description for the template
-        #[arg(value_name = "DESCRIPTION", help = "Description for the template")]
-        description: String,
-        
-        /// Tags for the template (comma-separated)
-        #[arg(long, value_name = "TAGS", help = "Tags for the template")]
-        tags: Option<String>,
-        
-        /// Priority for the template
-        #[arg(long, value_enum, help = "Priority for the template")]
-        priority: Option<CliPriority>,
-        
-        /// Phase for the template
-        #[arg(long, help = "Phase for the template")]
-        phase: Option<String>,
-        
-        /// Notes for the template
-        #[arg(long, help = "Notes for the template")]
-        notes: Option<String>,
-        
-        /// Category for the template
-        #[arg(long, help = "Category for the template")]
-        category: Option<String>,
-    },
-    
-    /// Delete a custom template
-    Delete {
-        /// Name of the template to delete
-        #[arg(value_name = "NAME", help = "Name of the template to delete")]
-        name: String,
-        
-        /// Force deletion without confirmation
-        #[arg(long, help = "Force deletion without confirmation")]
-        force: bool,
-    },
-    
-    /// Export templates to a file
-    Export {
-        /// Output file path
-        #[arg(value_name = "FILE", help = "Output file path")]
-        output: PathBuf,
-        
-        /// Pretty print JSON output
-        #[arg(long, help = "Pretty print JSON output")]
-        pretty: bool,
-    },
-    
-    /// Import templates from a file
-    Import {
-        /// Input file path
-        #[arg(value_name = "FILE", help = "Input file path")]
-        input: PathBuf,
-        
-        /// Merge with existing templates instead of replacing
-        #[arg(long, help = "Merge with existing templates")]
-        merge: bool,
-    },
-    
-    /// Show template help and examples
-    Examples,
 }
 
 /// Parse command line arguments and return the CLI structure

@@ -50,10 +50,12 @@ fn initialize_rask() -> Result<(), Box<dyn std::error::Error>> {
 fn run_command(command: &Commands) -> commands::CommandResult {
     match command {
         Commands::Init { filepath } => commands::init_project(filepath),
-        Commands::Show => commands::show_project(),
+        Commands::Show { group_by_phase, phase, detailed, collapse_completed } => {
+            commands::show_project_enhanced(*group_by_phase, phase.as_deref(), *detailed, *collapse_completed)
+        },
         Commands::Complete { id } => commands::complete_task(*id),
-        Commands::Add { description, tag, priority, phase, note, dependencies } => {
-            commands::add_task_enhanced(description, tag, priority, phase, note, dependencies)
+        Commands::Add { description, tag, priority, phase, note, dependencies, estimated_hours } => {
+            commands::add_task_enhanced(description, tag, priority, phase, note, dependencies, estimated_hours)
         },
         Commands::Remove { id } => commands::remove_task(*id),
         Commands::Edit { id, description } => commands::edit_task(*id, description),
@@ -104,11 +106,46 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         Commands::Notes(notes_command) => {
             handle_notes_command(notes_command)
         },
-        Commands::Export { format, output, include_completed, tags, priority, phase, pretty } => {
-            commands::export_roadmap(format, output.as_deref(), *include_completed, tags.as_deref(), priority.as_ref(), phase.as_ref(), *pretty)
+        Commands::Export { 
+            format, output, include_completed, tags, priority, phase, pretty,
+            created_after, created_before, min_estimated_hours, max_estimated_hours,
+            min_actual_hours, max_actual_hours, with_time_data, active_sessions_only,
+            over_estimated_only, under_estimated_only
+        } => {
+            commands::export_roadmap_enhanced(
+                format, output.as_deref(), *include_completed, tags.as_deref(), 
+                priority.as_ref(), phase.as_ref(), *pretty,
+                created_after.as_deref(), created_before.as_deref(),
+                *min_estimated_hours, *max_estimated_hours,
+                *min_actual_hours, *max_actual_hours,
+                *with_time_data, *active_sessions_only,
+                *over_estimated_only, *under_estimated_only
+            )
         },
         Commands::Template(template_command) => {
             commands::handle_template_command(template_command.clone())
+        },
+        Commands::Start { id, description } => {
+            commands::start_time_tracking(*id, description.as_deref())
+        },
+        Commands::Stop => {
+            commands::stop_time_tracking()
+        },
+        Commands::Time { task_id, summary, detailed } => {
+            commands::show_time_tracking(task_id, *summary, *detailed)
+        },
+        Commands::Analytics { overview, time, phases, priorities, trends, export, all } => {
+            commands::show_analytics(
+                *overview || *all, 
+                *time || *all, 
+                *phases || *all, 
+                *priorities || *all, 
+                *trends || *all, 
+                export.as_ref().map(|p| p.to_string_lossy().to_string())
+            )
+        },
+        Commands::Timeline { detailed, active_only, compact, page, page_size } => {
+            commands::show_timeline(*detailed, *active_only, *compact, *page, *page_size)
         },
     }
 }
