@@ -14,6 +14,7 @@ pub mod phases;
 pub mod notes;
 pub mod templates;
 pub mod utils;
+pub mod interactive;
 
 // Re-export all public command functions
 pub use analytics::*;
@@ -26,6 +27,7 @@ pub use dependencies::*;
 pub use phases::*;
 pub use notes::*;
 pub use templates::*;
+pub use interactive::*;
 
 // Common types used across all command modules
 pub type CommandResult = Result<(), Box<dyn std::error::Error>>;
