@@ -5,20 +5,21 @@ Welcome to the comprehensive Rask user guide! This document covers all features,
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-2. [Core Commands](#core-commands)
-3. [Advanced Task Management](#advanced-task-management)
-4. [Roadmap Phases System](#roadmap-phases-system)
-5. [Timeline Visualization & Pagination](#timeline-visualization--pagination)
-6. [Time Estimation and Tracking](#time-estimation-and-tracking)
-7. [Filtering & Search](#filtering--search)
-8. [Project Management](#project-management)
-9. [Dependency Management](#dependency-management)
-10. [Configuration System](#configuration-system)
-11. [Bulk Operations](#bulk-operations)
-12. [Export Capabilities](#export-capabilities)
-13. [Usage Examples](#usage-examples)
-14. [Terminal UI Features](#terminal-ui-features)
-15. [Tips & Best Practices](#tips--best-practices)
+2. [Interactive TUI Mode](#interactive-tui-mode)
+3. [Core Commands](#core-commands)
+4. [Advanced Task Management](#advanced-task-management)
+5. [Roadmap Phases System](#roadmap-phases-system)
+6. [Timeline Visualization & Pagination](#timeline-visualization--pagination)
+7. [Time Estimation and Tracking](#time-estimation-and-tracking)
+8. [Filtering & Search](#filtering--search)
+9. [Project Management](#project-management)
+10. [Dependency Management](#dependency-management)
+11. [Configuration System](#configuration-system)
+12. [Bulk Operations](#bulk-operations)
+13. [Export Capabilities](#export-capabilities)
+14. [Usage Examples](#usage-examples)
+15. [Terminal UI Features](#terminal-ui-features)
+16. [Tips & Best Practices](#tips--best-practices)
 
 ## Getting Started
 
@@ -67,6 +68,250 @@ rask show
 ```bash
 rask complete 1
 ```
+
+## Interactive TUI Mode
+
+**NEW**: Rask includes a comprehensive Terminal User Interface (TUI) that provides a modern, interactive project management experience directly in your terminal.
+
+### Launching the TUI
+
+```bash
+# Basic launch
+rask interactive
+
+# Launch with specific project
+rask interactive --project my-project
+
+# Skip welcome message
+rask interactive --no-welcome
+```
+
+### TUI Overview
+
+The Interactive TUI features a multi-view dashboard system with:
+
+- **Navigation Bar**: Quick access to all views with keyboard shortcuts
+- **Context-Aware Help**: Bottom-bar help that changes based on current view
+- **Real-Time Updates**: Instant feedback for all actions
+- **Settings Persistence**: Remembers your preferences and view settings
+- **Professional Layout**: Beautiful terminal interface with colors and formatting
+
+### TUI Views
+
+#### 🏠 Home Dashboard (F1)
+Your project command center with:
+
+- **Project Overview**: Title, progress bars, task statistics
+- **Recent Activity**: Live feed of actions and updates
+- **Quick Actions**: Function key shortcuts and common commands
+- **Phase Summary**: Overview of development phases with progress
+- **Time Tracking**: Current session info and project time statistics
+
+**Navigation:**
+- View project statistics and overall progress
+- Access quick action shortcuts
+- Monitor recent activity and changes
+- Get overview of all available functions
+
+#### 📝 Task Manager (F2)
+Interactive task management interface with:
+
+- **Task List**: Scrollable list with all tasks, priorities, and status
+- **Real-Time Completion**: Toggle task completion with Enter/Space
+- **Dependency Indicators**: Visual representation of task dependencies
+- **Phase Indicators**: Emoji-based phase identification
+- **Mini AI Assistant**: Task-focused chat interface
+- **Time Tracking Display**: Shows estimated vs actual time for tasks
+
+**Key Features:**
+- **Interactive Completion**: Toggle tasks complete/pending instantly
+- **Scrolling Support**: Navigate large task lists with Up/Down arrows
+- **Context Information**: See dependencies, priorities, and phases at a glance
+- **Integrated Chat**: Ask questions about specific tasks
+- **Progress Tracking**: Real-time progress updates
+
+**Keyboard Shortcuts:**
+- `↑↓`: Navigate tasks
+- `Enter`/`Space`: Toggle task completion
+- `Tab`: Switch between task list and chat
+- `PgUp`/`PgDn`: Fast scroll through tasks
+
+#### 🤖 AI Assistant (F3)
+Chat interface for task planning and assistance:
+
+- **Full-Screen Chat**: Dedicated conversation interface
+- **Message History**: Persistent chat log with timestamps
+- **Scrolling Support**: Navigate through long conversations
+- **Input Field**: Type messages and questions
+- **Smart Responses**: Context-aware assistance (foundation for future AI integration)
+
+**Usage:**
+- Ask questions about project planning
+- Get help with task breakdown
+- Request assistance with dependencies
+- Chat about project strategy
+- Get keyboard shortcut help
+
+**Keyboard Shortcuts:**
+- `↑↓`: Scroll through chat messages
+- `Tab`: Switch between chat and input
+- `Enter`: Send messages
+- `PgUp`/`PgDn`: Fast scroll chat history
+
+#### 📄 Templates (F4)
+Browse and manage task templates:
+
+- **Template Categories**: Organized by type (Development, Testing, etc.)
+- **Template Preview**: See template details and structure
+- **Quick Application**: Apply templates to create new tasks
+- **Custom Templates**: Create and manage your own patterns
+
+**Features:**
+- Browse built-in templates for common scenarios
+- Preview template structure before applying
+- Create consistent task patterns
+- Speed up project setup with proven templates
+
+#### 📊 Analytics (F5)
+Project insights and progress visualization:
+
+- **Progress Metrics**: Completion percentages and task distribution
+- **Priority Analysis**: Breakdown by priority levels
+- **Phase Statistics**: Progress tracking by development phases
+- **Time Analysis**: Estimated vs actual time comparisons
+- **Trend Visualization**: Project momentum and velocity insights
+
+**Displays:**
+- Task distribution charts and statistics
+- Priority breakdown with visual indicators
+- Phase-based progress tracking
+- Time estimation accuracy analysis
+- Project health indicators
+
+#### ⚙️ Settings (F6)
+Customize TUI behavior and appearance:
+
+- **Configuration Categories**: Organized settings sections
+- **Real-Time Preview**: See changes instantly
+- **Persistence**: Save settings for future sessions
+- **Project-Specific**: Configure per-project preferences
+- **Default Values**: Reset to defaults when needed
+
+**Settings Categories:**
+- **Display**: Color schemes, layout options, formatting
+- **Behavior**: Default priorities, phases, confirmation settings
+- **Performance**: Refresh rates, auto-save options
+- **AI Assistant**: Future AI integration preferences
+- **Export**: Default formats and options
+
+#### 🔄 Project Switcher (F7/p)
+Seamless multi-project navigation:
+
+- **Project List**: All available projects with statistics
+- **Current Project**: Highlighted active project
+- **Project Details**: Creation dates, descriptions, state files
+- **Quick Switching**: Instant project switching with Enter
+- **Project Statistics**: Task counts and completion progress for each project
+
+**Features:**
+- **Visual Project List**: See all projects with progress indicators
+- **Current Project Highlighting**: Clear indication of active project
+- **Project Metadata**: Creation dates, descriptions, file paths
+- **Instant Switching**: Change projects without leaving TUI
+- **Statistics Display**: Quick overview of each project's status
+
+**Navigation:**
+- `↑↓`: Navigate project list
+- `Enter`: Switch to selected project
+- `r`: Refresh project list
+- `F1`: Return to home after switching
+
+### Universal Keyboard Shortcuts
+
+These shortcuts work across all views:
+
+| Shortcut | Action |
+|----------|--------|
+| `F1` | Home Dashboard |
+| `F2` | Task Manager |
+| `F3` | AI Assistant |
+| `F4` | Templates |
+| `F5` | Analytics |
+| `F6` | Settings |
+| `F7` / `p` | Project Switcher |
+| `Tab` | Cycle through panels in current view |
+| `h` | Show help and shortcuts |
+| `r` | Refresh project data |
+| `s` | Save current settings |
+| `Esc` | Return to Home view |
+| `q` / `Ctrl+C` | Quit application |
+
+### TUI Settings and Persistence
+
+The TUI automatically saves your preferences:
+
+- **Default View**: Which view to open on startup
+- **Window Layout**: Panel sizes and arrangements
+- **Display Options**: Color schemes and formatting
+- **Behavior Settings**: Default actions and confirmations
+
+Settings are stored in `~/.config/rask/tui_settings.json` and loaded automatically.
+
+### TUI Workflow Examples
+
+#### Daily Development Workflow
+```bash
+# Start your day with TUI
+rask interactive
+
+# Review project status (Home Dashboard - F1)
+# Check tasks ready to work on (Task Manager - F2)
+# Toggle task completion as you work (Enter/Space)
+# Ask questions about complex tasks (AI Assistant - F3)
+# Apply templates for new features (Templates - F4)
+# Check progress at end of day (Analytics - F5)
+```
+
+#### Multi-Project Management
+```bash
+# Launch TUI
+rask interactive
+
+# Switch between projects (Project Switcher - F7/p)
+# Compare progress across projects (Analytics - F5)
+# Apply consistent templates across projects (Templates - F4)
+# Configure project-specific settings (Settings - F6)
+```
+
+#### Sprint Planning Session
+```bash
+# Open TUI for collaborative planning
+rask interactive
+
+# Review current progress (Analytics - F5)
+# Check task dependencies (Task Manager - F2)
+# Plan next tasks with templates (Templates - F4)
+# Discuss priorities with team (AI Assistant - F3)
+# Configure sprint settings (Settings - F6)
+```
+
+### TUI vs CLI Usage
+
+**Use TUI when:**
+- Interactive task management and real-time updates
+- Exploring project status and navigation
+- Multi-project switching and comparison
+- Learning Rask features with guided interface
+- Collaborative planning and discussion
+- Visual progress tracking and analytics
+
+**Use CLI when:**
+- Automation and scripting
+- Bulk operations and batch processing
+- Integration with other tools
+- Quick single commands
+- Export and reporting tasks
+- CI/CD pipeline integration
 
 ## Core Commands
 
@@ -1473,6 +1718,69 @@ rask bulk set-priority 10,11,12,13 high
 rask bulk set-phase 14,15,16 beta
 ```
 
+### Scenario 6: Interactive TUI for Modern Project Management
+
+```bash
+# Launch interactive TUI for comprehensive project management
+rask interactive
+
+# Daily workflow using TUI interface:
+
+# 1. Start with Home Dashboard (F1)
+#    - Review project overview and statistics
+#    - Check recent activity and progress bars
+#    - See quick action shortcuts
+
+# 2. Switch to Task Manager (F2)
+#    - Navigate tasks with ↑↓ arrow keys
+#    - Toggle task completion with Enter/Space
+#    - View dependencies and phase indicators
+#    - See time tracking information
+
+# 3. Use Project Switcher (F7 or p key)
+#    - Navigate between multiple projects
+#    - See project statistics and progress
+#    - Switch projects instantly with Enter
+#    - Compare project states
+
+# 4. Check Analytics (F5)
+#    - View progress visualization
+#    - Analyze priority distribution
+#    - Check phase completion rates
+#    - Review time estimation accuracy
+
+# 5. Apply Templates (F4)
+#    - Browse available task templates
+#    - Apply templates for consistent task creation
+#    - Use templates for recurring patterns
+
+# 6. Chat with AI Assistant (F3)
+#    - Ask questions about project planning
+#    - Get help with task breakdown
+#    - Request dependency guidance
+#    - Chat about project strategy
+
+# 7. Configure Settings (F6)
+#    - Customize TUI appearance and behavior
+#    - Set default views and preferences
+#    - Configure project-specific settings
+#    - Save settings for future sessions
+
+# Throughout the session:
+# - Use Tab to cycle through panels
+# - Use h for context-sensitive help
+# - Use r to refresh project data
+# - Use s to save current settings
+# - Use q to quit when done
+
+# Example multi-project workflow in TUI:
+# F7 → Select "backend-api" project → F2 → Complete some tasks
+# F7 → Switch to "mobile-app" project → F5 → Check analytics
+# F7 → Switch to "documentation" project → F4 → Apply templates
+# F6 → Configure project-specific settings
+# F1 → Return to home dashboard for overview
+```
+
 ## Terminal UI Features
 
 Rask provides a beautiful, intuitive terminal interface with:
@@ -1512,6 +1820,15 @@ Rask provides a beautiful, intuitive terminal interface with:
 - **Project context**: Always shows current project
 - **Phase context**: Clear phase organization
 - **Hover effects**: Interactive elements where supported
+
+### Interactive TUI Features
+- **Multi-view dashboard**: 7 integrated views with seamless navigation
+- **Real-time updates**: Instant task completion toggling and progress updates
+- **Project switcher**: Seamless navigation between multiple projects
+- **Keyboard navigation**: F1-F7 shortcuts for instant view switching
+- **Context-aware help**: Dynamic help system that changes based on current view
+- **Settings persistence**: Remembers preferences and customizations
+- **Professional interface**: Modern TUI experience with colors and formatting
 
 ### Information Density
 - **Compact view**: Essential information only
@@ -1616,7 +1933,16 @@ Rask provides a beautiful, intuitive terminal interface with:
 
 ### Workflow Optimization
 
-1. **Start each day with timeline and phase analysis:**
+1. **Start each day with Interactive TUI (Recommended):**
+   ```bash
+   rask interactive                 # Launch TUI dashboard
+   # F1 - Review Home Dashboard with project overview
+   # F2 - Check Task Manager for ready tasks
+   # F5 - Review Analytics for progress insights
+   # F7 - Switch projects if needed
+   ```
+
+2. **Or use traditional CLI for specific operations:**
    ```bash
    rask timeline                    # Overview of all phases
    rask timeline --active-only      # Focus on active phases
@@ -1625,7 +1951,17 @@ Rask provides a beautiful, intuitive terminal interface with:
    rask show --phase mvp            # Current focus phase
    ```
 
-2. **Use bulk operations for phase transitions:**
+2. **Use TUI for interactive project management:**
+   ```bash
+   # Interactive bulk operations via TUI
+   rask interactive
+   # F2 - Task Manager: Toggle multiple task completions
+   # F7 - Project Switcher: Compare and switch projects
+   # F5 - Analytics: Review progress across phases
+   # F6 - Settings: Configure project preferences
+   ```
+
+3. **Use bulk CLI operations for automation:**
    ```bash
    # Move completed MVP features to beta
    rask bulk set-phase 15,16,17 beta
@@ -1634,7 +1970,7 @@ Rask provides a beautiful, intuitive terminal interface with:
    rask bulk set-phase 20,21,22 release
    ```
 
-3. **Regular progress exports and timeline reviews:**
+4. **Regular progress exports and timeline reviews:**
    ```bash
    # Weekly team report with phases
    rask export html --include-completed -o weekly_report.html
@@ -1779,6 +2115,41 @@ Rask provides a beautiful, intuitive terminal interface with:
    rask config set behavior.track_break_time false
    ```
 
+### Interactive TUI Best Practices
+
+1. **Optimize TUI workflow for daily development:**
+   ```bash
+   # Start your development day
+   rask interactive
+   
+   # Daily routine using TUI:
+   # F1 - Home: Quick project overview
+   # F2 - Tasks: Work on ready tasks, toggle completion
+   # F5 - Analytics: Check progress and priorities
+   # F7 - Projects: Switch between different projects
+   # F6 - Settings: Adjust preferences as needed
+   ```
+
+2. **Use TUI for team collaboration:**
+   ```bash
+   # Team standup with TUI
+   rask interactive
+   # F5 - Analytics: Show team progress and bottlenecks
+   # F2 - Task Manager: Review blockers and dependencies
+   # F7 - Project Switcher: Compare multiple project states
+   # F4 - Templates: Discuss standard task patterns
+   ```
+
+3. **Configure TUI for optimal experience:**
+   ```bash
+   # Launch TUI and configure settings (F6)
+   rask interactive
+   # Set default view to Task Manager for development focus
+   # Configure auto-refresh for real-time updates
+   # Save project-specific preferences
+   # Customize keyboard shortcuts if needed
+   ```
+
 ### Timeline Navigation & Visualization
 
 1. **Optimize timeline display for your workflow:**
@@ -1835,6 +2206,6 @@ Rask provides a beautiful, intuitive terminal interface with:
 
 ---
 
-This user guide covers all the features and capabilities of Rask, including the new phases system. For quick reference, see the main [README](README.md). For issues or feature requests, please visit the [GitHub repository](https://github.com/tito-sala/rask).
+This user guide covers all the features and capabilities of Rask, including the comprehensive Interactive TUI system with project switcher, phases management, time tracking, and all CLI functionality. For quick reference, see the main [README](README.md). For issues or feature requests, please visit the [GitHub repository](https://github.com/tito-sala/rask).
 
-**Happy project planning with phases!** 🎯 
+**Happy project planning with the Interactive TUI!** 🎯 🖥️

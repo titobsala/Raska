@@ -147,6 +147,9 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         Commands::Timeline { detailed, active_only, compact, page, page_size } => {
             commands::show_timeline(*detailed, *active_only, *compact, *page, *page_size)
         },
+        Commands::Interactive { project, no_welcome } => {
+            commands::run_interactive_mode(project.as_deref(), *no_welcome)
+        },
     }
 }
 

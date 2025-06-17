@@ -23,7 +23,7 @@ pub use template::TemplateCommands;
 #[derive(ClapParser)]
 #[command(
     name = "rask",
-    version = "2.6.2",
+    version = "2.7.0",
     about = "An advanced CLI project planner with tags, priorities, dependencies, phases, and templates",
     long_about = "Rask is a powerful command-line project planner that helps you track tasks defined in Markdown files. \
                   It supports tags, priorities, task dependencies, custom phases, task templates, and advanced filtering capabilities."
@@ -358,6 +358,18 @@ pub enum Commands {
         /// Number of phases to show per page (default: 5)
         #[arg(long, value_name = "SIZE", help = "Number of phases to show per page (default: 5)")]
         page_size: Option<usize>,
+    },
+
+    /// Launch interactive TUI mode with AI assistant
+    #[command(alias = "tui")]
+    Interactive {
+        /// Start with specific project
+        #[arg(long, value_name = "PROJECT", help = "Start with a specific project")]
+        project: Option<String>,
+        
+        /// Skip the welcome screen
+        #[arg(long, help = "Skip the welcome screen and go directly to the interface")]
+        no_welcome: bool,
     },
 }
 
