@@ -2,6 +2,7 @@ use clap::{Parser as ClapParser, Subcommand};
 use std::path::PathBuf;
 
 // Import all the modularized CLI components
+pub mod ai;
 pub mod types;
 pub mod project;
 pub mod phase;
@@ -11,6 +12,7 @@ pub mod bulk;
 pub mod template;
 
 // Re-export the types for easier access
+pub use ai::AiCommands;
 pub use types::{CliPriority, ExportFormat};
 pub use project::ProjectCommands;
 pub use phase::PhaseCommands;
@@ -359,6 +361,10 @@ pub enum Commands {
         #[arg(long, value_name = "SIZE", help = "Number of phases to show per page (default: 5)")]
         page_size: Option<usize>,
     },
+
+    /// AI-powered task management and assistance
+    #[command(subcommand)]
+    Ai(AiCommands),
 
     /// Launch interactive TUI mode with AI assistant
     #[command(alias = "tui")]

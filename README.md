@@ -275,6 +275,21 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
 | `rask template create <name> <desc> [options]` | Create custom template |
 | `rask template delete <name>` | Delete custom template |
 | `rask template examples` | Show help and AI integration examples |
+| `rask template generate <desc> [options]` | **NEW**: AI-powered template generation |
+| `rask template suggest [options]` | **NEW**: AI template suggestions for project |
+| `rask template enhance <name> [options]` | **NEW**: AI template enhancement |
+
+### AI Commands
+
+| Command | Description |
+|---------|-------------|
+| `rask ai chat [message] [options]` | **NEW**: Interactive AI chat with project context |
+| `rask ai analyze [options]` | **NEW**: AI analysis of current tasks and project health |
+| `rask ai breakdown <description> [options]` | **NEW**: Break down complex tasks using AI |
+| `rask ai insights [options]` | **NEW**: Get AI-powered project insights and recommendations |
+| `rask ai configure [options]` | **NEW**: Configure AI settings and API keys |
+| `rask ai summary [options]` | **NEW**: Generate AI-powered project status summary |
+| `rask ai suggest [options]` | **NEW**: Get AI suggestions for next tasks |
 
 ## 🎨 Interactive TUI Preview
 
@@ -290,8 +305,8 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
 │ │ ▶ ✅ 🔥 #1 Set up development environment 🚀      │ │ │ Hello! I'm here to help │
 │ │   ✅ ⬆️ #2 Design database schema 🚀 [2.8h]      │ │ │ you manage your tasks.  │
 │ │   ✅ 🔥 #3 Create API endpoints #backend 🧪      │ │ │                          │
-│ │   □ ⬆️ #4 Implement authentication 🧪 [4.5h]     │ │ │ You:                    │
-│ │       🔗 Depends on: 2, 3                        │ │ │ Break down task #4      │
+│ │   □ ⬆️ #4 Implement authentication 🧪 [4.5h]     │ │ │                          │
+│ │       🔗 Depends on: 2, 3                        │ │ │                          │
 │ │   ⏱️ ▶️ #5 Write tests #testing 🎯 [1.2h tracked] │ │ │                          │
 │ │       🔗 Depends on: 4 | 🕐 Active session       │ │ │                          │
 │ │   □ 🔥 #6 Deploy to production #deployment 🎯    │ │ │                          │
@@ -337,13 +352,33 @@ F1-F7: Switch views • Tab: Change focus • ↑↓: Navigate • Enter/Space: 
   🎯 Great progress! Focus on Beta phase next.
 ```
 
-## 🤖 AI-Assisted Roadmap Generation
+## 🤖 AI-Powered Project Management
 
-Rask provides comprehensive templates and examples that work perfectly with AI assistants like ChatGPT, Claude, or any other AI tool. While Rask doesn't have built-in AI integration yet, it's designed to work seamlessly with AI-generated content, dramatically speeding up project planning and ensuring consistent task structure.
+Rask includes comprehensive AI integration powered by Google Gemini, transforming how you plan, manage, and execute projects. The AI system provides intelligent assistance for task breakdown, project analysis, template generation, and strategic guidance.
 
-### 📝 Copy-Paste Template for AI Assistants
+### 🧠 Built-in AI Features
 
-Use this template with any AI assistant to generate a complete roadmap that works perfectly with Rask:
+**AI Command Interface:**
+- `rask ai chat` - Interactive AI conversations with project context
+- `rask ai analyze` - AI-powered task and project health analysis  
+- `rask ai breakdown <description>` - Break down complex tasks automatically
+- `rask ai insights` - Get strategic project insights and recommendations
+- `rask ai suggest` - AI suggestions for next logical tasks
+- `rask ai summary` - Generate comprehensive project status reports
+
+**AI Template System:**
+- `rask template generate <description>` - Generate contextual templates with AI
+- `rask template suggest` - AI suggestions for missing template types
+- `rask template enhance <name>` - AI-powered template improvements
+
+**Interactive TUI Integration:**
+- F3: AI Assistant view with real-time chat interface
+- Context-aware AI responses based on current project state
+- Seamless integration between CLI and TUI AI features
+
+### 📝 External AI Assistant Template
+
+For additional AI assistance with external tools, use this template:
 
 ```markdown
 Create a development roadmap for a [PROJECT_TYPE] with the following structure. 
@@ -433,15 +468,16 @@ Each phase should have appropriate tasks with tags, priorities, and implementati
 - **Time-Saving**: Generate complete roadmaps in seconds instead of hours
 - **Template Integration**: Use Rask's task templates to standardize recurring tasks
 
-### 🔄 Workflow Integration
+### 🔄 AI-Powered Workflow
 
-1. **Generate**: Use AI assistants with our templates to create your initial roadmap
-2. **Initialize**: `rask init ai-generated-roadmap.md`
-3. **Enhance**: Use `rask template` commands to add standardized tasks
-4. **Execute**: Track progress with Rask's powerful features
-5. **Iterate**: Export progress and feed back to AI for roadmap updates
+1. **AI Analysis**: `rask ai analyze` - Get intelligent project health assessment
+2. **Smart Planning**: `rask ai breakdown "complex feature"` - Break down tasks automatically  
+3. **Template Generation**: `rask template generate "API development"` - Create contextual templates
+4. **Continuous Insights**: `rask ai insights` - Get strategic recommendations
+5. **Interactive Chat**: `rask ai chat` or F3 in TUI - Real-time AI assistance
+6. **Template Enhancement**: `rask template enhance` - Improve existing templates with AI
 
-> **Future Enhancement**: Direct AI integration is planned for future releases, which will automate this workflow even further.
+> **Advanced AI Features**: The AI system learns from your project patterns and provides increasingly personalized assistance.
 
 ## 🏗️ Architecture
 
@@ -458,11 +494,43 @@ src/
 │   ├── export.rs      # Export functionality
 │   ├── config.rs      # Configuration management
 │   ├── dependencies.rs # Dependency analysis
-│   └── utils.rs       # Shared utilities
+│   ├── analytics.rs   # Analytics and insights
+│   ├── interactive.rs # Interactive TUI mode
+│   ├── templates.rs   # Template management
+│   ├── ai.rs         # AI-powered commands
+│   ├── notes.rs      # Implementation notes
+│   └── utils.rs      # Shared utilities
+├── ai/                 # AI integration modules
+│   ├── service.rs     # AI service layer
+│   ├── models.rs      # AI data models
+│   ├── gemini.rs      # Google Gemini provider
+│   └── mod.rs         # AI module exports
+├── cli/               # CLI argument parsing
+│   ├── ai.rs         # AI command definitions
+│   ├── template.rs   # Template command definitions
+│   ├── bulk.rs       # Bulk operation definitions
+│   ├── config.rs     # Config command definitions
+│   ├── notes.rs      # Notes command definitions
+│   ├── phase.rs      # Phase command definitions
+│   ├── project.rs    # Project command definitions
+│   └── types.rs      # Shared CLI types
+├── ui/                # Terminal UI components
+│   ├── analytics.rs  # Analytics visualization
+│   ├── dependencies.rs # Dependency visualization
+│   ├── messages.rs   # Message display utilities
+│   ├── progress.rs   # Progress bars and indicators
+│   ├── projects.rs   # Project display utilities
+│   ├── roadmap.rs    # Roadmap visualization
+│   ├── tasks.rs      # Task display utilities
+│   └── helpers.rs    # UI helper functions
 ├── model.rs           # Data models and types
 ├── cli.rs             # Command-line interface
-├── main.rs            # Application entry point
-└── ...                # UI, parsing, and utilities
+├── config.rs         # Configuration management
+├── project.rs        # Project state management
+├── state.rs          # Application state
+├── parser.rs         # Markdown parsing
+├── markdown_writer.rs # Markdown file sync
+└── main.rs           # Application entry point
 ```
 
 **Benefits:**
@@ -521,45 +589,50 @@ src/
 - [x] **Enhanced UI layouts with multi-column sectioned displays**
 - [x] **Comprehensive phase statistics and navigation**
 
-### ✅ Phase 5: Complete Interactive TUI System 🖥️ (v2.8.0 - Recently Completed)
-- [x] **Comprehensive multi-view dashboard with navigation bar**
-- [x] **Home Dashboard with project overview and quick actions**
-- [x] **Interactive Task Manager with real-time completion toggling**
-- [x] **AI Assistant interface with chat functionality (foundation)**
-- [x] **Templates view for browsing and applying task patterns**
+### ✅ Phase 5: AI-Powered Product Development Environment 🤖 (v2.7.0 - v2.8.0 - Completed)
+- [x] **Core AI Infrastructure with Google Gemini integration**
+- [x] **Intelligent Task Analysis with AI-powered insights**
+- [x] **CLI Command Interface with interactive AI chat**
+- [x] **Advanced Template Integration** (generate, suggest, enhance)
+- [x] **Comprehensive Interactive TUI System**
+- [x] **Multi-view dashboard with navigation bar (Home, Tasks, AI, Templates, Analytics, Settings, Projects)**
+- [x] **Real-time task completion toggling and progress updates**
+- [x] **AI Assistant interface with chat functionality**
+- [x] **Templates view with AI-powered generation and suggestions**
 - [x] **Analytics view with progress visualization and insights**
-- [x] **Settings view with TUI customization options**
-- [x] **Project Switcher for seamless multi-project navigation**
-- [x] **Keyboard navigation system (F1-F7) with context-aware help**
-- [x] **Settings persistence and user preference management**
-- [x] **Professional TUI experience rivaling modern desktop applications**
+- [x] **Settings persistence and customizable TUI interface**
+- [x] **Professional TUI experience with keyboard navigation (F1-F7)**
 
-### 🚧 Phase 6: Enhanced Export & Plugin Foundation 📤 (v2.9.0 - Current Focus)
-- [ ] Time data integration in all export formats (JSON, CSV, HTML)
-- [ ] Advanced filtering in exports (date ranges, time thresholds)
-- [ ] Report templates (sprint reports, time tracking reports)
-- [ ] Export scheduling and automation
-- [ ] Interactive HTML reports with charts and visualizations
-- [ ] Custom export configurations and profiles
-- [ ] Plugin system foundation and architecture design
+### 🚧 Phase 6: Web Dashboard Interface 🌐 (v2.8.0 - Next Major Phase)
+- [ ] **Dashboard Backend** - REST API for project data with WebSocket support
+- [ ] **Interactive Frontend** - Real-time project visualization and charts
+- [ ] **Web-based Time Tracking** - Browser-based time tracking interface
+- [ ] **AI Integration Interface** - Web-based AI assistant chat
+- [ ] **Team Collaboration Features** - Multi-user support and real-time updates
 
 ### 🔮 Future Development Phases
 
-**Phase 7: Web Dashboard Interface 🌐 (v3.1.0)**
-- Local web server for dashboard with REST API
-- Real-time project visualization and interactive time tracking
-- Team collaboration features and multi-user support
+**Phase 7: Advanced AI Features 🧠 (v2.9.0)**
+- Structured collaboration framework with living sources of truth
+- Template-driven product workflows with cross-functional integration
+- Historical data analysis and pattern recognition
+- Smart project optimization and workflow automation
 
-**Phase 8: External Tool Integration 🔗 (v3.2.0)**
-- GitHub integration (sync with issues, PRs, commits)
-- Git integration (link commits to tasks)
-- Calendar integration (time blocking, meeting tracking)
-- Slack/Discord notifications and custom slash commands
+**Phase 8: Plugin System Foundation 🔌 (v3.0.0)**
+- Core plugin framework with safe sandbox environment
+- Hook system integration for pre/post command triggers
+- Built-in plugin examples for custom commands and integrations
 
-**Phase 10+: Advanced Features 🚀 (v4.0.0+)**
-- AI-powered task estimation and scheduling
-- Mobile companion app with offline sync
-- Enterprise features and multi-tenant architecture
+**Phase 9: External Tool Integration 🔗 (v3.1.0)**
+- Git/GitHub integration with automatic task linking
+- Calendar integration with time blocking and sync
+- Communication platform integration (Slack/Discord)
+- Project management tool sync (Jira, Trello, Linear)
+
+**Phase 10+: Mobile & Enterprise 📱🏢 (v3.2.0+)**
+- Mobile companion app with offline synchronization
+- Enterprise features with multi-tenant architecture
+- Advanced AI analytics and compliance features
 
 > 📋 **Complete Development Plan**: See [roadmap.md](roadmap.md) for detailed phase breakdown, timelines, and technical specifications.
 
