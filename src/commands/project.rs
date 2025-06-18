@@ -59,8 +59,29 @@ pub fn switch_project(name: &str) -> CommandResult {
     
     ui::display_success(&format!("Switched to project '{}'", name));
     
-    // Show the project status
+    // Show the project status (only for CLI, not TUI)
     super::core::show_project()?;
+    
+    Ok(())
+}
+
+/// Switch to a different project without showing status (TUI-safe)
+pub fn switch_project_tui_safe(name: &str) -> CommandResult {
+    use crate::project::{ProjectsConfig, set_current_project};
+    
+    // Load projects config
+    let mut projects_config = ProjectsConfig::load()?;
+    
+    // Check if project exists
+    if !projects_config.projects.contains_key(name) {
+        return Err(format!("Project '{}' not found", name).into());
+    }
+    
+    // Switch to the project
+    set_current_project(name)?;
+    
+    // Update last accessed time
+    projects_config.update_last_accessed(name)?;
     
     Ok(())
 }

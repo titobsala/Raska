@@ -1107,7 +1107,7 @@ checksum = "74765f6d916ee2faa39bc8e68e4f3ed8949b48cccdac59983d287a7cb71ce9c5"
 
 [[package]]
 name = "rask"
-version = "2.8.2"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "async-trait",

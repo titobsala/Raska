@@ -1,6 +1,6 @@
 [package]
 name = "rask"
-version = "2.8.2"
+version = "3.0.5"
 edition = "2021"
 description = "An advanced CLI project planner with tags, priorities, dependencies, and multi-project support"
 license = "MIT"
