@@ -449,9 +449,12 @@ pub fn migrate_legacy_files() -> Result<(), Error> {
         if file_name_str.starts_with(".rask_state_") && file_name_str.ends_with(".json") {
             let project_name = file_name_str
                 .strip_prefix(".rask_state_")
-                .unwrap()
-                .strip_suffix(".json")
-                .unwrap();
+                .and_then(|s| s.strip_suffix(".json"));
+            
+            let project_name = match project_name {
+                Some(name) => name,
+                None => continue, // Skip malformed filenames
+            };
             
             let new_state_file = data_dir.join(format!("project_{}.json", project_name));
             

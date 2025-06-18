@@ -152,7 +152,10 @@ fn run_command(command: &Commands) -> commands::CommandResult {
             commands::handle_ai_command(ai_command)
         },
         Commands::Interactive { project, no_welcome } => {
-            commands::run_interactive_mode(project.as_deref(), *no_welcome)
+            commands::run_interactive_mode(project.as_deref())
+        },
+        Commands::Sync { from_roadmap, from_details, from_global, to_files, force, dry_run } => {
+            commands::sync_project_files(*from_roadmap, *from_details, *from_global, *to_files, *force, *dry_run)
         },
     }
 }
