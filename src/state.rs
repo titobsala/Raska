@@ -129,7 +129,7 @@ pub fn get_workspace_info() -> Result<WorkspaceInfo, Error> {
     })
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct WorkspaceInfo {
     pub current_directory: PathBuf,
     pub workspace_type: WorkspaceType,
@@ -137,7 +137,7 @@ pub struct WorkspaceInfo {
     pub has_global_project: bool,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum WorkspaceType {
     Local,   // Has .rask/ directory
     Global,  // Uses global project system

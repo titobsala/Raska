@@ -102,6 +102,12 @@ pub struct App {
     pub selected_template: Option<usize>,
     /// Selected settings item index
     pub selected_setting: Option<usize>,
+    /// Cached workspace information to avoid repeated I/O
+    pub cached_workspace_info: Option<crate::state::WorkspaceInfo>,
+    /// Cached projects config to avoid repeated I/O
+    pub cached_projects_config: Option<crate::project::ProjectsConfig>,
+    /// Cached current project name to avoid repeated I/O
+    pub cached_current_project: Option<Option<String>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -168,7 +174,50 @@ impl Default for App {
             selected_project: None,
             selected_template: None,
             selected_setting: None,
+            cached_workspace_info: None,
+            cached_projects_config: None,
+            cached_current_project: None,
         }
+    }
+}
+
+impl App {
+    /// Get workspace info with caching
+    fn get_workspace_info(&mut self) -> crate::state::WorkspaceInfo {
+        if self.cached_workspace_info.is_none() {
+            self.cached_workspace_info = Some(
+                crate::state::get_workspace_info().unwrap_or_else(|_| crate::state::WorkspaceInfo {
+                    current_directory: std::env::current_dir().unwrap_or_default(),
+                    workspace_type: crate::state::WorkspaceType::None,
+                    has_local_rask: false,
+                    has_global_project: false,
+                })
+            );
+        }
+        self.cached_workspace_info.as_ref().unwrap().clone()
+    }
+    
+    /// Get projects config with caching
+    fn get_projects_config(&mut self) -> Result<crate::project::ProjectsConfig, Box<dyn Error>> {
+        if self.cached_projects_config.is_none() {
+            self.cached_projects_config = Some(crate::project::ProjectsConfig::load()?);
+        }
+        Ok(self.cached_projects_config.as_ref().unwrap().clone())
+    }
+    
+    /// Get current project name with caching
+    fn get_current_project(&mut self) -> Option<String> {
+        if self.cached_current_project.is_none() {
+            self.cached_current_project = Some(crate::project::get_current_project().ok().flatten());
+        }
+        self.cached_current_project.as_ref().unwrap().clone()
+    }
+    
+    /// Refresh cached data (call when project switching or other state changes)
+    fn refresh_cache(&mut self) {
+        self.cached_workspace_info = None;
+        self.cached_projects_config = None;
+        self.cached_current_project = None;
     }
 }
 
@@ -255,14 +304,19 @@ fn handle_navigation_keys(key: event::KeyEvent, app: &mut App) {
         // Navigation
         KeyCode::Down => {
             if app.current_view == AppView::ProjectSwitcher {
-                // Handle project switcher navigation
-                if let Ok(config) = crate::project::ProjectsConfig::load() {
-                    let project_count = config.projects.len();
-                    if project_count > 0 {
-                        let new_idx = app.selected_project.map_or(0, |i| (i + 1) % project_count);
-                        app.selected_project = Some(new_idx);
+                // Handle project switcher navigation - only for global workspaces
+                let workspace_info = app.get_workspace_info();
+                
+                if workspace_info.workspace_type == crate::state::WorkspaceType::Global {
+                    if let Ok(config) = app.get_projects_config() {
+                        let project_count = config.projects.len();
+                        if project_count > 0 {
+                            let new_idx = app.selected_project.map_or(0, |i| (i + 1) % project_count);
+                            app.selected_project = Some(new_idx);
+                        }
                     }
                 }
+                // For local workspaces, do nothing with up/down arrows
             } else {
                 // Handle main navigation
                 app.selected_nav_item = (app.selected_nav_item + 1) % app.navigation_items.len();
@@ -270,14 +324,19 @@ fn handle_navigation_keys(key: event::KeyEvent, app: &mut App) {
         }
         KeyCode::Up => {
             if app.current_view == AppView::ProjectSwitcher {
-                // Handle project switcher navigation
-                if let Ok(config) = crate::project::ProjectsConfig::load() {
-                    let project_count = config.projects.len();
-                    if project_count > 0 {
-                        let new_idx = app.selected_project.map_or(project_count - 1, |i| (i + project_count - 1) % project_count);
-                        app.selected_project = Some(new_idx);
+                // Handle project switcher navigation - only for global workspaces
+                let workspace_info = app.get_workspace_info();
+                
+                if workspace_info.workspace_type == crate::state::WorkspaceType::Global {
+                    if let Ok(config) = app.get_projects_config() {
+                        let project_count = config.projects.len();
+                        if project_count > 0 {
+                            let new_idx = app.selected_project.map_or(project_count - 1, |i| (i + project_count - 1) % project_count);
+                            app.selected_project = Some(new_idx);
+                        }
                     }
                 }
+                // For local workspaces, do nothing with up/down arrows
             } else {
                 // Handle main navigation
                 app.selected_nav_item = (app.selected_nav_item + app.navigation_items.len() - 1) % app.navigation_items.len();
@@ -287,20 +346,17 @@ fn handle_navigation_keys(key: event::KeyEvent, app: &mut App) {
             if app.current_view == AppView::ProjectSwitcher {
                 // Handle project switching
                 // Check if we're in a local workspace first
-                let workspace_info = crate::state::get_workspace_info().unwrap_or_else(|_| crate::state::WorkspaceInfo {
-                    current_directory: std::env::current_dir().unwrap_or_default(),
-                    workspace_type: crate::state::WorkspaceType::None,
-                    has_local_rask: false,
-                    has_global_project: false,
-                });
+                let workspace_info = app.get_workspace_info();
                 
                 // Only allow project switching in global mode
                 if workspace_info.workspace_type == crate::state::WorkspaceType::Global {
                     if let Some(selected_idx) = app.selected_project {
-                        if let Ok(config) = crate::project::ProjectsConfig::load() {
+                        if let Ok(config) = app.get_projects_config() {
                             if let Some(project_name) = config.projects.keys().nth(selected_idx) {
                                 // Use TUI-safe project switching
                                 if crate::commands::project::switch_project_tui_safe(project_name).is_ok() {
+                                    // Refresh cache after project switching
+                                    app.refresh_cache();
                                 // Try to load state for the new project
                                 app.roadmap = match crate::state::load_state() {
                                     Ok(roadmap) => {
@@ -368,16 +424,11 @@ fn handle_navigation_keys(key: event::KeyEvent, app: &mut App) {
                 // Initialize selections for specific views
                 if app.current_view == AppView::ProjectSwitcher {
                     // Check workspace type before initializing project selection
-                    let workspace_info = crate::state::get_workspace_info().unwrap_or_else(|_| crate::state::WorkspaceInfo {
-                        current_directory: std::env::current_dir().unwrap_or_default(),
-                        workspace_type: crate::state::WorkspaceType::None,
-                        has_local_rask: false,
-                        has_global_project: false,
-                    });
+                    let workspace_info = app.get_workspace_info();
                     
                     // Only initialize project selection for global workspaces
                     if workspace_info.workspace_type == crate::state::WorkspaceType::Global {
-                        if let Ok(config) = crate::project::ProjectsConfig::load() {
+                        if let Ok(config) = app.get_projects_config() {
                             if !config.projects.is_empty() && app.selected_project.is_none() {
                                 app.selected_project = Some(0);
                             }
@@ -419,27 +470,15 @@ fn handle_navigation_keys(key: event::KeyEvent, app: &mut App) {
                 };
             }
         }
-        KeyCode::Tab => {
-            // Switch focus to the main panel of the current view
-             app.focus = match app.current_view {
+        KeyCode::Tab | KeyCode::Esc => {
+            // Switch focus to the main panel of the current view or go back to navigation
+            app.focus = match app.current_view {
                 AppView::Tasks => PanelFocus::Tasks,
                 AppView::Templates => PanelFocus::Templates,
                 AppView::Settings => PanelFocus::Settings,
                 AppView::ProjectSwitcher => {
-                    // For project switcher, check if we should allow focus change
-                    let workspace_info = crate::state::get_workspace_info().unwrap_or_else(|_| crate::state::WorkspaceInfo {
-                        current_directory: std::env::current_dir().unwrap_or_default(),
-                        workspace_type: crate::state::WorkspaceType::None,
-                        has_local_rask: false,
-                        has_global_project: false,
-                    });
-                    
-                    // Only allow focus change for global projects, otherwise stay on navigation
-                    if workspace_info.workspace_type == crate::state::WorkspaceType::Global {
-                        PanelFocus::Settings // Use Settings focus for project switcher
-                    } else {
-                        PanelFocus::Navigation // Stay on navigation for local workspaces
-                    }
+                    // For project switcher, always allow going back to navigation
+                    PanelFocus::Navigation
                 },
                 _ => PanelFocus::Navigation,
             };
@@ -609,7 +648,7 @@ fn ui(f: &mut Frame, app: &mut App) {
 }
 
 /// Render the top navigation bar
-fn render_navigation_bar(f: &mut Frame, app: &App, area: Rect) {
+fn render_navigation_bar(f: &mut Frame, app: &mut App, area: Rect) {
     let nav_titles: Vec<String> = app.navigation_items.iter().map(|item| {
         match item {
             NavigationItem::Home => "Home".to_string(),
@@ -637,7 +676,7 @@ fn render_navigation_bar(f: &mut Frame, app: &App, area: Rect) {
     }
     let nav_line = Line::from(nav_line_spans);
     
-    let project_name = crate::project::get_current_project().ok().flatten().unwrap_or_else(|| "No Project".to_string());
+    let project_name = app.get_current_project().unwrap_or_else(|| "No Project".to_string());
     let view_name = format!("{:?}", app.current_view);
 
     let title = format!("🚀 Rask TUI • {} • Project: {} ", view_name, project_name);
@@ -816,12 +855,7 @@ fn render_settings_view(f: &mut Frame, app: &mut App, area: Rect) {
 /// Render the Project Switcher view
 fn render_project_switcher_view(f: &mut Frame, app: &mut App, area: Rect) {
     // Check if we're in a local workspace
-    let workspace_info = crate::state::get_workspace_info().unwrap_or_else(|_| crate::state::WorkspaceInfo {
-        current_directory: std::env::current_dir().unwrap_or_default(),
-        workspace_type: crate::state::WorkspaceType::None,
-        has_local_rask: false,
-        has_global_project: false,
-    });
+    let workspace_info = app.get_workspace_info();
 
     let project_items: Vec<ListItem> = match workspace_info.workspace_type {
         crate::state::WorkspaceType::Local => {
@@ -842,8 +876,8 @@ fn render_project_switcher_view(f: &mut Frame, app: &mut App, area: Rect) {
         },
         crate::state::WorkspaceType::Global => {
             // Use global project system
-            if let Ok(config) = crate::project::ProjectsConfig::load() {
-                let current_project_name = crate::project::get_current_project().ok().flatten();
+            if let Ok(config) = app.get_projects_config() {
+                let current_project_name = app.get_current_project();
                 let projects: Vec<_> = config.projects.keys().collect();
 
                 // Ensure selection is valid
