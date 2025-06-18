@@ -64,7 +64,7 @@ struct LegacyProjectConfig {
 
 /// Global projects configuration
 /// Manages all projects and default settings
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct ProjectsConfig {
     /// HashMap of project name -> project configuration
     pub projects: HashMap<String, ProjectConfig>,
@@ -77,7 +77,7 @@ pub struct ProjectsConfig {
 }
 
 /// Global settings that apply across all projects
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GlobalProjectSettings {
     /// Auto-switch to default project on startup
     pub auto_switch_default: bool,
