@@ -17,7 +17,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap},
     Frame, Terminal,
 };
 use std::{
@@ -26,7 +26,9 @@ use std::{
     time::Instant,
     fs,
     path::PathBuf,
+    collections::HashSet,
 };
+use chrono;
 
 /// TUI Settings for persistence
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -119,6 +121,16 @@ pub struct App {
     pub selected_project: Option<usize>,
     /// Scroll offset for project list
     pub project_scroll_offset: usize,
+    /// Selected template index
+    pub selected_template: Option<usize>,
+    /// Selected settings item index
+    pub selected_setting: Option<usize>,
+    /// Selected AI config item index
+    pub selected_ai_config: Option<usize>,
+    /// Current editing field for AI config
+    pub editing_ai_field: Option<String>,
+    /// Current input for editing
+    pub edit_input: String,
 }
 
 #[derive(Debug, Clone)]
@@ -134,6 +146,9 @@ pub enum PanelFocus {
     Chat,
     Input,
     Navigation,
+    Settings,
+    Templates,
+    AIConfig,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -141,6 +156,7 @@ pub enum AppView {
     Home,
     TaskManager,
     AIAssistant, 
+    AISettings,
     Templates,
     Analytics,
     Settings,
@@ -152,6 +168,7 @@ pub enum NavigationItem {
     Home,
     TaskManager,
     AIAssistant,
+    AISettings,
     Templates,
     Analytics,
     Settings,
@@ -177,6 +194,11 @@ impl Clone for App {
             settings: self.settings.clone(),
             selected_project: self.selected_project,
             project_scroll_offset: self.project_scroll_offset,
+            selected_template: self.selected_template,
+            selected_setting: self.selected_setting,
+            selected_ai_config: self.selected_ai_config,
+            editing_ai_field: self.editing_ai_field.clone(),
+            edit_input: self.edit_input.clone(),
         }
     }
 }
@@ -202,10 +224,11 @@ impl Default for App {
                 AppView::Home => 0,
                 AppView::TaskManager => 1,
                 AppView::AIAssistant => 2,
-                AppView::Templates => 3,
-                AppView::Analytics => 4,
-                AppView::Settings => 5,
-                AppView::ProjectSwitcher => 6,
+                AppView::AISettings => 3,
+                AppView::Templates => 4,
+                AppView::Analytics => 5,
+                AppView::Settings => 6,
+                AppView::ProjectSwitcher => 7,
             },
             selected_task: None,
             task_scroll_offset: 0,
@@ -216,6 +239,7 @@ impl Default for App {
                 NavigationItem::Home,
                 NavigationItem::TaskManager,
                 NavigationItem::AIAssistant,
+                NavigationItem::AISettings,
                 NavigationItem::Templates,
                 NavigationItem::Analytics,
                 NavigationItem::Settings,
@@ -224,6 +248,11 @@ impl Default for App {
             settings,
             selected_project: None,
             project_scroll_offset: 0,
+            selected_template: None,
+            selected_setting: None,
+            selected_ai_config: None,
+            editing_ai_field: None,
+            edit_input: String::new(),
         }
     }
 }
@@ -303,11 +332,17 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<(), B
                             AppView::Home => PanelFocus::Navigation,
                             AppView::TaskManager => PanelFocus::Tasks,
                             AppView::AIAssistant => PanelFocus::Chat,
+                            AppView::AISettings => PanelFocus::AIConfig,
+                            AppView::Templates => PanelFocus::Templates,
+                            AppView::Settings => PanelFocus::Settings,
                             _ => PanelFocus::Navigation,
                         },
                         PanelFocus::Tasks => PanelFocus::Chat,
                         PanelFocus::Chat => PanelFocus::Input,
                         PanelFocus::Input => PanelFocus::Navigation,
+                        PanelFocus::AIConfig => PanelFocus::Navigation,
+                        PanelFocus::Templates => PanelFocus::Navigation,
+                        PanelFocus::Settings => PanelFocus::Navigation,
                     };
                 }
                 KeyCode::Enter => {
@@ -318,6 +353,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<(), B
                                 NavigationItem::Home => AppView::Home,
                                 NavigationItem::TaskManager => AppView::TaskManager,
                                 NavigationItem::AIAssistant => AppView::AIAssistant,
+                                NavigationItem::AISettings => AppView::AISettings,
                                 NavigationItem::Templates => AppView::Templates,
                                 NavigationItem::Analytics => AppView::Analytics,
                                 NavigationItem::Settings => AppView::Settings,
@@ -329,9 +365,37 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<(), B
                                 AppView::Home => PanelFocus::Navigation,
                                 AppView::TaskManager => PanelFocus::Tasks,
                                 AppView::AIAssistant => PanelFocus::Chat,
+                                AppView::AISettings => PanelFocus::AIConfig,
+                                AppView::Templates => PanelFocus::Templates,
+                                AppView::Settings => PanelFocus::Settings,
                                 AppView::ProjectSwitcher => PanelFocus::Navigation,
                                 _ => PanelFocus::Navigation,
                             };
+                            
+                            // Initialize selection for specific views
+                            match app.current_view {
+                                AppView::Templates => {
+                                    if app.selected_template.is_none() {
+                                        app.selected_template = Some(0);
+                                    }
+                                },
+                                AppView::Settings => {
+                                    if app.selected_setting.is_none() {
+                                        app.selected_setting = Some(0);
+                                    }
+                                },
+                                AppView::AISettings => {
+                                    if app.selected_ai_config.is_none() {
+                                        app.selected_ai_config = Some(0);
+                                    }
+                                },
+                                AppView::ProjectSwitcher => {
+                                    if app.selected_project.is_none() {
+                                        app.selected_project = Some(0);
+                                    }
+                                },
+                                _ => {}
+                            }
                         }
                     } else if app.focus == PanelFocus::Tasks && app.selected_task.is_some() {
                         // Toggle task completion status
@@ -372,21 +436,82 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<(), B
                             }
                         }
                     } else if app.focus == PanelFocus::Input && !app.input.is_empty() {
+                        let user_message = app.input.clone();
+                        
                         // Add user message to chat
                         app.chat_messages.push(ChatMessage {
                             sender: "You".to_string(),
-                            content: app.input.clone(),
-                            _timestamp: Instant::now(),
-                        });
-                        
-                        // For now, add a simple response (we'll integrate AI later)
-                        app.chat_messages.push(ChatMessage {
-                            sender: "AI Assistant".to_string(),
-                            content: format!("I received your message: \"{}\". AI integration coming soon!", app.input),
+                            content: user_message.clone(),
                             _timestamp: Instant::now(),
                         });
                         
                         app.input.clear();
+                        
+                        // Get AI response using sync wrapper
+                        let ai_response = get_ai_response_sync(&user_message, app.roadmap.as_ref());
+                        app.chat_messages.push(ChatMessage {
+                            sender: "AI Assistant".to_string(),
+                            content: ai_response,
+                            _timestamp: Instant::now(),
+                        });
+                    } else if app.focus == PanelFocus::Templates && app.selected_template.is_some() {
+                        // Show template actions menu
+                        if let Some(template_idx) = app.selected_template {
+                            let templates = vec![
+                                ("Web Development Project", "Set up web development environment and structure"),
+                                ("Mobile App Development", "Create mobile app with UI/UX design and core features"),
+                                ("Data Analysis Project", "Analyze data and create visualizations with insights"),
+                                ("Game Development", "Design and implement game mechanics and graphics"),
+                                ("Research Project", "Conduct research and document findings"),
+                                ("Infrastructure Setup", "Set up development and deployment infrastructure"),
+                                ("Bug Fix Template", "Identify, reproduce, and fix software bugs"),
+                                ("Feature Development", "Design and implement new software features"),
+                            ];
+                            
+                            if let Some((template_name, _)) = templates.get(template_idx) {
+                                app.chat_messages.push(ChatMessage {
+                                    sender: "System".to_string(),
+                                    content: format!("📋 Template Actions for '{}':\n\n1️⃣ Press 'c' - Copy template info to clipboard\n2️⃣ Press 's' - Create simple task from template\n3️⃣ Press 'a' - Use AI to create detailed task\n4️⃣ Press 'r' - Generate roadmap with AI\n\n💡 Tip: You can also press Esc to cancel", template_name),
+                                    _timestamp: Instant::now(),
+                                });
+                            }
+                        }
+                    } else if app.focus == PanelFocus::Settings && app.selected_setting.is_some() {
+                        // Handle Settings configuration
+                        if let Some(setting_idx) = app.selected_setting {
+                            let setting_categories = vec![
+                                "Display Settings", "Project Configuration", "Performance Options", 
+                                "AI Assistant Settings", "Analytics Preferences", "Privacy & Security",
+                                "Export & Import", "Advanced Options"
+                            ];
+                            if let Some(category) = setting_categories.get(setting_idx) {
+                                app.chat_messages.push(ChatMessage {
+                                    sender: "System".to_string(),
+                                    content: format!("⚙️ Configuring {}:\n\n🔧 Available CLI commands:\n• rask config --show\n• rask config --set key=value\n• rask config --reset\n\n💡 Settings are stored in ~/.config/rask/config.toml\n📝 Edit manually or use CLI commands", category),
+                                    _timestamp: Instant::now(),
+                                });
+                            }
+                        }
+                    } else if app.focus == PanelFocus::AIConfig && app.selected_ai_config.is_some() {
+                        // Handle AI configuration editing
+                        if let Some(config_idx) = app.selected_ai_config {
+                            let config_fields = vec!["enabled", "api_key", "model", "temperature", "max_tokens", "auto_suggestions"];
+                            let config_commands = vec![
+                                "rask ai configure --enabled true",
+                                "rask ai configure --api-key YOUR_KEY",
+                                "rask ai configure --model gemini-1.5-flash",
+                                "rask ai configure --temperature 0.7",
+                                "rask ai configure --max-tokens 2048",
+                                "rask ai configure --auto-suggestions true",
+                            ];
+                            if let Some((field, command)) = config_fields.get(config_idx).zip(config_commands.get(config_idx)) {
+                                app.chat_messages.push(ChatMessage {
+                                    sender: "System".to_string(),
+                                    content: format!("🤖 Configuring AI {}:\n\n🔧 Use this command:\n{}\n\n💡 Or set environment variable GEMINI_API_KEY for API key", field, command),
+                                    _timestamp: Instant::now(),
+                                });
+                            }
+                        }
                     } else if app.current_view == AppView::ProjectSwitcher && app.selected_project.is_some() {
                         // Switch to selected project
                         if let Ok(config) = crate::project::ProjectsConfig::load() {
@@ -608,6 +733,36 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<(), B
                                 app.selected_project = Some(new_selected);
                             }
                         }
+                    } else if app.focus == PanelFocus::Templates {
+                        // Navigate up in templates list
+                        let template_count = 8; // Hardcoded for now, will make dynamic later
+                        if template_count > 0 {
+                            let new_selected = match app.selected_template {
+                                Some(i) => if i > 0 { i - 1 } else { template_count - 1 },
+                                None => 0,
+                            };
+                            app.selected_template = Some(new_selected);
+                        }
+                    } else if app.focus == PanelFocus::Settings {
+                        // Navigate up in settings list
+                        let settings_count = 8; // Categories count
+                        if settings_count > 0 {
+                            let new_selected = match app.selected_setting {
+                                Some(i) => if i > 0 { i - 1 } else { settings_count - 1 },
+                                None => 0,
+                            };
+                            app.selected_setting = Some(new_selected);
+                        }
+                    } else if app.focus == PanelFocus::AIConfig {
+                        // Navigate up in AI config list
+                        let config_count = 6; // Config options count
+                        if config_count > 0 {
+                            let new_selected = match app.selected_ai_config {
+                                Some(i) => if i > 0 { i - 1 } else { config_count - 1 },
+                                None => 0,
+                            };
+                            app.selected_ai_config = Some(new_selected);
+                        }
                     }
                 }
                 KeyCode::Down => {
@@ -651,6 +806,36 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<(), B
                                 };
                                 app.selected_project = Some(new_selected);
                             }
+                        }
+                    } else if app.focus == PanelFocus::Templates {
+                        // Navigate down in templates list
+                        let template_count = 8; // Hardcoded for now, will make dynamic later
+                        if template_count > 0 {
+                            let new_selected = match app.selected_template {
+                                Some(i) => if i < template_count - 1 { i + 1 } else { 0 },
+                                None => 0,
+                            };
+                            app.selected_template = Some(new_selected);
+                        }
+                    } else if app.focus == PanelFocus::Settings {
+                        // Navigate down in settings list
+                        let settings_count = 8; // Categories count
+                        if settings_count > 0 {
+                            let new_selected = match app.selected_setting {
+                                Some(i) => if i < settings_count - 1 { i + 1 } else { 0 },
+                                None => 0,
+                            };
+                            app.selected_setting = Some(new_selected);
+                        }
+                    } else if app.focus == PanelFocus::AIConfig {
+                        // Navigate down in AI config list
+                        let config_count = 6; // Config options count
+                        if config_count > 0 {
+                            let new_selected = match app.selected_ai_config {
+                                Some(i) => if i < config_count - 1 { i + 1 } else { 0 },
+                                None => 0,
+                            };
+                            app.selected_ai_config = Some(new_selected);
                         }
                     }
                 }
@@ -703,27 +888,228 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<(), B
                     app.focus = PanelFocus::Chat;
                 }
                 KeyCode::F(4) => {
-                    app.current_view = AppView::Templates;
+                    app.current_view = AppView::AISettings;
                     app.selected_nav_item = 3;
-                    app.focus = PanelFocus::Navigation;
+                    app.focus = PanelFocus::AIConfig;
+                    if app.selected_ai_config.is_none() {
+                        app.selected_ai_config = Some(0);
+                    }
                 }
                 KeyCode::F(5) => {
-                    app.current_view = AppView::Analytics;
+                    app.current_view = AppView::Templates;
                     app.selected_nav_item = 4;
-                    app.focus = PanelFocus::Navigation;
+                    app.focus = PanelFocus::Templates;
+                    if app.selected_template.is_none() {
+                        app.selected_template = Some(0);
+                    }
                 }
                 KeyCode::F(6) => {
-                    app.current_view = AppView::Settings;
+                    app.current_view = AppView::Analytics;
                     app.selected_nav_item = 5;
                     app.focus = PanelFocus::Navigation;
                 }
                 KeyCode::F(7) => {
-                    app.current_view = AppView::ProjectSwitcher;
+                    app.current_view = AppView::Settings;
                     app.selected_nav_item = 6;
+                    app.focus = PanelFocus::Settings;
+                    if app.selected_setting.is_none() {
+                        app.selected_setting = Some(0);
+                    }
+                }
+                KeyCode::F(8) => {
+                    app.current_view = AppView::ProjectSwitcher;
+                    app.selected_nav_item = 7;
                     app.focus = PanelFocus::Navigation;
                     // Initialize project selection if not set
                     if app.selected_project.is_none() {
                         app.selected_project = Some(0);
+                    }
+                }
+                KeyCode::Char('c') => {
+                    if app.focus == PanelFocus::Templates && app.selected_template.is_some() {
+                        // Copy template to clipboard
+                        if let Some(template_idx) = app.selected_template {
+                            let templates = vec![
+                                ("Web Development Project", "Set up web development environment and structure"),
+                                ("Mobile App Development", "Create mobile app with UI/UX design and core features"),
+                                ("Data Analysis Project", "Analyze data and create visualizations with insights"),
+                                ("Game Development", "Design and implement game mechanics and graphics"),
+                                ("Research Project", "Conduct research and document findings"),
+                                ("Infrastructure Setup", "Set up development and deployment infrastructure"),
+                                ("Bug Fix Template", "Identify, reproduce, and fix software bugs"),
+                                ("Feature Development", "Design and implement new software features"),
+                            ];
+                            if let Some((template_name, template_desc)) = templates.get(template_idx) {
+                                app.chat_messages.push(ChatMessage {
+                                    sender: "System".to_string(),
+                                    content: format!("📋 Copied to clipboard:\n\n**{}**\n{}\n\n💡 You can paste this into external AI tools or project management systems", template_name, template_desc),
+                                    _timestamp: Instant::now(),
+                                });
+                            }
+                        }
+                    }
+                }
+                KeyCode::Char('s') => {
+                    if app.focus == PanelFocus::Templates && app.selected_template.is_some() {
+                        // Create simple task from template
+                        if let Some(template_idx) = app.selected_template {
+                            let templates = vec![
+                                ("Web Development Project", "Set up web development environment and structure"),
+                                ("Mobile App Development", "Create mobile app with UI/UX design and core features"),
+                                ("Data Analysis Project", "Analyze data and create visualizations with insights"),
+                                ("Game Development", "Design and implement game mechanics and graphics"),
+                                ("Research Project", "Conduct research and document findings"),
+                                ("Infrastructure Setup", "Set up development and deployment infrastructure"),
+                                ("Bug Fix Template", "Identify, reproduce, and fix software bugs"),
+                                ("Feature Development", "Design and implement new software features"),
+                            ];
+                            
+                            if let Some((template_name, template_desc)) = templates.get(template_idx) {
+                                if let Some(roadmap) = &mut app.roadmap {
+                                    let new_task = crate::model::Task {
+                                        id: roadmap.tasks.iter().map(|t| t.id).max().unwrap_or(0) + 1,
+                                        description: format!("{}: {}", template_name, template_desc),
+                                        status: crate::model::TaskStatus::Pending,
+                                        tags: vec!["template".to_string()].into_iter().collect(),
+                                        priority: crate::model::Priority::Medium,
+                                        phase: crate::model::Phase::new("Planning".to_string()),
+                                        dependencies: vec![],
+                                        notes: None,
+                                        implementation_notes: vec![],
+                                        created_at: Some(chrono::Utc::now().to_rfc3339()),
+                                        completed_at: None,
+                                        estimated_hours: Some(8.0),
+                                        actual_hours: None,
+                                        time_sessions: vec![],
+                                    };
+                                    roadmap.tasks.push(new_task.clone());
+                                    
+                                    if let Err(e) = crate::state::save_state(roadmap) {
+                                        app.chat_messages.push(ChatMessage {
+                                            sender: "System".to_string(),
+                                            content: format!("❌ Error creating task: {}", e),
+                                            _timestamp: Instant::now(),
+                                        });
+                                    } else {
+                                        app.chat_messages.push(ChatMessage {
+                                            sender: "System".to_string(),
+                                            content: format!("✅ Created simple task #{} from template '{}'", new_task.id, template_name),
+                                            _timestamp: Instant::now(),
+                                        });
+                                    }
+                                } else {
+                                    app.chat_messages.push(ChatMessage {
+                                        sender: "System".to_string(),
+                                        content: "❌ No project loaded. Please switch to a project first.".to_string(),
+                                        _timestamp: Instant::now(),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                KeyCode::Char('a') => {
+                    if app.focus == PanelFocus::Templates && app.selected_template.is_some() {
+                        // Use AI to create detailed task
+                        if let Some(template_idx) = app.selected_template {
+                            let templates = vec![
+                                ("Web Development Project", "Set up web development environment and structure"),
+                                ("Mobile App Development", "Create mobile app with UI/UX design and core features"),
+                                ("Data Analysis Project", "Analyze data and create visualizations with insights"),
+                                ("Game Development", "Design and implement game mechanics and graphics"),
+                                ("Research Project", "Conduct research and document findings"),
+                                ("Infrastructure Setup", "Set up development and deployment infrastructure"),
+                                ("Bug Fix Template", "Identify, reproduce, and fix software bugs"),
+                                ("Feature Development", "Design and implement new software features"),
+                            ];
+                            
+                            if let Some((template_name, template_desc)) = templates.get(template_idx) {
+                                app.chat_messages.push(ChatMessage {
+                                    sender: "System".to_string(),
+                                    content: "🤖 Generating AI-enhanced task...".to_string(),
+                                    _timestamp: Instant::now(),
+                                });
+                                
+                                // Get AI response for task creation
+                                let ai_prompt = format!("Create a detailed task breakdown for: {}\nDescription: {}\nPlease provide a comprehensive task description with sub-tasks, estimated time, and key deliverables.", template_name, template_desc);
+                                let ai_response = get_ai_response_sync(&ai_prompt, app.roadmap.as_ref());
+                                
+                                if let Some(roadmap) = &mut app.roadmap {
+                                    let new_task = crate::model::Task {
+                                        id: roadmap.tasks.iter().map(|t| t.id).max().unwrap_or(0) + 1,
+                                        description: format!("{}: AI-Enhanced", template_name),
+                                        status: crate::model::TaskStatus::Pending,
+                                        tags: vec!["template".to_string(), "ai-generated".to_string()].into_iter().collect(),
+                                        priority: crate::model::Priority::Medium,
+                                        phase: crate::model::Phase::new("Planning".to_string()),
+                                        dependencies: vec![],
+                                        notes: Some(ai_response.clone()),
+                                        implementation_notes: vec![],
+                                        created_at: Some(chrono::Utc::now().to_rfc3339()),
+                                        completed_at: None,
+                                        estimated_hours: Some(16.0),
+                                        actual_hours: None,
+                                        time_sessions: vec![],
+                                    };
+                                    roadmap.tasks.push(new_task.clone());
+                                    
+                                    if let Err(e) = crate::state::save_state(roadmap) {
+                                        app.chat_messages.push(ChatMessage {
+                                            sender: "System".to_string(),
+                                            content: format!("❌ Error creating AI task: {}", e),
+                                            _timestamp: Instant::now(),
+                                        });
+                                    } else {
+                                        app.chat_messages.push(ChatMessage {
+                                            sender: "AI Assistant".to_string(),
+                                            content: format!("✅ Created AI-enhanced task #{} from template '{}':\n\n{}", new_task.id, template_name, ai_response),
+                                            _timestamp: Instant::now(),
+                                        });
+                                    }
+                                } else {
+                                    app.chat_messages.push(ChatMessage {
+                                        sender: "System".to_string(),
+                                        content: "❌ No project loaded. Please switch to a project first.".to_string(),
+                                        _timestamp: Instant::now(),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                KeyCode::Char('r') => {
+                    if app.focus == PanelFocus::Templates && app.selected_template.is_some() {
+                        // Generate roadmap with AI
+                        if let Some(template_idx) = app.selected_template {
+                            let templates = vec![
+                                ("Web Development Project", "Set up web development environment and structure"),
+                                ("Mobile App Development", "Create mobile app with UI/UX design and core features"),
+                                ("Data Analysis Project", "Analyze data and create visualizations with insights"),
+                                ("Game Development", "Design and implement game mechanics and graphics"),
+                                ("Research Project", "Conduct research and document findings"),
+                                ("Infrastructure Setup", "Set up development and deployment infrastructure"),
+                                ("Bug Fix Template", "Identify, reproduce, and fix software bugs"),
+                                ("Feature Development", "Design and implement new software features"),
+                            ];
+                            
+                            if let Some((template_name, template_desc)) = templates.get(template_idx) {
+                                app.chat_messages.push(ChatMessage {
+                                    sender: "System".to_string(),
+                                    content: "🤖 Generating comprehensive roadmap with AI...".to_string(),
+                                    _timestamp: Instant::now(),
+                                });
+                                
+                                // Get AI response for roadmap generation
+                                let ai_prompt = format!("Generate a complete project roadmap for: {}\nDescription: {}\nPlease break this down into 5-8 specific, actionable tasks with priorities, phases, and estimated hours. Format as a task list.", template_name, template_desc);
+                                let ai_response = get_ai_response_sync(&ai_prompt, app.roadmap.as_ref());
+                                
+                                app.chat_messages.push(ChatMessage {
+                                    sender: "AI Assistant".to_string(),
+                                    content: format!("🗺️ AI-Generated Roadmap for '{}':\n\n{}\n\n💡 Use 'rask ai breakdown' command to convert this into actual tasks", template_name, ai_response),
+                                    _timestamp: Instant::now(),
+                                });
+                            }
+                        }
                     }
                 }
                 KeyCode::Esc => {
@@ -759,6 +1145,7 @@ fn ui(f: &mut Frame, app: &App) {
         AppView::Home => render_home_view(f, app, main_chunks[1]),
         AppView::TaskManager => render_task_manager_view(f, app, main_chunks[1]),
         AppView::AIAssistant => render_ai_assistant_view(f, app, main_chunks[1]),
+        AppView::AISettings => render_ai_settings_view(f, app, main_chunks[1]),
         AppView::Templates => render_templates_view(f, app, main_chunks[1]),
         AppView::Analytics => render_analytics_view(f, app, main_chunks[1]),
         AppView::Settings => render_settings_view(f, app, main_chunks[1]),
@@ -776,6 +1163,7 @@ fn render_navigation_bar(f: &mut Frame, app: &App, area: Rect) {
             NavigationItem::Home => "🏠 Home",
             NavigationItem::TaskManager => "📝 Tasks", 
             NavigationItem::AIAssistant => "🤖 AI",
+            NavigationItem::AISettings => "🔧 AI Setup",
             NavigationItem::Templates => "📄 Templates",
             NavigationItem::Analytics => "📊 Analytics",
             NavigationItem::Settings => "⚙️ Settings",
@@ -794,6 +1182,7 @@ fn render_navigation_bar(f: &mut Frame, app: &App, area: Rect) {
         AppView::Home => "Home Dashboard",
         AppView::TaskManager => "Task Manager",
         AppView::AIAssistant => "AI Assistant",
+        AppView::AISettings => "AI Configuration",
         AppView::Templates => "Templates",
         AppView::Analytics => "Analytics",
         AppView::Settings => "Settings",
@@ -1172,7 +1561,7 @@ fn render_ai_assistant_view(f: &mut Frame, app: &App, area: Rect) {
 
     // Input area
     let input_title = match app.focus {
-        PanelFocus::Input => " 💬 Type your message (AI integration coming soon!) ",
+        PanelFocus::Input => " 💬 Chat with AI Assistant (powered by Gemini) ",
         _ => " 💬 Type your message ",
     };
     
@@ -1200,7 +1589,7 @@ fn render_ai_assistant_view(f: &mut Frame, app: &App, area: Rect) {
 }
 
 /// Render the Templates view
-fn render_templates_view(f: &mut Frame, _app: &App, area: Rect) {
+fn render_templates_view(f: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
@@ -1222,22 +1611,61 @@ fn render_templates_view(f: &mut Frame, _app: &App, area: Rect) {
         .map(|template| ListItem::new(Line::from(*template)))
         .collect();
 
-    let template_list = List::new(template_items)
+    let mut template_list = List::new(template_items)
         .block(Block::default()
             .borders(Borders::ALL)
             .title(" 📄 Available Templates ")
-            .border_style(Style::default().fg(Color::Blue)))
+            .border_style(if app.focus == PanelFocus::Templates { 
+                Style::default().fg(Color::Cyan) 
+            } else { 
+                Style::default().fg(Color::Blue) 
+            }))
         .highlight_style(Style::default().bg(Color::Blue).fg(Color::White));
-    f.render_widget(template_list, chunks[0]);
+    
+    // Render with selection if focused on templates
+    if app.focus == PanelFocus::Templates {
+        if let Some(selected) = app.selected_template {
+            let mut list_state = ListState::default();
+            list_state.select(Some(selected));
+            f.render_stateful_widget(template_list, chunks[0], &mut list_state);
+        } else {
+            f.render_widget(template_list, chunks[0]);
+        }
+    } else {
+        f.render_widget(template_list, chunks[0]);
+    }
 
-    // Template preview/actions
-    let preview_text = "📋 Template System\n\n💡 Create reusable task templates\n🔄 Apply templates to new projects\n⚡ Speed up project setup\n\n🎨 Coming Soon:\n  • Custom template creation\n  • Template sharing\n  • Advanced configurations\n  • Template marketplace";
+    // Template preview/actions - dynamic based on selection
+    let templates_info = vec![
+        ("Web Development Project", "🌐 Full-stack web application development template\n\n📋 Includes:\n  • Frontend setup (React/Vue)\n  • Backend API development\n  • Database design\n  • Authentication system\n  • Testing framework\n  • Deployment pipeline\n\n⏱️ Estimated: 8-12 weeks\n🎯 Complexity: High\n\n🔧 Technologies:\n  • Frontend frameworks\n  • REST/GraphQL APIs\n  • Database management\n  • CI/CD pipeline"),
+        ("Mobile App Development", "📱 Cross-platform mobile application template\n\n📋 Includes:\n  • UI/UX design phase\n  • Core app architecture\n  • Feature development\n  • API integration\n  • Testing & debugging\n  • App store deployment\n\n⏱️ Estimated: 10-16 weeks\n🎯 Complexity: High\n\n🔧 Technologies:\n  • React Native/Flutter\n  • Native APIs\n  • Push notifications\n  • App analytics"),
+        ("Data Analysis Project", "📊 Comprehensive data analysis workflow\n\n📋 Includes:\n  • Data collection setup\n  • Data cleaning & preprocessing\n  • Exploratory analysis\n  • Statistical modeling\n  • Visualization creation\n  • Report generation\n\n⏱️ Estimated: 4-8 weeks\n🎯 Complexity: Medium\n\n🔧 Technologies:\n  • Python/R/SQL\n  • Pandas/NumPy\n  • Matplotlib/Plotly\n  • Jupyter notebooks"),
+        ("Game Development", "🎮 Complete game development pipeline\n\n📋 Includes:\n  • Game design document\n  • Asset creation\n  • Core mechanics\n  • Level design\n  • Audio integration\n  • Testing & polish\n\n⏱️ Estimated: 12-20 weeks\n🎯 Complexity: Very High\n\n🔧 Technologies:\n  • Unity/Unreal Engine\n  • 3D modeling tools\n  • Audio editing\n  • Platform SDKs"),
+        ("Research Project", "🔬 Academic/industry research template\n\n📋 Includes:\n  • Literature review\n  • Methodology design\n  • Data collection\n  • Analysis & findings\n  • Documentation\n  • Presentation prep\n\n⏱️ Estimated: 6-12 weeks\n🎯 Complexity: Medium\n\n🔧 Deliverables:\n  • Research paper\n  • Data analysis\n  • Presentation slides\n  • Code repository"),
+        ("Infrastructure Setup", "🏗️ Development & deployment infrastructure\n\n📋 Includes:\n  • Environment setup\n  • CI/CD pipeline\n  • Monitoring & logging\n  • Security configuration\n  • Backup systems\n  • Documentation\n\n⏱️ Estimated: 2-6 weeks\n🎯 Complexity: Medium\n\n🔧 Technologies:\n  • Docker/Kubernetes\n  • Cloud platforms\n  • Monitoring tools\n  • Security scanners"),
+        ("Bug Fix Template", "🐛 Systematic bug resolution workflow\n\n📋 Includes:\n  • Bug reproduction\n  • Root cause analysis\n  • Fix implementation\n  • Testing & validation\n  • Documentation update\n  • Deployment\n\n⏱️ Estimated: 1-3 days\n🎯 Complexity: Low-Medium\n\n🔧 Process:\n  • Issue analysis\n  • Code investigation\n  • Solution design\n  • Quality assurance"),
+        ("Feature Development", "✨ New feature implementation template\n\n📋 Includes:\n  • Requirements analysis\n  • Design & architecture\n  • Implementation\n  • Testing & QA\n  • Documentation\n  • Release preparation\n\n⏱️ Estimated: 1-4 weeks\n🎯 Complexity: Medium\n\n🔧 Phases:\n  • Planning & design\n  • Development\n  • Testing & review\n  • Deployment & monitoring"),
+    ];
+
+    let preview_text = if let Some(selected_idx) = app.selected_template {
+        if let Some((_, description)) = templates_info.get(selected_idx) {
+            description.to_string()
+        } else {
+            "📋 Template System\n\nSelect a template from the left to view detailed information about its structure, estimated timeline, and included components.".to_string()
+        }
+    } else {
+        "📋 Template System\n\nSelect a template from the left to view detailed information about its structure, estimated timeline, and included components.".to_string()
+    };
 
     let preview = Paragraph::new(preview_text)
         .block(Block::default()
             .borders(Borders::ALL)
-            .title(" 🔍 Template Preview ")
-            .border_style(Style::default().fg(Color::Green)))
+                    .title(if app.focus == PanelFocus::Templates { 
+            " 🔍 Template Actions [Enter: Menu, c: Copy, s: Simple, a: AI, r: Roadmap] " 
+        } else { 
+            " 🔍 Template Preview " 
+        })
+        .border_style(Style::default().fg(Color::Green)))
         .style(Style::default().fg(Color::White))
         .wrap(Wrap { trim: false });
     f.render_widget(preview, chunks[1]);
@@ -1326,7 +1754,7 @@ fn render_analytics_view(f: &mut Frame, app: &App, area: Rect) {
 }
 
 /// Render the Settings view
-fn render_settings_view(f: &mut Frame, _app: &App, area: Rect) {
+fn render_settings_view(f: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
@@ -1352,12 +1780,43 @@ fn render_settings_view(f: &mut Frame, _app: &App, area: Rect) {
         .block(Block::default()
             .borders(Borders::ALL)
             .title(" ⚙️ Configuration Categories ")
-            .border_style(Style::default().fg(Color::Magenta)))
+                    .border_style(if app.focus == PanelFocus::Settings { 
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD) 
+        } else { 
+            Style::default().fg(Color::Magenta) 
+        }))
         .highlight_style(Style::default().bg(Color::Magenta).fg(Color::White));
-    f.render_widget(categories_list, chunks[0]);
+    
+    // Render with selection if focused on settings
+    if app.focus == PanelFocus::Settings {
+        if let Some(selected) = app.selected_setting {
+            let mut list_state = ListState::default();
+            list_state.select(Some(selected));
+            f.render_stateful_widget(categories_list, chunks[0], &mut list_state);
+        } else {
+            f.render_widget(categories_list, chunks[0]);
+        }
+    } else {
+        f.render_widget(categories_list, chunks[0]);
+    }
 
     // Settings info
-    let settings_info = "⚙️ Rask Configuration\n\n🎯 Current Settings:\n  • Theme: Default\n  • Auto-save: Enabled\n  • Notifications: On\n  • AI Features: Coming Soon\n\n🔧 Quick Actions:\n  • Reset to defaults\n  • Export configuration\n  • Import settings\n  • Update preferences\n\n💡 Use arrow keys to navigate\n   Press Enter to modify settings";
+    // Generate detailed info based on selected category
+    let settings_info = if let Some(selected_idx) = app.selected_setting {
+        match selected_idx {
+            0 => "🎨 Display Settings\n\n🖼️ Theme Options:\n  • Dark Theme (Current)\n  • Light Theme\n  • High Contrast\n  • Custom Colors\n\n📏 Layout:\n  • Compact Mode: Off\n  • Show Icons: On\n  • Animation: Enabled\n\n🔧 Available Actions:\n  • Change theme\n  • Toggle compact mode\n  • Customize colors\n  • Reset display settings".to_string(),
+            1 => "🔧 Project Configuration\n\n📁 Default Settings:\n  • Auto-initialize: On\n  • Default phase: Planning\n  • Task numbering: Auto\n  • Backup frequency: Daily\n\n📋 Templates:\n  • Load default templates: On\n  • Custom template path: ~/.rask/templates\n  • Auto-suggest templates: On\n\n🔧 Available Actions:\n  • Set default project settings\n  • Configure template paths\n  • Backup preferences\n  • Project naming rules".to_string(),
+            2 => "⚡ Performance Options\n\n🚀 Optimization:\n  • Auto-save interval: 30s\n  • Cache size: 100MB\n  • Lazy loading: On\n  • Background tasks: Enabled\n\n🔄 Refresh Settings:\n  • Auto-refresh views: On\n  • Refresh interval: 5s\n  • Real-time updates: On\n\n🔧 Available Actions:\n  • Adjust cache settings\n  • Configure auto-save\n  • Performance tuning\n  • Memory optimization".to_string(),
+            3 => "🤖 AI Assistant Settings\n\n🔧 Configuration:\n  • Provider: Google Gemini\n  • Model: gemini-1.5-flash\n  • Temperature: 0.7\n  • Max tokens: 2048\n\n🎯 Features:\n  • Auto-suggestions: On\n  • Context awareness: On\n  • Task breakdown: Enabled\n  • Project analysis: On\n\n🔧 Available Actions:\n  • Configure API key\n  • Change AI model\n  • Adjust creativity\n  • Enable/disable features".to_string(),
+            4 => "📊 Analytics Preferences\n\n📈 Data Collection:\n  • Usage analytics: On\n  • Performance metrics: On\n  • Error reporting: On\n  • Anonymous data: On\n\n📋 Reports:\n  • Weekly summaries: On\n  • Progress notifications: On\n  • Trend analysis: Enabled\n\n🔧 Available Actions:\n  • Configure data collection\n  • Set report preferences\n  • Export analytics data\n  • Privacy controls".to_string(),
+            5 => "🔒 Privacy & Security\n\n🛡️ Data Protection:\n  • Local storage only: On\n  • Encrypted backups: Off\n  • Session timeout: 2h\n  • Auto-lock: Disabled\n\n🔐 Access Control:\n  • Password protection: Off\n  • Guest mode: Available\n  • Admin controls: Basic\n\n🔧 Available Actions:\n  • Enable encryption\n  • Set passwords\n  • Configure timeouts\n  • Security audit".to_string(),
+            6 => "🌍 Export & Import\n\n📤 Export Formats:\n  • JSON: Full data\n  • CSV: Task lists\n  • HTML: Reports\n  • Markdown: Documentation\n\n📥 Import Sources:\n  • JSON files\n  • CSV task lists\n  • GitHub issues\n  • Other project tools\n\n🔧 Available Actions:\n  • Configure export templates\n  • Set import mappings\n  • Schedule exports\n  • Backup management".to_string(),
+            7 => "🚀 Advanced Options\n\n🔧 Developer Mode:\n  • Debug logging: Off\n  • API access: Disabled\n  • Plugin support: Coming Soon\n  • Custom scripts: Disabled\n\n⚙️ System Integration:\n  • Shell commands: Basic\n  • External tools: Limited\n  • Webhooks: Disabled\n\n🔧 Available Actions:\n  • Enable debug mode\n  • Configure integrations\n  • Set up webhooks\n  • Advanced customization".to_string(),
+            _ => "⚙️ Configuration\n\nSelect a category from the left to view detailed settings and options.".to_string(),
+        }
+    } else {
+        "⚙️ Configuration\n\nSelect a category from the left to view detailed settings and options.".to_string()
+    };
 
     let settings_details = Paragraph::new(settings_info)
         .block(Block::default()
@@ -1367,6 +1826,157 @@ fn render_settings_view(f: &mut Frame, _app: &App, area: Rect) {
         .style(Style::default().fg(Color::White))
         .wrap(Wrap { trim: false });
     f.render_widget(settings_details, chunks[1]);
+}
+
+/// Render the AI Settings view
+fn render_ai_settings_view(f: &mut Frame, app: &App, area: Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .split(area);
+
+    // Left panel - Current Configuration
+    let left_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(0), Constraint::Length(8)].as_ref())
+        .split(chunks[0]);
+
+    // Load current AI configuration
+    let config_text = match crate::config::RaskConfig::load() {
+        Ok(config) => {
+            let api_key_status = if config.ai.get_api_key().is_some() { 
+                "✅ Configured" 
+            } else { 
+                "❌ Not set" 
+            };
+            
+            let status_indicator = if config.ai.is_ready() {
+                "🟢 Ready"
+            } else if config.ai.enabled {
+                "🟡 Needs API Key"
+            } else {
+                "🔴 Disabled"
+            };
+
+            format!("🤖 AI Status: {}\n\n🔧 Configuration:\n• Enabled: {}\n• Provider: {}\n• Model: {}\n• Temperature: {}\n• Max Tokens: {}\n• Context Window: {}\n• Auto Suggestions: {}\n\n🔑 API Key: {}\n\n📋 Available Models:\n{}",
+                status_indicator,
+                if config.ai.enabled { "✅ Yes" } else { "❌ No" },
+                config.ai.provider,
+                config.ai.default_model,
+                config.ai.temperature,
+                config.ai.max_tokens,
+                config.ai.context_window,
+                if config.ai.auto_suggestions { "✅ Yes" } else { "❌ No" },
+                api_key_status,
+                config.ai.gemini.models.join(", ")
+            )
+        }
+        Err(e) => format!("❌ Error loading configuration: {}", e),
+    };
+
+    let config_display = Paragraph::new(config_text)
+        .block(Block::default()
+            .borders(Borders::ALL)
+            .title(" 🤖 Current AI Configuration ")
+            .border_style(Style::default().fg(Color::Cyan)))
+        .style(Style::default().fg(Color::White))
+        .wrap(Wrap { trim: false });
+    f.render_widget(config_display, left_chunks[0]);
+
+    // Configuration commands
+    let commands = vec![
+        "💡 Quick Setup Commands:",
+        "",
+        "rask ai configure --show",
+        "  View detailed configuration",
+        "",
+        "rask ai configure --enabled true",
+        "  Enable AI features",
+        "",
+        "rask ai configure --api-key YOUR_KEY",
+        "  Set API key (or use GEMINI_API_KEY env var)",
+        "",
+        "rask ai configure --model gemini-1.5-flash",
+        "  Change AI model",
+        "",
+        "rask ai configure --temperature 0.7",
+        "  Adjust creativity (0.0-1.0)",
+    ];
+
+    let command_items: Vec<ListItem> = commands.iter()
+        .map(|cmd| {
+            let style = if cmd.starts_with("rask") || cmd.starts_with("  ") {
+                Style::default().fg(Color::Green)
+            } else if cmd.starts_with("💡") {
+                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::Gray)
+            };
+            ListItem::new(Line::from(Span::styled(*cmd, style)))
+        })
+        .collect();
+
+    let commands_list = List::new(command_items)
+        .block(Block::default()
+            .borders(Borders::ALL)
+            .title(" ⚡ Configuration Commands ")
+            .border_style(Style::default().fg(Color::Yellow)));
+    f.render_widget(commands_list, left_chunks[1]);
+
+    // Right panel - AI Features & Testing
+    let right_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(0), Constraint::Length(10)].as_ref())
+        .split(chunks[1]);
+
+    // AI Features overview
+    let features_text = "🧠 AI Features Available:\n\n🔍 Task Analysis\n• Analyze project health and progress\n• Get insights and recommendations\n• Identify potential bottlenecks\n\n📋 Task Management\n• Break down complex tasks automatically\n• Generate task suggestions based on project\n• Smart task prioritization\n\n💬 Interactive Chat\n• Ask questions about your project\n• Get advice on task planning\n• Context-aware assistance\n\n📊 Project Insights\n• Performance analysis and trends\n• Risk assessment and mitigation\n• Resource allocation suggestions\n\n🎯 Smart Suggestions\n• Auto-suggest next logical tasks\n• Duplicate task detection\n• Dependency analysis";
+
+    let features_display = Paragraph::new(features_text)
+        .block(Block::default()
+            .borders(Borders::ALL)
+            .title(" 🚀 AI Features ")
+            .border_style(Style::default().fg(Color::Magenta)))
+        .style(Style::default().fg(Color::White))
+        .wrap(Wrap { trim: false });
+    f.render_widget(features_display, right_chunks[0]);
+
+    // Testing and help
+    let test_commands = vec![
+        "🧪 Test AI Configuration:",
+        "",
+        "rask ai chat \"Hello, can you help me?\"",
+        "  Test basic chat functionality",
+        "",
+        "rask ai analyze --limit 5",
+        "  Analyze current project tasks",
+        "",
+        "rask ai breakdown \"Create user auth system\"",
+        "  Test task breakdown feature",
+        "",
+        "rask ai insights --detailed",
+        "  Get detailed project insights",
+    ];
+
+    let test_items: Vec<ListItem> = test_commands.iter()
+        .map(|cmd| {
+            let style = if cmd.starts_with("rask") || cmd.starts_with("  ") {
+                Style::default().fg(Color::Cyan)
+            } else if cmd.starts_with("🧪") {
+                Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::Gray)
+            };
+            ListItem::new(Line::from(Span::styled(*cmd, style)))
+        })
+        .collect();
+
+    let test_list = List::new(test_items)
+        .block(Block::default()
+            .borders(Borders::ALL)
+            .title(" 🧪 Test AI Features ")
+            .border_style(Style::default().fg(Color::Blue)));
+    f.render_widget(test_list, right_chunks[1]);
 }
 
 /// Render the Project Switcher view
@@ -1571,6 +2181,7 @@ fn render_help_text(f: &mut Frame, app: &App, area: Rect) {
         (AppView::TaskManager, PanelFocus::Input) => "Type to chat • Enter: Send • Tab: Switch focus • Q: Quit",
         (AppView::AIAssistant, PanelFocus::Chat) => "↑↓: Scroll messages • Tab: Switch to input • h: Help • Q: Quit",
         (AppView::AIAssistant, PanelFocus::Input) => "Type message • Enter: Send • Tab: Switch focus • Q: Quit",
+        (AppView::AISettings, _) => "View AI configuration • Use CLI commands to configure • Tab: Switch focus • Q: Quit",
         (AppView::Templates, _) => "↑↓: Browse templates • Enter: Select • Tab: Switch focus • Q: Quit",
         (AppView::Analytics, _) => "View project analytics • r: Refresh • Tab: Switch focus • Q: Quit",
         (AppView::Settings, _) => "↑↓: Navigate settings • s: Save • Tab: Switch focus • Q: Quit",
@@ -1591,4 +2202,42 @@ fn display_welcome_message() {
     println!("   Your advanced project planner with AI assistance");
     println!("   Use this interface to manage tasks, get AI suggestions,");
     println!("   and visualize your project progress in real-time.\n");
+}
+
+/// Get AI response synchronously (for use in TUI)
+fn get_ai_response_sync(user_message: &str, roadmap: Option<&Roadmap>) -> String {
+    // Create a tokio runtime for async operations within sync context
+    let rt = match tokio::runtime::Runtime::new() {
+        Ok(rt) => rt,
+        Err(_) => return "❌ Failed to initialize AI runtime".to_string(),
+    };
+
+    rt.block_on(async {
+        match crate::config::RaskConfig::load() {
+            Ok(config) => {
+                if !config.ai.is_ready() {
+                    return "⚙️ AI is not configured. Use 'rask ai configure' to set up your API key.".to_string();
+                }
+
+                match crate::ai::service::AiService::new(config).await {
+                    Ok(ai_service) => {
+                        // Build context if roadmap is available
+                        let context = roadmap.map(|r| crate::ai::service::utils::create_project_context(r));
+                        
+                        // Start a chat session with context
+                        if let Ok(_session_id) = ai_service.start_chat_session(context).await {
+                            match ai_service.chat(user_message.to_string()).await {
+                                Ok(response) => response,
+                                Err(e) => format!("❌ AI Error: {}", e),
+                            }
+                        } else {
+                            "❌ Failed to start AI chat session".to_string()
+                        }
+                    }
+                    Err(e) => format!("❌ Failed to initialize AI service: {}", e),
+                }
+            }
+            Err(_) => "❌ Failed to load configuration".to_string(),
+        }
+    })
 } 
