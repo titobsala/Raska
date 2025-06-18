@@ -1,6 +1,6 @@
 # Rask User Guide 📚
 
-Welcome to the comprehensive Rask user guide! This document covers all features, commands, and usage patterns for the advanced CLI project planner.
+Welcome to the comprehensive Rask user guide! This document covers all features, commands, and usage patterns for the advanced CLI project planner with interactive TUI interface.
 
 ## Table of Contents
 
@@ -17,9 +17,10 @@ Welcome to the comprehensive Rask user guide! This document covers all features,
 11. [Configuration System](#configuration-system)
 12. [Bulk Operations](#bulk-operations)
 13. [Export Capabilities](#export-capabilities)
-14. [Usage Examples](#usage-examples)
-15. [Terminal UI Features](#terminal-ui-features)
-16. [Tips & Best Practices](#tips--best-practices)
+14. [Task Templates System](#task-templates-system)
+15. [Usage Examples](#usage-examples)
+16. [Terminal UI Features](#terminal-ui-features)
+17. [Tips & Best Practices](#tips--best-practices)
 
 ## Getting Started
 
@@ -71,7 +72,9 @@ rask complete 1
 
 ## Interactive TUI Mode
 
-**NEW**: Rask includes a comprehensive Terminal User Interface (TUI) that provides a modern, interactive project management experience directly in your terminal.
+**NEW**: Rask includes a comprehensive Terminal User Interface (TUI) that provides a modern, interactive project management experience directly in your terminal. 
+
+**🔧 Recent Improvements**: Navigation freezing issues in the project switcher have been resolved with caching optimizations, providing a much smoother user experience.
 
 ### Launching the TUI
 
@@ -95,6 +98,7 @@ The Interactive TUI features a multi-view dashboard system with:
 - **Real-Time Updates**: Instant feedback for all actions
 - **Settings Persistence**: Remembers your preferences and view settings
 - **Professional Layout**: Beautiful terminal interface with colors and formatting
+- **Navigation Fixes**: Recent improvements have resolved freezing issues in project navigation
 
 ### TUI Views
 
@@ -136,29 +140,7 @@ Interactive task management interface with:
 - `Tab`: Switch between task list and chat
 - `PgUp`/`PgDn`: Fast scroll through tasks
 
-#### 🤖 AI Assistant (F3)
-Chat interface for task planning and assistance:
-
-- **Full-Screen Chat**: Dedicated conversation interface
-- **Message History**: Persistent chat log with timestamps
-- **Scrolling Support**: Navigate through long conversations
-- **Input Field**: Type messages and questions
-- **Smart Responses**: Context-aware assistance (foundation for future AI integration)
-
-**Usage:**
-- Ask questions about project planning
-- Get help with task breakdown
-- Request assistance with dependencies
-- Chat about project strategy
-- Get keyboard shortcut help
-
-**Keyboard Shortcuts:**
-- `↑↓`: Scroll through chat messages
-- `Tab`: Switch between chat and input
-- `Enter`: Send messages
-- `PgUp`/`PgDn`: Fast scroll chat history
-
-#### 📄 Templates (F4)
+#### 📄 Templates (View available in TUI)
 Browse and manage task templates:
 
 - **Template Categories**: Organized by type (Development, Testing, etc.)
@@ -172,23 +154,7 @@ Browse and manage task templates:
 - Create consistent task patterns
 - Speed up project setup with proven templates
 
-#### 📊 Analytics (F5)
-Project insights and progress visualization:
-
-- **Progress Metrics**: Completion percentages and task distribution
-- **Priority Analysis**: Breakdown by priority levels
-- **Phase Statistics**: Progress tracking by development phases
-- **Time Analysis**: Estimated vs actual time comparisons
-- **Trend Visualization**: Project momentum and velocity insights
-
-**Displays:**
-- Task distribution charts and statistics
-- Priority breakdown with visual indicators
-- Phase-based progress tracking
-- Time estimation accuracy analysis
-- Project health indicators
-
-#### ⚙️ Settings (F6)
+#### ⚙️ Settings (Available in TUI)
 Customize TUI behavior and appearance:
 
 - **Configuration Categories**: Organized settings sections
@@ -201,11 +167,10 @@ Customize TUI behavior and appearance:
 - **Display**: Color schemes, layout options, formatting
 - **Behavior**: Default priorities, phases, confirmation settings
 - **Performance**: Refresh rates, auto-save options
-- **AI Assistant**: Future AI integration preferences
 - **Export**: Default formats and options
 
-#### 🔄 Project Switcher (F7/p)
-Seamless multi-project navigation:
+#### 🔄 Project Switcher (Available in TUI)
+Seamless multi-project navigation (navigation issues recently fixed):
 
 - **Project List**: All available projects with statistics
 - **Current Project**: Highlighted active project
@@ -219,12 +184,13 @@ Seamless multi-project navigation:
 - **Project Metadata**: Creation dates, descriptions, file paths
 - **Instant Switching**: Change projects without leaving TUI
 - **Statistics Display**: Quick overview of each project's status
+- **Navigation Fix**: Recent improvements resolved freezing issues
 
 **Navigation:**
 - `↑↓`: Navigate project list
 - `Enter`: Switch to selected project
 - `r`: Refresh project list
-- `F1`: Return to home after switching
+
 
 ### Universal Keyboard Shortcuts
 
@@ -1526,6 +1492,144 @@ rask export json --priority critical,high
 rask export html --phase release --priority high --tag deployment --include-completed
 ```
 
+## Task Templates System
+
+Rask includes a comprehensive task templates system for consistent task creation and project setup.
+
+### Template Commands
+
+#### `rask template list [--category <cat>]`
+List all available templates.
+
+```bash
+# List all templates
+rask template list
+
+# List templates by category
+rask template list --category development
+rask template list --category testing
+```
+
+#### `rask template show <name>`
+Show detailed template information.
+
+```bash
+rask template show "Feature Implementation"
+rask template show "Bug Fix"
+```
+
+#### `rask template use <name> [description]`
+Create task from template.
+
+```bash
+# Use template with default description
+rask template use "Bug Fix"
+
+# Use template with custom description
+rask template use "Feature Implementation" "User authentication system"
+```
+
+#### `rask template create <name> <desc> [options]`
+Create custom template.
+
+```bash
+# Create basic template
+rask template create "Code Review" "Review pull request for team member"
+
+# Create template with metadata
+rask template create "API Endpoint" "Implement new API endpoint" \
+  --tags "backend,api" --priority high --phase mvp --estimated-hours 4.0
+```
+
+#### `rask template delete <name>`
+Delete custom template.
+
+```bash
+rask template delete "Old Template"
+```
+
+#### `rask template examples`
+Show help and integration examples.
+
+```bash
+rask template examples
+```
+
+### Built-in Templates
+
+Rask comes with several built-in templates for common development scenarios:
+
+| Template | Category | Description |
+|----------|----------|-------------|
+| Feature Implementation | Development | Complete feature development with testing |
+| Bug Fix | Development | Systematic bug identification and resolution |
+| Code Review | Development | Pull request review and feedback process |
+| API Endpoint | Development | REST API endpoint implementation |
+| Database Migration | Development | Database schema changes and migrations |
+| Unit Testing | Testing | Comprehensive unit test coverage |
+| Integration Testing | Testing | End-to-end integration testing |
+| Performance Testing | Testing | Load and performance testing |
+| Documentation | Documentation | Technical documentation writing |
+| User Guide | Documentation | User-facing documentation |
+| Deployment | DevOps | Production deployment process |
+| Environment Setup | DevOps | Development environment configuration |
+| Security Review | Security | Security assessment and improvements |
+| UI Component | Design | User interface component development |
+
+### Template Categories
+
+Templates are organized into logical categories:
+
+- **Development**: Core development tasks
+- **Testing**: Quality assurance and testing
+- **Documentation**: Documentation and guides
+- **DevOps**: Deployment and infrastructure
+- **Design**: UI/UX and design tasks
+- **Security**: Security-related tasks
+
+### Custom Template Creation
+
+Create templates that match your team's workflow:
+
+```bash
+# Development workflow template
+rask template create "Sprint Task" "Standard sprint development task" \
+  --tags "development,sprint" \
+  --priority medium \
+  --phase mvp \
+  --estimated-hours 8.0
+
+# Bug tracking template
+rask template create "Production Bug" "Critical production issue" \
+  --tags "bug,production,urgent" \
+  --priority critical \
+  --phase release \
+  --estimated-hours 2.0
+```
+
+### Template Best Practices
+
+1. **Consistent Naming**: Use clear, descriptive template names
+2. **Appropriate Tags**: Include relevant tags for filtering
+3. **Realistic Estimates**: Base time estimates on historical data
+4. **Phase Alignment**: Assign templates to appropriate phases
+5. **Team Standards**: Create templates that match team conventions
+
+### Template Integration Workflow
+
+```bash
+# Daily development with templates
+rask template use "Feature Implementation" "User dashboard analytics"
+rask template use "Unit Testing" "Test dashboard analytics feature"
+rask template use "Code Review" "Review analytics implementation"
+
+# Sprint planning with templates
+rask template list --category development
+rask template use "API Endpoint" "User preferences API"
+rask template use "Database Migration" "Add user preferences table"
+rask template use "Documentation" "API documentation for preferences"
+```
+
 ## Usage Examples
 
 ### Scenario 1: Web Development Project with Phases and Time Tracking
@@ -1842,6 +1946,32 @@ Rask provides a beautiful, intuitive terminal interface with:
 - **Navigation tips**: Clear guidance for timeline navigation
 
 ## Tips & Best Practices
+
+### TUI Usage & Navigation
+
+1. **Smooth navigation experience:**
+   - Recent caching improvements have resolved project switcher freezing issues
+   - Navigation between projects is now instant and responsive
+   - Use `↑↓` arrows to navigate smoothly through project lists
+   - Project switching no longer causes UI freezes
+
+2. **Optimal TUI workflow:**
+   ```bash
+   # Start with interactive mode for best experience
+   rask interactive
+   
+   # Use keyboard shortcuts for efficient navigation
+   # Home: Overview and project status
+   # Tasks: Interactive task management
+   # Templates: Quick task creation
+   # Settings: Customize your experience
+   # Projects: Switch between projects seamlessly
+   ```
+
+3. **Performance considerations:**
+   - The TUI now caches workspace and project information for better performance
+   - Large project lists load quickly without blocking the interface
+   - Multi-project switching is optimized for real-time use
 
 ### Project Organization
 
@@ -2206,6 +2336,8 @@ Rask provides a beautiful, intuitive terminal interface with:
 
 ---
 
-This user guide covers all the features and capabilities of Rask, including the comprehensive Interactive TUI system with project switcher, phases management, time tracking, and all CLI functionality. For quick reference, see the main [README](README.md). For issues or feature requests, please visit the [GitHub repository](https://github.com/tito-sala/rask).
+This user guide covers all the features and capabilities of Rask, including the comprehensive Interactive TUI system with project switcher navigation fixes, phases management, time tracking, and all CLI functionality. Recent improvements have resolved navigation freezing issues for a smoother user experience.
 
-**Happy project planning with the Interactive TUI!** 🎯 🖥️
+For quick reference, see the main [README](README.md). For issues or feature requests, please visit the [GitHub repository](https://github.com/tito-sala/rask).
+
+**Happy project planning with the enhanced Interactive TUI!** 🎯 🖥️
