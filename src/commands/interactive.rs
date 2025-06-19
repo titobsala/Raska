@@ -96,18 +96,10 @@ pub struct App {
     pub max_visible_tasks: usize,
     /// TUI settings
     pub settings: TuiSettings,
-    /// Selected project index in project switcher
-    pub selected_project: Option<usize>,
     /// Selected template index
     pub selected_template: Option<usize>,
     /// Selected settings item index
     pub selected_setting: Option<usize>,
-    /// Cached workspace information to avoid repeated I/O
-    pub cached_workspace_info: Option<crate::state::WorkspaceInfo>,
-    /// Cached projects config to avoid repeated I/O
-    pub cached_projects_config: Option<crate::project::ProjectsConfig>,
-    /// Cached current project name to avoid repeated I/O
-    pub cached_current_project: Option<Option<String>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -124,7 +116,6 @@ pub enum AppView {
     Tasks,
     Templates,
     Settings,
-    ProjectSwitcher,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -133,7 +124,6 @@ pub enum NavigationItem {
     Tasks,
     Templates,
     Settings,
-    ProjectSwitcher,
 }
 
 impl Default for App {
@@ -144,7 +134,6 @@ impl Default for App {
             NavigationItem::Tasks,
             NavigationItem::Templates,
             NavigationItem::Settings,
-            NavigationItem::ProjectSwitcher,
         ];
         
         let initial_view = settings.default_view.clone();
@@ -155,7 +144,6 @@ impl Default for App {
                 (NavigationItem::Tasks, AppView::Tasks) => true,
                 (NavigationItem::Templates, AppView::Templates) => true,
                 (NavigationItem::Settings, AppView::Settings) => true,
-                (NavigationItem::ProjectSwitcher, AppView::ProjectSwitcher) => true,
                 _ => false,
             })
             .unwrap_or(0);
@@ -171,62 +159,20 @@ impl Default for App {
             max_visible_tasks: 10, // Will be calculated dynamically
             navigation_items,
             settings,
-            selected_project: None,
             selected_template: None,
             selected_setting: None,
-            cached_workspace_info: None,
-            cached_projects_config: None,
-            cached_current_project: None,
         }
     }
 }
 
-impl App {
-    /// Get workspace info with caching
-    fn get_workspace_info(&mut self) -> crate::state::WorkspaceInfo {
-        if self.cached_workspace_info.is_none() {
-            self.cached_workspace_info = Some(
-                crate::state::get_workspace_info().unwrap_or_else(|_| crate::state::WorkspaceInfo {
-                    current_directory: std::env::current_dir().unwrap_or_default(),
-                    workspace_type: crate::state::WorkspaceType::None,
-                    has_local_rask: false,
-                    has_global_project: false,
-                })
-            );
-        }
-        self.cached_workspace_info.as_ref().unwrap().clone()
-    }
-    
-    /// Get projects config with caching
-    fn get_projects_config(&mut self) -> Result<crate::project::ProjectsConfig, Box<dyn Error>> {
-        if self.cached_projects_config.is_none() {
-            self.cached_projects_config = Some(crate::project::ProjectsConfig::load()?);
-        }
-        Ok(self.cached_projects_config.as_ref().unwrap().clone())
-    }
-    
-    /// Get current project name with caching
-    fn get_current_project(&mut self) -> Option<String> {
-        if self.cached_current_project.is_none() {
-            self.cached_current_project = Some(crate::project::get_current_project().ok().flatten());
-        }
-        self.cached_current_project.as_ref().unwrap().clone()
-    }
-    
-    /// Refresh cached data (call when project switching or other state changes)
-    fn refresh_cache(&mut self) {
-        self.cached_workspace_info = None;
-        self.cached_projects_config = None;
-        self.cached_current_project = None;
-    }
-}
+impl App {}
 
 /// Launch the interactive TUI mode
-pub fn run_interactive_mode(project: Option<&str>) -> CommandResult {
+pub fn run_interactive_mode(project: Option<&str>, no_welcome: bool) -> CommandResult {
     display_info("Launching interactive TUI mode...");
     
     let settings = TuiSettings::load();
-    if settings.show_welcome {
+    if !no_welcome && settings.show_welcome {
         display_welcome_message();
     }
     
@@ -238,7 +184,7 @@ pub fn run_interactive_mode(project: Option<&str>) -> CommandResult {
     let roadmap = match crate::state::load_state() {
         Ok(roadmap) => Some(roadmap),
         Err(_) => {
-            display_info("No active project found. Use the Project Switcher (F5) to begin.");
+            display_info("No local .rask directory found. Exit TUI and run 'rask init <roadmap.md>' first.");
             None
         }
     };
@@ -303,138 +249,23 @@ fn handle_navigation_keys(key: event::KeyEvent, app: &mut App) {
 
         // Navigation
         KeyCode::Down => {
-            if app.current_view == AppView::ProjectSwitcher {
-                // Handle project switcher navigation - only for global workspaces
-                let workspace_info = app.get_workspace_info();
-                
-                if workspace_info.workspace_type == crate::state::WorkspaceType::Global {
-                    if let Ok(config) = app.get_projects_config() {
-                        let project_count = config.projects.len();
-                        if project_count > 0 {
-                            let new_idx = app.selected_project.map_or(0, |i| (i + 1) % project_count);
-                            app.selected_project = Some(new_idx);
-                        }
-                    }
-                }
-                // For local workspaces, do nothing with up/down arrows
-            } else {
-                // Handle main navigation
-                app.selected_nav_item = (app.selected_nav_item + 1) % app.navigation_items.len();
-            }
+            // Handle main navigation
+            app.selected_nav_item = (app.selected_nav_item + 1) % app.navigation_items.len();
         }
         KeyCode::Up => {
-            if app.current_view == AppView::ProjectSwitcher {
-                // Handle project switcher navigation - only for global workspaces
-                let workspace_info = app.get_workspace_info();
-                
-                if workspace_info.workspace_type == crate::state::WorkspaceType::Global {
-                    if let Ok(config) = app.get_projects_config() {
-                        let project_count = config.projects.len();
-                        if project_count > 0 {
-                            let new_idx = app.selected_project.map_or(project_count - 1, |i| (i + project_count - 1) % project_count);
-                            app.selected_project = Some(new_idx);
-                        }
-                    }
-                }
-                // For local workspaces, do nothing with up/down arrows
-            } else {
-                // Handle main navigation
-                app.selected_nav_item = (app.selected_nav_item + app.navigation_items.len() - 1) % app.navigation_items.len();
-            }
+            // Handle main navigation
+            app.selected_nav_item = (app.selected_nav_item + app.navigation_items.len() - 1) % app.navigation_items.len();
         }
         KeyCode::Enter => {
-            if app.current_view == AppView::ProjectSwitcher {
-                // Handle project switching
-                // Check if we're in a local workspace first
-                let workspace_info = app.get_workspace_info();
-                
-                // Only allow project switching in global mode
-                if workspace_info.workspace_type == crate::state::WorkspaceType::Global {
-                    if let Some(selected_idx) = app.selected_project {
-                        if let Ok(config) = app.get_projects_config() {
-                            if let Some(project_name) = config.projects.keys().nth(selected_idx) {
-                                // Use TUI-safe project switching
-                                if crate::commands::project::switch_project_tui_safe(project_name).is_ok() {
-                                    // Refresh cache after project switching
-                                    app.refresh_cache();
-                                // Try to load state for the new project
-                                app.roadmap = match crate::state::load_state() {
-                                    Ok(roadmap) => {
-                                        // Debug: Successfully loaded roadmap
-                                        Some(roadmap)
-                                    },
-                                    Err(_) => {
-                                        // Create a default roadmap for projects without state
-                                        let mut roadmap = crate::model::Roadmap::new(format!("{} Project", project_name));
-                                        roadmap.project_id = Some(project_name.to_string());
-                                        roadmap.metadata.name = project_name.to_string();
-                                        
-                                        // Add some sample tasks to make switching visible
-                                        let sample_task = crate::model::Task {
-                                            id: 1,
-                                            description: format!("Sample task for {}", project_name),
-                                            status: crate::model::TaskStatus::Pending,
-                                            priority: crate::model::Priority::Medium,
-                                            phase: crate::model::Phase::new("Getting Started".to_string()),
-                                            created_at: Some(chrono::Utc::now().to_rfc3339()),
-                                            tags: std::collections::HashSet::new(),
-                                            dependencies: Vec::new(),
-                                            notes: None,
-                                            estimated_hours: None,
-                                            actual_hours: None,
-                                            time_sessions: Vec::new(),
-                                            implementation_notes: Vec::new(),
-                                            completed_at: None,
-                                        };
-                                        roadmap.tasks.push(sample_task);
-                                        
-                                        // Try to save the default state
-                                        if crate::state::save_state(&roadmap).is_ok() {
-                                            Some(roadmap)
-                                        } else {
-                                            Some(roadmap) // Return it anyway for immediate display
-                                        }
-                                    }
-                                };
-                                
-                                // Reset all selections to clean state
-                                app.selected_task = None;
-                                app.selected_template = None;
-                                app.selected_setting = None;
-                                app.selected_project = None;
-                                app.task_scroll_offset = 0;
-                                // Go back to home view for clean state
-                                app.current_view = AppView::Home;
-                                app.focus = PanelFocus::Navigation;
-                                app.selected_nav_item = 0; // Home is index 0
-                                }
-                            }
-                        }
-                    }
-                }
-            } else if let Some(nav_item) = app.navigation_items.get(app.selected_nav_item) {
+            if let Some(nav_item) = app.navigation_items.get(app.selected_nav_item) {
                 app.current_view = match nav_item {
                     NavigationItem::Home => AppView::Home,
                     NavigationItem::Tasks => AppView::Tasks,
                     NavigationItem::Templates => AppView::Templates,
                     NavigationItem::Settings => AppView::Settings,
-                    NavigationItem::ProjectSwitcher => AppView::ProjectSwitcher,
                 };
                 
                 // Initialize selections for specific views
-                if app.current_view == AppView::ProjectSwitcher {
-                    // Check workspace type before initializing project selection
-                    let workspace_info = app.get_workspace_info();
-                    
-                    // Only initialize project selection for global workspaces
-                    if workspace_info.workspace_type == crate::state::WorkspaceType::Global {
-                        if let Ok(config) = app.get_projects_config() {
-                            if !config.projects.is_empty() && app.selected_project.is_none() {
-                                app.selected_project = Some(0);
-                            }
-                        }
-                    }
-                }
                 // Automatically switch focus to the main panel and initialize selections
                 app.focus = match app.current_view {
                     AppView::Tasks => {
@@ -476,10 +307,6 @@ fn handle_navigation_keys(key: event::KeyEvent, app: &mut App) {
                 AppView::Tasks => PanelFocus::Tasks,
                 AppView::Templates => PanelFocus::Templates,
                 AppView::Settings => PanelFocus::Settings,
-                AppView::ProjectSwitcher => {
-                    // For project switcher, always allow going back to navigation
-                    PanelFocus::Navigation
-                },
                 _ => PanelFocus::Navigation,
             };
         }
@@ -599,11 +426,11 @@ fn handle_settings_keys(key: event::KeyEvent, app: &mut App) {
                 match idx {
                     0 => { // Default View
                         let current_idx = match app.settings.default_view {
-                            AppView::Home => 0, AppView::Tasks => 1, AppView::Templates => 2, AppView::Settings => 3, AppView::ProjectSwitcher => 4,
+                            AppView::Home => 0, AppView::Tasks => 1, AppView::Templates => 2, AppView::Settings => 3,
                         };
-                        let next_idx = (current_idx + 1) % 5;
+                        let next_idx = (current_idx + 1) % 4;
                         app.settings.default_view = match next_idx {
-                            0 => AppView::Home, 1 => AppView::Tasks, 2 => AppView::Templates, 3 => AppView::Settings, _ => AppView::ProjectSwitcher,
+                            0 => AppView::Home, 1 => AppView::Tasks, 2 => AppView::Templates, _ => AppView::Settings,
                         };
                     },
                     1 => app.settings.remember_selection = !app.settings.remember_selection,
@@ -641,7 +468,6 @@ fn ui(f: &mut Frame, app: &mut App) {
         AppView::Tasks => render_tasks_view(f, app, main_chunks[1]),
         AppView::Templates => render_templates_view(f, app, main_chunks[1]),
         AppView::Settings => render_settings_view(f, app, main_chunks[1]),
-        AppView::ProjectSwitcher => render_project_switcher_view(f, app, main_chunks[1]),
     }
     
     render_help_text(f, app, main_chunks[2]);
@@ -655,7 +481,6 @@ fn render_navigation_bar(f: &mut Frame, app: &mut App, area: Rect) {
             NavigationItem::Tasks => "Tasks".to_string(),
             NavigationItem::Templates => "Templates".to_string(),
             NavigationItem::Settings => "Settings".to_string(),
-            NavigationItem::ProjectSwitcher => "Projects".to_string(),
         }
     }).collect();
 
@@ -676,10 +501,12 @@ fn render_navigation_bar(f: &mut Frame, app: &mut App, area: Rect) {
     }
     let nav_line = Line::from(nav_line_spans);
     
-    let project_name = app.get_current_project().unwrap_or_else(|| "No Project".to_string());
+    let project_name = app.roadmap.as_ref()
+        .map(|r| r.title.clone())
+        .unwrap_or_else(|| "No Project Loaded".to_string());
     let view_name = format!("{:?}", app.current_view);
 
-    let title = format!("🚀 Rask TUI • {} • Project: {} ", view_name, project_name);
+    let title = format!("🚀 Rask TUI • {} • {} ", view_name, project_name);
     
     let nav_paragraph = Paragraph::new(nav_line)
         .block(Block::default()
@@ -849,101 +676,6 @@ fn render_settings_view(f: &mut Frame, app: &mut App, area: Rect) {
     let list = List::new(items).block(list_block);
     let mut list_state = ListState::default();
     list_state.select(app.selected_setting);
-    f.render_stateful_widget(list, area, &mut list_state);
-}
-
-/// Render the Project Switcher view
-fn render_project_switcher_view(f: &mut Frame, app: &mut App, area: Rect) {
-    // Check if we're in a local workspace
-    let workspace_info = app.get_workspace_info();
-
-    let project_items: Vec<ListItem> = match workspace_info.workspace_type {
-        crate::state::WorkspaceType::Local => {
-            // We're in a local workspace - show workspace info instead of project switching
-            vec![
-                ListItem::new("📁 Local Workspace Detected"),
-                ListItem::new(""),
-                ListItem::new(format!("📍 Directory: {}", workspace_info.current_directory.display())),
-                ListItem::new("📋 Using local .rask/ directory"),
-                ListItem::new(""),
-                ListItem::new("💡 This is a local workspace project."),
-                ListItem::new("   Task data is stored in .rask/state.json"),
-                ListItem::new(""),
-                ListItem::new("🔧 To use global projects:"),
-                ListItem::new("   • Move to a directory without .rask/"),
-                ListItem::new("   • Or use CLI: rask project create <name>"),
-            ]
-        },
-        crate::state::WorkspaceType::Global => {
-            // Use global project system
-            if let Ok(config) = app.get_projects_config() {
-                let current_project_name = app.get_current_project();
-                let projects: Vec<_> = config.projects.keys().collect();
-
-                // Ensure selection is valid
-                if app.selected_project.is_none() && !projects.is_empty() {
-                    app.selected_project = Some(0);
-                } else if let Some(selected) = app.selected_project {
-                    if selected >= projects.len() {
-                        app.selected_project = if projects.is_empty() { None } else { Some(projects.len() - 1) };
-                    }
-                }
-                
-                projects.iter().enumerate().map(|(i, name)| {
-                    let line_text = if current_project_name.as_deref() == Some(name) {
-                        format!("● {} (current)", name)
-                    } else {
-                        format!("○ {}", name)
-                    };
-                    let style = if app.selected_project == Some(i) {
-                        Style::default().bg(Color::Blue).fg(Color::White)
-                    } else if current_project_name.as_deref() == Some(name) {
-                        Style::default().fg(Color::Green)
-                    } else {
-                        Style::default()
-                    };
-                    ListItem::new(Line::from(Span::styled(line_text, style)))
-                }).collect()
-            } else {
-                vec![ListItem::new("No global projects found. Use CLI to create projects.")]
-            }
-        },
-        crate::state::WorkspaceType::None => {
-            vec![
-                ListItem::new("⚠️  No Project Configuration"),
-                ListItem::new(""),
-                ListItem::new("To get started:"),
-                ListItem::new(""),
-                ListItem::new("🏠 Local Workspace:"),
-                ListItem::new("   rask init roadmap.md"),
-                ListItem::new(""),
-                ListItem::new("🌐 Global Project:"),
-                ListItem::new("   rask project create <name>"),
-            ]
-        }
-    };
-
-    let title = match workspace_info.workspace_type {
-        crate::state::WorkspaceType::Local => " 📁 Local Workspace ",
-        crate::state::WorkspaceType::Global => " 🔄 Switch Project ",
-        crate::state::WorkspaceType::None => " 🚀 Get Started ",
-    };
-
-    let list_block = Block::default()
-        .borders(Borders::ALL)
-        .title(title)
-        .border_style(if app.focus == PanelFocus::Navigation { 
-            Style::default().fg(Color::Yellow) 
-        } else { 
-            Style::default().fg(Color::Cyan) 
-        });
-    let list = List::new(project_items).block(list_block);
-    
-    let mut list_state = ListState::default();
-    // Only allow selection for global projects
-    if workspace_info.workspace_type == crate::state::WorkspaceType::Global {
-        list_state.select(app.selected_project);
-    }
     f.render_stateful_widget(list, area, &mut list_state);
 }
 

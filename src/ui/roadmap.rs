@@ -20,15 +20,10 @@ pub fn display_roadmap_enhanced(roadmap: &Roadmap, show_detailed: bool) {
     println!("\n{}", "═".repeat(60).bright_blue());
     println!("  {}", roadmap.title.bold().bright_cyan());
     
-    // Show current project information if available
-    if let Ok(Some(project_info)) = crate::project::get_current_project_info() {
-        println!("  📁 Project: {} {}", 
-            project_info.name.bright_yellow(),
-            if let Some(ref desc) = project_info.description {
-                format!("({})", desc).italic().bright_black().to_string()
-            } else {
-                String::new()
-            }
+    // Show local project directory information
+    if let Ok(current_dir) = std::env::current_dir() {
+        println!("  📁 Directory: {}", 
+            current_dir.display().to_string().bright_yellow()
         );
     }
     
@@ -110,15 +105,10 @@ pub fn display_roadmap_grouped_by_phase(roadmap: &Roadmap, detailed: bool, colla
     println!("\n{}", "═".repeat(80).bright_blue());
     println!("  {} - {} tasks across phases", roadmap.title.bold().bright_cyan(), total_tasks);
     
-    // Show current project information if available
-    if let Ok(Some(project_info)) = crate::project::get_current_project_info() {
-        println!("  📁 Project: {} {}", 
-            project_info.name.bright_yellow(),
-            if let Some(ref desc) = project_info.description {
-                format!("({})", desc).italic().bright_black().to_string()
-            } else {
-                String::new()
-            }
+    // Show local project directory information
+    if let Ok(current_dir) = std::env::current_dir() {
+        println!("  📁 Directory: {}", 
+            current_dir.display().to_string().bright_yellow()
         );
     }
     

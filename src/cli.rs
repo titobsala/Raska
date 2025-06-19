@@ -4,7 +4,6 @@ use std::path::PathBuf;
 // Import all the modularized CLI components
 pub mod ai;
 pub mod types;
-pub mod project;
 pub mod phase;
 pub mod config;
 pub mod notes;
@@ -14,7 +13,6 @@ pub mod template;
 // Re-export the types for easier access
 pub use ai::AiCommands;
 pub use types::{CliPriority, ExportFormat};
-pub use project::ProjectCommands;
 pub use phase::PhaseCommands;
 pub use config::ConfigCommands;
 pub use notes::NotesCommands;
@@ -156,9 +154,6 @@ pub enum Commands {
         detailed: bool,
     },
 
-    /// Manage projects (multi-project support)
-    #[command(subcommand)]
-    Project(ProjectCommands),
 
     /// Analyze and visualize task dependencies
     Dependencies {

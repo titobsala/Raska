@@ -942,9 +942,11 @@ pub fn show_time_tracking(task_id: &Option<usize>, summary: bool, _detailed: boo
 pub fn sync_project_files(from_roadmap: bool, from_details: bool, from_global: bool, to_files: bool, force: bool, dry_run: bool) -> CommandResult {
     use crate::ui;
     
-    // Handle transfer from global to local
+    // Global project management has been removed in favor of local-only approach
     if from_global {
-        return transfer_global_to_local_command(force, dry_run);
+        ui::display_warning("Global project management is no longer supported. Use local .rask/ directories instead.");
+        ui::display_info("Initialize a local project with: rask init <roadmap.md>");
+        return Ok(());
     }
     
     // Handle regenerating local files
@@ -1161,38 +1163,6 @@ fn update_last_sync_timestamp() -> CommandResult {
     Ok(())
 }
 
-/// Transfer global project state to local workspace
-fn transfer_global_to_local_command(force: bool, dry_run: bool) -> CommandResult {
-    use crate::{ui, state};
-    
-    if dry_run {
-        ui::display_info("🔍 Dry run - would transfer global project state to local .rask directory");
-        return Ok(());
-    }
-    
-    ui::display_info("🔄 Checking for global project state to transfer...");
-    
-    match state::transfer_global_to_local() {
-        Ok(true) => {
-            ui::display_success("✅ Successfully transferred global project state to local .rask directory!");
-            ui::display_info("💡 You can now work with this project using local workspace commands");
-        },
-        Ok(false) => {
-            if state::has_local_workspace() {
-                ui::display_info("📁 Local .rask workspace already exists - no transfer needed");
-            } else {
-                ui::display_warning("⚠️  No global project state found to transfer");
-                ui::display_info("💡 Initialize a project with 'rask init roadmap.md' first");
-            }
-        },
-        Err(e) => {
-            ui::display_error(&format!("❌ Error transferring global state: {}", e));
-            return Err(e.into());
-        }
-    }
-    
-    Ok(())
-}
 
 /// Regenerate .rask project files from current state
 fn sync_to_local_files(force: bool, dry_run: bool) -> CommandResult {

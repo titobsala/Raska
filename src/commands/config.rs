@@ -140,7 +140,7 @@ fn edit_config(project_config: bool) -> CommandResult {
     // Determine the config file path
     let config_path = if project_config {
         // Ensure local .rask directory exists
-        crate::project::init_local_rask_directory()?;
+        std::fs::create_dir_all(".rask")?;
         PathBuf::from(".rask/config.toml")
     } else {
         let config_dir = crate::config::get_rask_config_dir()?;
@@ -177,7 +177,7 @@ fn init_config(project_config: bool, user_config: bool) -> CommandResult {
     }
     
     if project_config {
-        crate::project::init_local_rask_directory()?;
+        std::fs::create_dir_all(".rask")?;
         RaskConfig::init_project_config()?;
         ui::display_success("Initialized project configuration at .rask/config.toml");
     }
