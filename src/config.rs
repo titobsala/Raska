@@ -22,6 +22,9 @@ pub struct RaskConfig {
     
     /// Theme configuration (for future expansion)
     pub theme: ThemeConfig,
+    
+    /// AI integration settings
+    pub ai: AiConfig,
 }
 
 /// UI and display configuration
@@ -139,6 +142,50 @@ pub struct SymbolConfig {
     pub dependency: String,
 }
 
+/// AI integration configuration
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AiConfig {
+    /// Enable AI features
+    pub enabled: bool,
+    
+    /// AI provider: "gemini", "openai" (future), "claude" (future)
+    pub provider: String,
+    
+    /// Google Gemini configuration
+    pub gemini: GeminiConfig,
+    
+    /// Default model to use
+    pub default_model: String,
+    
+    /// Maximum tokens per request
+    pub max_tokens: u32,
+    
+    /// AI response temperature (0.0 - 1.0)
+    pub temperature: f32,
+    
+    /// Enable AI task suggestions
+    pub auto_suggestions: bool,
+    
+    /// Context window size for conversations
+    pub context_window: usize,
+}
+
+/// Google Gemini specific configuration
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GeminiConfig {
+    /// API key (will check environment variable if not set)
+    pub api_key: Option<String>,
+    
+    /// Available models
+    pub models: Vec<String>,
+    
+    /// API endpoint base URL
+    pub endpoint: String,
+    
+    /// Request timeout in seconds
+    pub timeout: u64,
+}
+
 /// Default configuration values
 impl Default for RaskConfig {
     fn default() -> Self {
@@ -148,6 +195,7 @@ impl Default for RaskConfig {
             export: ExportConfig::default(),
             advanced: AdvancedConfig::default(),
             theme: ThemeConfig::default(),
+            ai: AiConfig::default(),
         }
     }
 }
@@ -239,6 +287,36 @@ impl Default for SymbolConfig {
             blocked: "🚫".to_string(),
             current_project: "👉".to_string(),
             dependency: "🔗".to_string(),
+        }
+    }
+}
+
+impl Default for AiConfig {
+    fn default() -> Self {
+        AiConfig {
+            enabled: false, // Disabled by default until user configures API key
+            provider: "gemini".to_string(),
+            gemini: GeminiConfig::default(),
+            default_model: "gemini-1.5-flash".to_string(),
+            max_tokens: 4096,
+            temperature: 0.7,
+            auto_suggestions: false,
+            context_window: 10,
+        }
+    }
+}
+
+impl Default for GeminiConfig {
+    fn default() -> Self {
+        GeminiConfig {
+            api_key: None,
+            models: vec![
+                "gemini-1.5-flash".to_string(),
+                "gemini-1.5-pro".to_string(),
+                "gemini-2.0-flash-exp".to_string(),
+            ],
+            endpoint: "https://generativelanguage.googleapis.com/v1beta".to_string(),
+            timeout: 30,
         }
     }
 }
@@ -407,6 +485,15 @@ impl RaskConfig {
             ("advanced", "editor") => self.advanced.editor.clone(),
             ("advanced", "debug") => Some(self.advanced.debug.to_string()),
             ("theme", "name") => Some(self.theme.name.clone()),
+            ("ai", "enabled") => Some(self.ai.enabled.to_string()),
+            ("ai", "provider") => Some(self.ai.provider.clone()),
+            ("ai", "default_model") => Some(self.ai.default_model.clone()),
+            ("ai", "max_tokens") => Some(self.ai.max_tokens.to_string()),
+            ("ai", "temperature") => Some(self.ai.temperature.to_string()),
+            ("ai", "auto_suggestions") => Some(self.ai.auto_suggestions.to_string()),
+            ("ai", "context_window") => Some(self.ai.context_window.to_string()),
+            ("gemini", "endpoint") => Some(self.ai.gemini.endpoint.clone()),
+            ("gemini", "timeout") => Some(self.ai.gemini.timeout.to_string()),
             _ => None,
         }
     }
@@ -432,9 +519,46 @@ impl RaskConfig {
             ("advanced", "editor") => self.advanced.editor = if value.is_empty() { None } else { Some(value.to_string()) },
             ("advanced", "debug") => self.advanced.debug = value.parse().map_err(|_| Error::new(ErrorKind::InvalidInput, "Invalid boolean value"))?,
             ("theme", "name") => self.theme.name = value.to_string(),
+            ("ai", "enabled") => self.ai.enabled = value.parse().map_err(|_| Error::new(ErrorKind::InvalidInput, "Invalid boolean value"))?,
+            ("ai", "provider") => self.ai.provider = value.to_string(),
+            ("ai", "default_model") => self.ai.default_model = value.to_string(),
+            ("ai", "max_tokens") => self.ai.max_tokens = value.parse().map_err(|_| Error::new(ErrorKind::InvalidInput, "Invalid number value"))?,
+            ("ai", "temperature") => self.ai.temperature = value.parse().map_err(|_| Error::new(ErrorKind::InvalidInput, "Invalid float value"))?,
+            ("ai", "auto_suggestions") => self.ai.auto_suggestions = value.parse().map_err(|_| Error::new(ErrorKind::InvalidInput, "Invalid boolean value"))?,
+            ("ai", "context_window") => self.ai.context_window = value.parse().map_err(|_| Error::new(ErrorKind::InvalidInput, "Invalid number value"))?,
+            ("gemini", "endpoint") => self.ai.gemini.endpoint = value.to_string(),
+            ("gemini", "timeout") => self.ai.gemini.timeout = value.parse().map_err(|_| Error::new(ErrorKind::InvalidInput, "Invalid number value"))?,
             _ => return Err(Error::new(ErrorKind::InvalidInput, "Unknown configuration key")),
         }
         
         Ok(())
+    }
+}
+
+impl AiConfig {
+    /// Get the API key for the current provider, checking environment variables first
+    pub fn get_api_key(&self) -> Option<String> {
+        match self.provider.as_str() {
+            "gemini" => {
+                // Check environment variable first
+                std::env::var("GEMINI_API_KEY")
+                    .or_else(|_| std::env::var("GOOGLE_API_KEY"))
+                    .ok()
+                    .or_else(|| self.gemini.api_key.clone())
+            }
+            _ => None,
+        }
+    }
+
+    /// Check if AI features are properly configured and ready to use
+    pub fn is_ready(&self) -> bool {
+        self.enabled && self.get_api_key().is_some()
+    }
+}
+
+impl GeminiConfig {
+    /// Get the full API endpoint for a specific operation
+    pub fn get_endpoint(&self, operation: &str) -> String {
+        format!("{}/models/{}:{}", self.endpoint, operation, "generateContent")
     }
 } 

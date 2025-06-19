@@ -64,7 +64,7 @@ struct LegacyProjectConfig {
 
 /// Global projects configuration
 /// Manages all projects and default settings
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct ProjectsConfig {
     /// HashMap of project name -> project configuration
     pub projects: HashMap<String, ProjectConfig>,
@@ -77,7 +77,7 @@ pub struct ProjectsConfig {
 }
 
 /// Global settings that apply across all projects
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GlobalProjectSettings {
     /// Auto-switch to default project on startup
     pub auto_switch_default: bool,
@@ -449,9 +449,12 @@ pub fn migrate_legacy_files() -> Result<(), Error> {
         if file_name_str.starts_with(".rask_state_") && file_name_str.ends_with(".json") {
             let project_name = file_name_str
                 .strip_prefix(".rask_state_")
-                .unwrap()
-                .strip_suffix(".json")
-                .unwrap();
+                .and_then(|s| s.strip_suffix(".json"));
+            
+            let project_name = match project_name {
+                Some(name) => name,
+                None => continue, // Skip malformed filenames
+            };
             
             let new_state_file = data_dir.join(format!("project_{}.json", project_name));
             

@@ -3,9 +3,9 @@
 //! This module provides a clean, modular interface for all Rask commands.
 //! Each command category is organized into its own submodule for better maintainability.
 
+pub mod ai;
 pub mod analytics;
 pub mod core;
-pub mod project;
 pub mod bulk;
 pub mod export;
 pub mod config;
@@ -17,9 +17,9 @@ pub mod utils;
 pub mod interactive;
 
 // Re-export all public command functions
+pub use ai::*;
 pub use analytics::*;
 pub use core::*;
-pub use project::*;
 pub use bulk::*;
 pub use export::*;
 pub use config::*;

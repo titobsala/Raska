@@ -2,8 +2,8 @@ use clap::{Parser as ClapParser, Subcommand};
 use std::path::PathBuf;
 
 // Import all the modularized CLI components
+pub mod ai;
 pub mod types;
-pub mod project;
 pub mod phase;
 pub mod config;
 pub mod notes;
@@ -11,8 +11,8 @@ pub mod bulk;
 pub mod template;
 
 // Re-export the types for easier access
+pub use ai::AiCommands;
 pub use types::{CliPriority, ExportFormat};
-pub use project::ProjectCommands;
 pub use phase::PhaseCommands;
 pub use config::ConfigCommands;
 pub use notes::NotesCommands;
@@ -23,7 +23,7 @@ pub use template::TemplateCommands;
 #[derive(ClapParser)]
 #[command(
     name = "rask",
-    version = "2.7.0",
+    version = "2.9.0",
     about = "An advanced CLI project planner with tags, priorities, dependencies, phases, and templates",
     long_about = "Rask is a powerful command-line project planner that helps you track tasks defined in Markdown files. \
                   It supports tags, priorities, task dependencies, custom phases, task templates, and advanced filtering capabilities."
@@ -154,9 +154,6 @@ pub enum Commands {
         detailed: bool,
     },
 
-    /// Manage projects (multi-project support)
-    #[command(subcommand)]
-    Project(ProjectCommands),
 
     /// Analyze and visualize task dependencies
     Dependencies {
@@ -360,6 +357,10 @@ pub enum Commands {
         page_size: Option<usize>,
     },
 
+    /// AI-powered task management and assistance
+    #[command(subcommand)]
+    Ai(AiCommands),
+
     /// Launch interactive TUI mode with AI assistant
     #[command(alias = "tui")]
     Interactive {
@@ -370,6 +371,33 @@ pub enum Commands {
         /// Skip the welcome screen
         #[arg(long, help = "Skip the welcome screen and go directly to the interface")]
         no_welcome: bool,
+    },
+
+    /// Synchronize changes between roadmap files and Rask state
+    Sync {
+        /// Sync from the original roadmap file to Rask state
+        #[arg(long, help = "Update Rask state from changes in the original roadmap file")]
+        from_roadmap: bool,
+        
+        /// Sync from task details file to Rask state  
+        #[arg(long, help = "Update Rask state from changes in .rask/task-details.md")]
+        from_details: bool,
+        
+        /// Transfer global project state to local .rask directory
+        #[arg(long, help = "Transfer global project state to local .rask directory")]
+        from_global: bool,
+        
+        /// Update local .rask files from current state
+        #[arg(long, help = "Regenerate .rask project files from current state")]
+        to_files: bool,
+        
+        /// Force sync without backup
+        #[arg(long, help = "Force sync without creating backup")]
+        force: bool,
+        
+        /// Dry run - show what would be synced without making changes
+        #[arg(long, help = "Show what would be synced without making changes")]
+        dry_run: bool,
     },
 }
 

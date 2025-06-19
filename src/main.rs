@@ -1,15 +1,15 @@
 // Module declarations
+mod ai;
 mod cli;
 mod commands;
 mod config;
 mod markdown_writer;
 mod model;
 mod parser;
-mod project;
 mod state;
 mod ui;
 
-use cli::{Commands, ProjectCommands, PhaseCommands, NotesCommands};
+use cli::{Commands, PhaseCommands, NotesCommands};
 use std::process;
 
 fn main() {
@@ -35,9 +35,6 @@ fn initialize_rask() -> Result<(), Box<dyn std::error::Error>> {
     config::get_rask_config_dir()?;
     config::get_rask_data_dir()?;
     
-    // Migrate legacy files if they exist
-    project::migrate_legacy_files()?;
-    
     // Initialize user configuration if it doesn't exist
     if config::RaskConfig::load_user_config().is_err() {
         config::RaskConfig::init_user_config()?;
@@ -62,25 +59,6 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         Commands::Reset { id } => commands::reset_tasks(*id),
         Commands::List { tag, priority, phase, status, search, detailed } => {
             commands::list_tasks(tag, priority, phase, status, search, *detailed)
-        },
-        Commands::Project(project_command) => {
-            match project_command {
-                ProjectCommands::Create { name, description } => {
-                    commands::create_project(name, description)
-                },
-                ProjectCommands::Switch { name } => {
-                    commands::switch_project(name)
-                },
-                ProjectCommands::List => {
-                    commands::list_projects()
-                },
-                ProjectCommands::Switcher => {
-                    commands::project_switcher()
-                },
-                ProjectCommands::Delete { name, force } => {
-                    commands::delete_project(name, *force)
-                },
-            }
         },
         Commands::Dependencies { task_id, validate, show_ready, show_blocked } => {
             commands::analyze_dependencies(task_id, *validate, *show_ready, *show_blocked)
@@ -147,8 +125,14 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         Commands::Timeline { detailed, active_only, compact, page, page_size } => {
             commands::show_timeline(*detailed, *active_only, *compact, *page, *page_size)
         },
+        Commands::Ai(ai_command) => {
+            commands::handle_ai_command(ai_command)
+        },
         Commands::Interactive { project, no_welcome } => {
             commands::run_interactive_mode(project.as_deref(), *no_welcome)
+        },
+        Commands::Sync { from_roadmap, from_details, from_global, to_files, force, dry_run } => {
+            commands::sync_project_files(*from_roadmap, *from_details, *from_global, *to_files, *force, *dry_run)
         },
     }
 }
