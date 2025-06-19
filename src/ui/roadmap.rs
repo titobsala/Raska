@@ -198,7 +198,7 @@ pub fn display_roadmap_filtered_by_phase(roadmap: &Roadmap, phase_filter: &str, 
 }
 
 /// Display project timeline with horizontal phase layout
-pub fn display_project_timeline(roadmap: &Roadmap, detailed: bool, active_only: bool, compact: bool, page: Option<usize>, page_size: Option<usize>) {
+pub fn display_project_timeline(roadmap: &Roadmap, _detailed: bool, active_only: bool, compact: bool, page: Option<usize>, page_size: Option<usize>) {
     let total_tasks = roadmap.tasks.len();
     let completed_tasks = roadmap.tasks.iter().filter(|t| t.status == TaskStatus::Completed).count();
     
@@ -273,7 +273,7 @@ pub fn display_project_timeline(roadmap: &Roadmap, detailed: bool, active_only: 
         let tasks = phase_groups.get(&phase.name).unwrap_or(&empty_vec);
         let phase_completed = tasks.iter().filter(|t| t.status == TaskStatus::Completed).count();
         let phase_total = tasks.len();
-        let percentage = if phase_total > 0 { (phase_completed * 100) / phase_total } else { 0 };
+        let _percentage = if phase_total > 0 { (phase_completed * 100) / phase_total } else { 0 };
         
         print!("  {} {} ", phase.emoji(), phase.name.bright_yellow().bold());
         if compact {
@@ -294,10 +294,10 @@ pub fn display_project_timeline(roadmap: &Roadmap, detailed: bool, active_only: 
         let tasks = phase_groups.get(&phase.name).unwrap_or(&empty_vec);
         let phase_completed = tasks.iter().filter(|t| t.status == TaskStatus::Completed).count();
         let phase_total = tasks.len();
-        let percentage = if phase_total > 0 { (phase_completed * 100) / phase_total } else { 0 };
+        let _percentage = if phase_total > 0 { (phase_completed * 100) / phase_total } else { 0 };
         
         print!("  {}% [{}]", 
-            format!("{:3}", percentage).bright_white(),
+            format!("{:3}", _percentage).bright_white(),
             create_progress_bar(phase_completed, phase_total, 12)
         );
         
@@ -423,7 +423,7 @@ fn display_phase_section(phase_name: &str, emoji: &str, tasks: &[&crate::model::
     // Show tasks (limit to first few if not detailed)
     let tasks_to_show = if detailed { tasks.len() } else { std::cmp::min(tasks.len(), 5) };
     
-    for (i, task) in tasks.iter().take(tasks_to_show).enumerate() {
+    for (_i, task) in tasks.iter().take(tasks_to_show).enumerate() {
         display_task_line(task, detailed);
     }
     

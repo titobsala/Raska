@@ -940,8 +940,6 @@ pub fn show_time_tracking(task_id: &Option<usize>, summary: bool, _detailed: boo
 
 /// Synchronize changes between roadmap files and Rask state
 pub fn sync_project_files(from_roadmap: bool, from_details: bool, from_global: bool, to_files: bool, force: bool, dry_run: bool) -> CommandResult {
-    use crate::ui;
-    
     // Global project management has been removed in favor of local-only approach
     if from_global {
         ui::display_warning("Global project management is no longer supported. Use local .rask/ directories instead.");
