@@ -260,7 +260,7 @@ async fn handle_ai_breakdown(description: &str, apply: bool, default_phase: Opti
                 }
 
                 // Update markdown file if available
-                if let Some(ref source_file) = roadmap.source_file {
+                if let Some(ref _source_file) = roadmap.source_file {
                     if let Err(e) = crate::markdown_writer::sync_to_source_file(&roadmap) {
                         display_warning(&format!("Failed to update markdown file: {}", e));
                     }
@@ -461,7 +461,7 @@ async fn handle_ai_configure(
 }
 
 /// Handle AI summary command
-async fn handle_ai_summary(with_recommendations: bool, focus: Option<&str>) -> CommandResult {
+async fn handle_ai_summary(with_recommendations: bool, _focus: Option<&str>) -> CommandResult {
     let config = RaskConfig::load().map_err(|e| format!("Failed to load configuration: {}", e))?;
     
     if !config.ai.is_ready() {
@@ -568,7 +568,7 @@ async fn handle_ai_suggest(count: usize, apply: bool, priority: Option<&str>, ph
                     return Ok(());
                 }
 
-                if let Some(ref source_file) = roadmap.source_file {
+                if let Some(ref _source_file) = roadmap.source_file {
                     if let Err(e) = crate::markdown_writer::sync_to_source_file(&roadmap) {
                         display_warning(&format!("Failed to update markdown file: {}", e));
                     }
