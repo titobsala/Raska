@@ -1121,7 +1121,19 @@ impl Roadmap {
         
         visited.insert(task_id);
         
-        let task = self.find_task_by_id(task_id).unwrap();
+        let task = match self.find_task_by_id(task_id) {
+            Some(task) => task,
+            None => {
+                // Task not found - return a placeholder node
+                return DependencyNode {
+                    task_id,
+                    description: "[Task Not Found]".to_string(),
+                    status: TaskStatus::Pending,
+                    dependencies: Vec::new(),
+                    is_circular: false,
+                };
+            }
+        };
         let dependencies = task.dependencies
             .iter()
             .map(|&dep_id| self.build_dependency_tree_recursive(dep_id, visited))

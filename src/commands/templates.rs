@@ -34,6 +34,15 @@ pub fn handle_template_command(cmd: TemplateCommands) -> Result<(), Box<dyn std:
         TemplateCommands::Examples => {
             show_template_help()
         }
+        TemplateCommands::Generate { description, count, category, phase, apply } => {
+            generate_templates_with_ai(&description, count, category.as_deref(), phase.as_deref(), apply)
+        }
+        TemplateCommands::Suggest { limit, category, detailed } => {
+            suggest_templates_with_ai(limit, category.as_deref(), detailed)
+        }
+        TemplateCommands::Enhance { name, apply } => {
+            enhance_template_with_ai(&name, apply)
+        }
     }
 }
 
@@ -513,4 +522,399 @@ fn get_templates_path() -> Result<std::path::PathBuf, Box<dyn std::error::Error>
     
     let rask_dir = config_dir.join("rask");
     Ok(rask_dir.join("templates.json"))
+}
+
+/// Generate templates using AI based on description and context
+fn generate_templates_with_ai(
+    description: &str,
+    count: usize,
+    category_override: Option<&str>,
+    phase_override: Option<&str>,
+    apply: bool
+) -> Result<(), Box<dyn std::error::Error>> {
+    use tokio::runtime::Runtime;
+    
+    let rt = Runtime::new()?;
+    
+    rt.block_on(async {
+        // Load AI config
+        let config = crate::config::RaskConfig::load()?;
+        if !config.ai.is_ready() {
+            println!("  {} AI is not configured. Please run 'rask ai configure' first.", "❌".bright_red());
+            return Ok(());
+        }
+
+        // Load current project context
+        let roadmap = match crate::state::load_state() {
+            Ok(roadmap) => Some(roadmap),
+            Err(_) => {
+                println!("  {} No project found. Generating templates without project context.", "⚠️".bright_yellow());
+                None
+            }
+        };
+
+        // Initialize AI service
+        let ai_service = crate::ai::service::AiService::new(config).await?;
+        
+        println!("  {} Generating {} template(s) for: \"{}\"", "🤖".bright_blue(), count, description.bright_white());
+        
+        match ai_service.generate_templates(description, count, roadmap.as_ref()).await {
+            Ok(generated_templates) => {
+                if generated_templates.is_empty() {
+                    println!("  {} No templates generated", "⚠️".bright_yellow());
+                    return Ok(());
+                }
+
+                println!("\n  {} Generated Templates:", "✨".bright_green());
+                println!("  {}", "─".repeat(60).dimmed());
+
+                let mut templates_to_save = Vec::new();
+
+                for (i, ai_template) in generated_templates.iter().enumerate() {
+                    // Create TaskTemplate from AI generation
+                    let mut template = TaskTemplate::new(ai_template.name.clone(), ai_template.description.clone());
+                    
+                    // Apply AI suggestions
+                    template.tags = ai_template.tags.iter().cloned().collect();
+                    template.implementation_notes = ai_template.implementation_notes.clone();
+                    
+                    // Parse priority
+                    template.priority = match ai_template.priority.to_lowercase().as_str() {
+                        "critical" => Priority::Critical,
+                        "high" => Priority::High,
+                        "medium" => Priority::Medium,
+                        "low" => Priority::Low,
+                        _ => Priority::Medium,
+                    };
+                    
+                    // Parse phase
+                    template.phase = Phase::from_string(&ai_template.phase);
+                    
+                    // Parse category
+                    template.category = match ai_template.category.to_lowercase().as_str() {
+                        "development" => TemplateCategory::Development,
+                        "testing" => TemplateCategory::Testing,
+                        "documentation" => TemplateCategory::Documentation,
+                        "devops" => TemplateCategory::DevOps,
+                        "design" => TemplateCategory::Design,
+                        "research" => TemplateCategory::Research,
+                        "meeting" => TemplateCategory::Meeting,
+                        "bug" => TemplateCategory::Bug,
+                        "feature" => TemplateCategory::Feature,
+                        _ => TemplateCategory::Custom(ai_template.category.clone()),
+                    };
+
+                    // Apply overrides
+                    if let Some(category_str) = category_override {
+                        template.category = match category_str.to_lowercase().as_str() {
+                            "development" => TemplateCategory::Development,
+                            "testing" => TemplateCategory::Testing,
+                            "documentation" => TemplateCategory::Documentation,
+                            "devops" => TemplateCategory::DevOps,
+                            "design" => TemplateCategory::Design,
+                            "research" => TemplateCategory::Research,
+                            "meeting" => TemplateCategory::Meeting,
+                            "bug" => TemplateCategory::Bug,
+                            "feature" => TemplateCategory::Feature,
+                            _ => TemplateCategory::Custom(category_str.to_string()),
+                        };
+                    }
+
+                    if let Some(phase_str) = phase_override {
+                        template.phase = Phase::from_string(phase_str);
+                    }
+
+                    // Display template
+                    let priority_icon = match template.priority {
+                        Priority::Critical => "🔴",
+                        Priority::High => "⬆️",
+                        Priority::Medium => "▶️",
+                        Priority::Low => "⬇️",
+                    };
+
+                    println!("\n  {}. {} {} {}", 
+                        i + 1,
+                        priority_icon,
+                        template.name.bright_white().bold(),
+                        format!("({})", template.category.to_string()).dimmed()
+                    );
+                    println!("     📝 {}", template.description.dimmed());
+                    
+                    if !template.tags.is_empty() {
+                        let tags: Vec<String> = template.tags.iter()
+                            .map(|t| format!("#{}", t))
+                            .collect();
+                        println!("     🏷️  {}", tags.join(" ").bright_blue());
+                    }
+                    
+                    if !ai_template.implementation_notes.is_empty() {
+                        println!("     🔧 Implementation:");
+                        for note in &ai_template.implementation_notes {
+                            println!("        • {}", note.dimmed());
+                        }
+                    }
+
+                    if !ai_template.usage_examples.is_empty() {
+                        println!("     💡 Examples:");
+                        for example in &ai_template.usage_examples {
+                            println!("        • {}", example.bright_cyan());
+                        }
+                    }
+
+                    println!("     🤖 AI Reasoning: {}", ai_template.reasoning.dimmed());
+
+                    templates_to_save.push(template);
+                }
+
+                if apply {
+                    let mut existing_templates = load_templates()?;
+                    let mut added_count = 0;
+
+                    for template in templates_to_save {
+                        if existing_templates.find_template(&template.name).is_some() {
+                            println!("  {} Template '{}' already exists, skipping", "⚠️".bright_yellow(), template.name);
+                            continue;
+                        }
+                        existing_templates.add_template(template);
+                        added_count += 1;
+                    }
+
+                    save_templates(&existing_templates)?;
+                    println!("\n  {} Saved {} new templates!", "✅".bright_green(), added_count);
+                } else {
+                    println!("\n  {} Use --apply to save these templates", "💡".bright_blue());
+                }
+            }
+            Err(e) => {
+                println!("  {} Failed to generate templates: {}", "❌".bright_red(), e);
+            }
+        }
+
+        Ok(())
+    })
+}
+
+/// Suggest relevant templates based on current project context
+fn suggest_templates_with_ai(
+    limit: usize,
+    category_filter: Option<&str>,
+    detailed: bool
+) -> Result<(), Box<dyn std::error::Error>> {
+    use tokio::runtime::Runtime;
+    
+    let rt = Runtime::new()?;
+    
+    rt.block_on(async {
+        // Load AI config
+        let config = crate::config::RaskConfig::load()?;
+        if !config.ai.is_ready() {
+            println!("  {} AI is not configured. Please run 'rask ai configure' first.", "❌".bright_red());
+            return Ok(());
+        }
+
+        // Load current project
+        let roadmap = crate::state::load_state()?;
+        
+        // Load existing templates
+        let existing_templates = load_templates()?;
+        
+        // Initialize AI service
+        let ai_service = crate::ai::service::AiService::new(config).await?;
+        
+        println!("  {} Analyzing project and suggesting {} relevant template(s)...", "🔍".bright_blue(), limit);
+        
+        match ai_service.suggest_templates(&roadmap, &existing_templates.templates, limit).await {
+            Ok(suggestions) => {
+                if suggestions.is_empty() {
+                    println!("  {} No template suggestions generated", "⚠️".bright_yellow());
+                    return Ok(());
+                }
+
+                // Filter by category if specified
+                let filtered_suggestions: Vec<_> = if let Some(cat_filter) = category_filter {
+                    suggestions.into_iter()
+                        .filter(|s| s.category.to_lowercase().contains(&cat_filter.to_lowercase()))
+                        .collect()
+                } else {
+                    suggestions
+                };
+
+                if filtered_suggestions.is_empty() {
+                    println!("  {} No suggestions match the category filter '{}'", "⚠️".bright_yellow(), category_filter.unwrap());
+                    return Ok(());
+                }
+
+                println!("\n  {} AI Template Suggestions:", "💡".bright_green());
+                println!("  {}", "─".repeat(70).dimmed());
+
+                for (i, suggestion) in filtered_suggestions.iter().enumerate() {
+                    let priority_icon = match suggestion.priority.to_lowercase().as_str() {
+                        "critical" => "🔴",
+                        "high" => "⬆️",
+                        "medium" => "▶️",
+                        "low" => "⬇️",
+                        _ => "▶️",
+                    };
+
+                    let score_color = if suggestion.usefulness_score >= 80 {
+                        "bright_green"
+                    } else if suggestion.usefulness_score >= 60 {
+                        "bright_yellow"
+                    } else {
+                        "bright_red"
+                    };
+
+                    println!("\n  {}. {} {} {} ({}% useful)", 
+                        i + 1,
+                        priority_icon,
+                        suggestion.name.bright_white().bold(),
+                        format!("[{}]", suggestion.category).bright_cyan(),
+                        suggestion.usefulness_score.to_string().color(score_color).bold()
+                    );
+                    
+                    println!("     📝 {}", suggestion.description);
+                    
+                    if detailed {
+                        println!("     🤖 AI Reasoning:");
+                        for line in suggestion.reasoning.lines() {
+                            println!("        {}", line.dimmed());
+                        }
+                    }
+                }
+
+                println!("\n  {} Use 'rask template generate' to create these templates", "💡".bright_blue());
+            }
+            Err(e) => {
+                println!("  {} Failed to generate suggestions: {}", "❌".bright_red(), e);
+            }
+        }
+
+        Ok(())
+    })
+}
+
+/// Enhance an existing template with AI improvements
+fn enhance_template_with_ai(
+    template_name: &str,
+    apply: bool
+) -> Result<(), Box<dyn std::error::Error>> {
+    use tokio::runtime::Runtime;
+    
+    let rt = Runtime::new()?;
+    
+    rt.block_on(async {
+        // Load AI config
+        let config = crate::config::RaskConfig::load()?;
+        if !config.ai.is_ready() {
+            println!("  {} AI is not configured. Please run 'rask ai configure' first.", "❌".bright_red());
+            return Ok(());
+        }
+
+        // Load templates and find the target
+        let mut templates = load_templates()?;
+        let template = match templates.find_template(template_name) {
+            Some(t) => t.clone(),
+            None => {
+                println!("  {} Template '{}' not found", "❌".bright_red(), template_name.bright_white());
+                return Ok(());
+            }
+        };
+
+        // Load current project context
+        let roadmap = match crate::state::load_state() {
+            Ok(roadmap) => Some(roadmap),
+            Err(_) => None,
+        };
+
+        // Initialize AI service
+        let ai_service = crate::ai::service::AiService::new(config).await?;
+        
+        println!("  {} Enhancing template: '{}'", "🚀".bright_blue(), template_name.bright_white());
+        
+        match ai_service.enhance_template(&template, roadmap.as_ref()).await {
+            Ok(enhancement) => {
+                println!("\n  {} AI Enhancement Results:", "✨".bright_green());
+                println!("  {}", "─".repeat(60).dimmed());
+
+                // Show current vs enhanced
+                println!("\n  📝 Enhanced Description:");
+                println!("     {}", enhancement.enhanced_description.bright_white());
+
+                if !enhancement.additional_tags.is_empty() {
+                    println!("\n  🏷️  Additional Tags:");
+                    let new_tags: Vec<String> = enhancement.additional_tags.iter()
+                        .map(|t| format!("#{}", t))
+                        .collect();
+                    println!("     {}", new_tags.join(" ").bright_blue());
+                }
+
+                if !enhancement.enhanced_implementation_notes.is_empty() {
+                    println!("\n  🔧 Enhanced Implementation Notes:");
+                    for (i, note) in enhancement.enhanced_implementation_notes.iter().enumerate() {
+                        println!("     {}. {}", i + 1, note.dimmed());
+                    }
+                }
+
+                if !enhancement.usage_examples.is_empty() {
+                    println!("\n  💡 Usage Examples:");
+                    for example in &enhancement.usage_examples {
+                        println!("     • {}", example.bright_cyan());
+                    }
+                }
+
+                if !enhancement.common_pitfalls.is_empty() {
+                    println!("\n  ⚠️  Common Pitfalls:");
+                    for pitfall in &enhancement.common_pitfalls {
+                        println!("     • {}", pitfall.bright_red());
+                    }
+                }
+
+                if !enhancement.acceptance_criteria.is_empty() {
+                    println!("\n  ✅ Acceptance Criteria:");
+                    for criteria in &enhancement.acceptance_criteria {
+                        println!("     • {}", criteria.bright_green());
+                    }
+                }
+
+                println!("\n  📊 Summary: {}", enhancement.improvements_summary.dimmed());
+
+                if apply {
+                    // Create enhanced template
+                    let mut enhanced_template = template.clone();
+                    enhanced_template.description = enhancement.enhanced_description;
+                    
+                    // Add new tags
+                    for tag in enhancement.additional_tags {
+                        enhanced_template.tags.insert(tag);
+                    }
+                    
+                    // Replace implementation notes
+                    enhanced_template.implementation_notes = enhancement.enhanced_implementation_notes;
+                    
+                    // Add enhancement info as notes
+                    let enhancement_info = format!(
+                        "Enhanced with AI assistance. Usage examples: {}. Common pitfalls: {}. Acceptance criteria: {}",
+                        enhancement.usage_examples.join("; "),
+                        enhancement.common_pitfalls.join("; "),
+                        enhancement.acceptance_criteria.join("; ")
+                    );
+                    enhanced_template.notes = Some(enhancement_info);
+
+                    // Replace in collection
+                    templates.remove_template(template_name);
+                    templates.add_template(enhanced_template);
+                    save_templates(&templates)?;
+
+                    println!("\n  {} Template enhanced and saved!", "✅".bright_green());
+                } else {
+                    println!("\n  {} Use --apply to save the enhanced template", "💡".bright_blue());
+                }
+            }
+            Err(e) => {
+                println!("  {} Failed to enhance template: {}", "❌".bright_red(), e);
+            }
+        }
+
+        Ok(())
+    })
 } 

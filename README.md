@@ -1,31 +1,30 @@
-# Rask 🚀 - Advanced CLI Project Planner
+# Rask 🚀 - CLI Project Planner
 
-[![Version](https://img.shields.io/badge/version-2.8.0-blue.svg)](https://github.com/tito-sala/rask)
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/tito-sala/rask)
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**Rask** is a powerful, feature-rich command-line project planner built with Rust. It transforms simple Markdown files into sophisticated project management systems with advanced task tracking, dependency management, multi-project support, **roadmap phases**, **interactive TUI interface**, and beautiful terminal UI.
+**Rask** is a command-line project planner built with Rust. It transforms Markdown files into sophisticated task management systems with advanced task tracking, dependency management, multi-project support, roadmap phases, interactive TUI interface, and comprehensive terminal UI. Recently fixed TUI navigation issues for smoother user experience.
 
 ## ✨ Key Features
 
 ### 🖥️ **Interactive TUI Interface**
-- **NEW**: Full-featured Terminal User Interface with real-time interaction
-- **NEW**: Multi-view dashboard system (Home, Task Manager, AI Assistant, Templates, Analytics, Settings, Project Switcher)
-- **NEW**: Project switcher for seamless navigation between projects
-- **NEW**: Keyboard shortcuts (F1-F7) for instant view switching
-- **NEW**: Real-time task completion toggling and progress updates
-- **NEW**: Settings persistence and customizable interface
-- **NEW**: Context-aware help system and navigation guidance
+- Full-featured Terminal User Interface with real-time interaction
+- Multi-view dashboard system (Home, Tasks, Templates, Settings, Project Switcher)
+- Project switcher for seamless navigation between projects
+- Real-time task completion toggling and progress updates
+- Recently fixed navigation freezing issues for smooth operation
+- Context-aware help system and keyboard navigation
 
 ### 🎯 **Core Task Management**
 - Initialize projects from Markdown files with automatic sync
 - Complete, add, edit, and remove tasks with rich metadata
 - Beautiful, colored terminal output with progress tracking
-- **NEW**: Detailed task view with comprehensive information
+- Detailed task view with comprehensive information
 
 ### 🏗️ **Roadmap Phases System**
-- **NEW**: Organize tasks by development lifecycle phases (MVP, Beta, Release, Future, Backlog)
-- **NEW**: Create custom phases with personalized names, descriptions, and emojis
+- Organize tasks by development lifecycle phases (MVP, Beta, Release, Future, Backlog)
+- Create custom phases with personalized names and descriptions
 - Phase-based filtering and visualization with emoji indicators
 - Smart phase recommendations and progress tracking
 - Comprehensive phase overview with statistics and insights
@@ -45,13 +44,13 @@
 - Full-text search across task descriptions and notes
 - Flexible AND/OR filter operations
 - List ready-to-start vs blocked tasks
-- **NEW**: Phase-specific task filtering and display
+- Phase-specific task filtering and display
 
 ### 🏢 **Multi-Project Workspace**
 - Manage multiple projects simultaneously
 - Project-specific state files and configurations
 - Easy project switching and isolation
-- **NEW**: Comprehensive configuration system
+- Comprehensive configuration system
 
 ### 🔗 **Dependency Management**
 - Define task dependencies with automatic validation
@@ -61,31 +60,30 @@
 - Block task completion until dependencies are satisfied
 
 ### ⚡ **Power User Features**
-- **NEW**: Interactive TUI mode with comprehensive project management dashboard
-- **NEW**: Bulk operations (complete, tag, prioritize, set phases for multiple tasks)
-- **NEW**: Export capabilities (JSON, CSV, HTML) with filtering and phase information
-- **NEW**: Configuration system with user and project-specific settings
-- **NEW**: Enhanced dependency tree visualization
-- **NEW**: Modular architecture for better maintainability and extensibility
-- **NEW**: Time estimation and tracking with variance analysis
-- **NEW**: Session-based time tracking with optional descriptions
+- Interactive TUI mode with comprehensive project management dashboard
+- Bulk operations (complete, tag, prioritize, set phases for multiple tasks)
+- Export capabilities (JSON, CSV, HTML) with filtering and phase information
+- Configuration system with user and project-specific settings
+- Enhanced dependency tree visualization
+- Modular architecture for better maintainability and extensibility
+- Time estimation and tracking with variance analysis
+- Session-based time tracking with optional descriptions
 
 ### 📊 **Visualization & Analysis**
 - Comprehensive dependency trees with ASCII art
 - Progress bars and completion statistics
 - Ready vs blocked task analysis
 - Project overview dashboards
-- **NEW**: Beautiful HTML exports with responsive design
-- **NEW**: Phase-based progress tracking and recommendations
-- **NEW**: Timeline view with horizontal phase progression and pagination
-- **NEW**: Phase-grouped displays with individual progress bars
+- Beautiful HTML exports with responsive design
+- Phase-based progress tracking and recommendations
+- Timeline view with horizontal phase progression and pagination
+- Phase-grouped displays with individual progress bars
 
 ### 📋 **Task Templates System**
-- **NEW**: Pre-configured task patterns for consistent task creation
+- Pre-configured task patterns for consistent task creation
 - Built-in templates for common development scenarios (Bug Fix, Feature Implementation, etc.)
 - Custom template creation with full metadata support
 - Template categories (Development, Testing, Documentation, DevOps, Design, etc.)
-- AI integration examples for automated roadmap generation
 - Template export/import for team sharing
 - Smart placeholders and implementation notes
 
@@ -104,7 +102,7 @@ cargo install --path .
 
 ### Interactive TUI Mode
 
-**NEW**: Launch the powerful interactive Terminal User Interface:
+Launch the powerful interactive Terminal User Interface:
 
 ```bash
 # Start interactive mode
@@ -120,19 +118,14 @@ rask interactive --no-welcome
 **TUI Features:**
 - **🏠 Home Dashboard**: Project overview with statistics and quick actions
 - **📝 Task Manager**: Interactive task list with real-time completion toggling
-- **🤖 AI Assistant**: Chat interface for task planning and assistance
 - **📄 Templates**: Browse and apply task templates
-- **📊 Analytics**: Project progress visualization and insights
 - **⚙️ Settings**: Customize TUI behavior and appearance
-- **🔄 Project Switcher**: Seamlessly navigate between multiple projects
+- **🔄 Project Switcher**: Seamlessly navigate between multiple projects (navigation issues recently fixed)
 
 **Navigation:**
-- **F1-F7**: Quick view switching
-- **Tab**: Cycle through interface panels
 - **↑↓**: Navigate lists and options
 - **Enter/Space**: Toggle tasks or select options
-- **p/F7**: Open project switcher
-- **h**: Show help and keyboard shortcuts
+- **Tab**: Cycle through interface panels
 - **q**: Quit application
 
 ### Basic Usage
@@ -192,43 +185,33 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
 
 | Command | Description |
 |---------|-------------|
-| `rask interactive [options]` | **NEW**: Launch interactive TUI with full dashboard |
+| `rask interactive [options]` | Launch interactive TUI with full dashboard |
 | `rask init <file.md>` | Initialize project from Markdown |
 | `rask show [options]` | Display project status with phase grouping and filtering |
-| `rask timeline [options]` | **NEW**: Show horizontal timeline with phase progression and pagination |
+| `rask timeline [options]` | Show horizontal timeline with phase progression and pagination |
 | `rask add <desc> [options]` | Add task with metadata, phase, and time estimate |
 | `rask complete <id>` | Complete a task |
 | `rask view <id>` | View detailed task information |
 | `rask list [filters]` | List and filter tasks |
-| `rask phase <operation>` | **NEW**: Manage roadmap phases |
+| `rask phase <operation>` | Manage roadmap phases |
 | `rask dependencies [options]` | Analyze dependencies |
-| `rask start <id> [options]` | **NEW**: Start time tracking for a task |
-| `rask stop` | **NEW**: Stop current time tracking session |
-| `rask time [id] [options]` | **NEW**: View time tracking information |
+| `rask start <id> [options]` | Start time tracking for a task |
+| `rask stop` | Stop current time tracking session |
+| `rask time [id] [options]` | View time tracking information |
 | `rask bulk <operation> <ids>` | Bulk operations on multiple tasks |
 | `rask export <format> [options]` | Export to JSON/CSV/HTML with phases and time data |
 | `rask config <operation>` | Manage configuration |
 | `rask project <operation>` | Multi-project management |
-| `rask template <operation>` | **NEW**: Manage task templates |
+| `rask template <operation>` | Manage task templates |
 
-### Interactive TUI Commands
+### Interactive TUI Navigation
 
-| Keyboard Shortcut | Description |
-|-------------------|-------------|
-| `F1` | Home Dashboard - Project overview and quick actions |
-| `F2` | Task Manager - Interactive task list with completion |
-| `F3` | AI Assistant - Chat interface for task planning |
-| `F4` | Templates - Browse and apply task templates |
-| `F5` | Analytics - Progress visualization and insights |
-| `F6` | Settings - Customize TUI behavior |
-| `F7` / `p` | Project Switcher - Navigate between projects |
-| `Tab` | Cycle through interface panels |
+| Key | Action |
+|-----|--------|
 | `↑↓` | Navigate lists and options |
 | `Enter` / `Space` | Toggle tasks or select options |
-| `h` | Show help and keyboard shortcuts |
-| `r` | Refresh project data |
-| `s` | Save current settings |
-| `q` / `Ctrl+C` | Quit application |
+| `Tab` | Cycle through interface panels |
+| `q` | Quit application |
 
 ### Phase Commands
 
@@ -238,7 +221,7 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
 | `rask phase list` | List all phases with descriptions |
 | `rask phase show <phase>` | Display tasks in specific phase |
 | `rask phase set <id> <phase>` | Set phase for individual task |
-| `rask phase create <name> [options]` | **NEW**: Create custom phases |
+| `rask phase create <name> [options]` | Create custom phases |
 | `rask bulk set-phase <ids> <phase>` | Set phase for multiple tasks |
 
 ### Timeline & Visualization Commands
@@ -246,13 +229,13 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
 | Command | Description |
 |---------|-------------|
 | `rask timeline` | Show horizontal timeline with all phases (paginated) |
-| `rask timeline --page <n>` | **NEW**: Navigate to specific page (default: 5 phases per page) |
-| `rask timeline --page-size <n>` | **NEW**: Set number of phases per page |
+| `rask timeline --page <n>` | Navigate to specific page (default: 5 phases per page) |
+| `rask timeline --page-size <n>` | Set number of phases per page |
 | `rask timeline --compact` | Use compact view for more information |
 | `rask timeline --active-only` | Show only phases containing tasks |
-| `rask show --group-by-phase` | **NEW**: Group tasks by phase with progress bars |
-| `rask show --phase <name>` | **NEW**: Filter display to specific phase |
-| `rask show --collapse-completed` | **NEW**: Collapse completed phases |
+| `rask show --group-by-phase` | Group tasks by phase with progress bars |
+| `rask show --phase <name>` | Filter display to specific phase |
+| `rask show --collapse-completed` | Collapse completed phases |
 
 ### Time Tracking Commands
 
@@ -274,33 +257,33 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
 | `rask template use <name> [description]` | Create task from template |
 | `rask template create <name> <desc> [options]` | Create custom template |
 | `rask template delete <name>` | Delete custom template |
-| `rask template examples` | Show help and AI integration examples |
+| `rask template examples` | Show help and integration examples |
 
 ## 🎨 Interactive TUI Preview
 
-**NEW**: Launch the interactive Terminal User Interface for a modern project management experience:
+Comprehensive Terminal User Interface with multiple views:
 
 ```
 ┌─ 🚀 Rask TUI • Task Manager ──────────────────────────────────────────────────┐
-│  🏠 Home │📝 Tasks │🤖 AI │📄 Templates │📊 Analytics │⚙️ Settings │🔄 Projects │
+│  🏠 Home │📝 Tasks │📄 Templates │⚙️ Settings │🔄 Projects                    │
 └────────────────────────────────────────────────────────────────────────────────┘
-┌─ 📋 My Web App Project • 8/12 tasks (67%) ──────────┐ ┌─ 🤖 Task Assistant (3) ─┐
-│                                                      │ │                          │
-│ ┌─ Tasks (1-8/12) ──────────────────────────────────┐ │ │ AI Assistant:           │
-│ │ ▶ ✅ 🔥 #1 Set up development environment 🚀      │ │ │ Hello! I'm here to help │
-│ │   ✅ ⬆️ #2 Design database schema 🚀 [2.8h]      │ │ │ you manage your tasks.  │
-│ │   ✅ 🔥 #3 Create API endpoints #backend 🧪      │ │ │                          │
-│ │   □ ⬆️ #4 Implement authentication 🧪 [4.5h]     │ │ │ You:                    │
-│ │       🔗 Depends on: 2, 3                        │ │ │ Break down task #4      │
-│ │   ⏱️ ▶️ #5 Write tests #testing 🎯 [1.2h tracked] │ │ │                          │
-│ │       🔗 Depends on: 4 | 🕐 Active session       │ │ │                          │
-│ │   □ 🔥 #6 Deploy to production #deployment 🎯    │ │ │                          │
-│ │       🔗 Depends on: 5                           │ │ └─────────────────────────┘
-│ └──────────────────────────────────────────────────┘ │ ┌─ 💬 Ask about tasks ──┐
-│                                                      │ │ _                       │
-└──────────────────────────────────────────────────────┘ └─────────────────────────┘
+┌─ 📋 My Web App Project • 8/12 tasks (67%) ──────────┐ ┌─ 📊 Phase Progress ──┐
+│                                                      │ │                      │
+│ ┌─ Tasks (1-8/12) ──────────────────────────────────┐ │ │ 🚀 MVP: 67% (2/3)    │
+│ │ ✅ ▶️ #1 Set up development environment 🚀      │ │ │ 🧪 Beta: 50% (1/2)   │
+│ │ ✅ ⬆️ #2 Design database schema 🚀 [2.8h]      │ │ │ 🎯 Release: 0% (0/2) │
+│ │ ✅ 🔥 #3 Create API endpoints #backend 🧪      │ │ │                      │
+│ │ □ ⬆️ #4 Implement authentication 🧪 [4.5h]     │ │ │ 🎯 Ready: Task #4    │
+│ │     🔗 Depends on: 2, 3                        │ │ │                      │
+│ │ ⏱️ ▶️ #5 Write tests #testing 🎯 [1.2h tracked] │ │ │                      │
+│ │     🔗 Depends on: 4 | 🕐 Active session       │ │ │                      │
+│ │ □ 🔥 #6 Deploy to production #deployment 🎯    │ │ │                      │
+│ │     🔗 Depends on: 5                           │ │ └──────────────────────┘
+│ └──────────────────────────────────────────────────┘ │
+│                                                      │
+└──────────────────────────────────────────────────────┘
 
-F1-F7: Switch views • Tab: Change focus • ↑↓: Navigate • Enter/Space: Toggle • Q: Quit
+↑↓: Navigate • Enter/Space: Toggle • Tab: Switch panels • Q: Quit
 ```
 
 ### CLI Terminal Preview
@@ -337,139 +320,50 @@ F1-F7: Switch views • Tab: Change focus • ↑↓: Navigate • Enter/Space: 
   🎯 Great progress! Focus on Beta phase next.
 ```
 
-## 🤖 AI-Assisted Roadmap Generation
+## 🤖 Future: Web Dashboard
 
-Rask provides comprehensive templates and examples that work perfectly with AI assistants like ChatGPT, Claude, or any other AI tool. While Rask doesn't have built-in AI integration yet, it's designed to work seamlessly with AI-generated content, dramatically speeding up project planning and ensuring consistent task structure.
+Based on the lessons learned from building a comprehensive TUI, our roadmap focuses on simplicity first. The next major milestone is a **web dashboard** that will provide:
 
-### 📝 Copy-Paste Template for AI Assistants
+### 🌐 Planned Web Interface
+- **Clean Dashboard**: Simple, focused project overview
+- **Task Management**: Web-based task completion and editing
+- **Multi-Project View**: Easy switching between projects
+- **Export & Sharing**: Better collaboration and reporting
+- **Simple Visualizations**: Progress charts and dependency graphs
 
-Use this template with any AI assistant to generate a complete roadmap that works perfectly with Rask:
+### 🎯 Development Philosophy
+- **Simplicity First**: Learn from TUI complexity and keep it simple
+- **Core Features Focus**: Prioritize essential functionality over advanced features
+- **User-Centered**: Build what users actually need, not what's theoretically possible
+- **Progressive Enhancement**: Start minimal, add features based on real usage
+
+### 📝 AI Assistant Template
+
+For AI assistance with external tools like ChatGPT or Claude, use this simple template:
 
 ```markdown
-Create a development roadmap for a [PROJECT_TYPE] with the following structure. 
-Each task should include appropriate tags, priorities, phases, and implementation notes:
+Create a simple development roadmap for a [PROJECT_TYPE] with basic task structure:
 
 # Project: [PROJECT_NAME]
 
 ## MVP Phase
-- [ ] Task description #tag1 #tag2 (Priority: High)
-  Notes: Implementation details and considerations
-  
-- [ ] Another MVP task #backend #database (Priority: Medium)
-  Notes: Database setup and configuration requirements
+- [ ] Core task description #tag1 #tag2 (Priority: High)
+- [ ] Another essential task #backend (Priority: Medium)
 
 ## Beta Phase  
-- [ ] Beta feature #frontend #ui (Priority: High)
-  Notes: User interface improvements and testing
-  
-- [ ] Integration testing #testing #qa (Priority: Medium)
-  Notes: End-to-end testing scenarios and acceptance criteria
+- [ ] Enhancement feature #frontend (Priority: High)
+- [ ] Testing task #testing (Priority: Medium)
 
 ## Release Phase
-- [ ] Production deployment #devops #deployment (Priority: Critical)
-  Notes: Deployment checklist and rollback procedures
-  
-- [ ] Performance optimization #performance (Priority: High)
-  Notes: Profiling and optimization targets
+- [ ] Deployment task #deployment (Priority: Critical)
+- [ ] Final optimization #performance (Priority: High)
 
 ## Future Phase
-- [ ] Advanced features #enhancement (Priority: Low)
-  Notes: Future improvements and feature requests
+- [ ] Future improvements #enhancement (Priority: Low)
 
-## Custom Phases (Optional)
-You can also request custom phases for specific project needs:
-
-## Planning Phase
-- [ ] Market research #research #planning (Priority: High)
-  Notes: Competitive analysis and user research
-
-## Design Phase  
-- [ ] UI/UX mockups #design #frontend (Priority: High)
-  Notes: User interface design and prototyping
-
-IMPORTANT: When generating Notes sections, use plain text descriptions 
-instead of bullet points or numbered lists to prevent parsing issues.
-Use comma-separated items or flowing text instead.
-
-Please format it as a markdown file that I can use with 'rask init roadmap.md'
+Keep it simple - focus on essential tasks only.
+Format as markdown for 'rask init roadmap.md'
 ```
-
-### 🎯 Example AI Prompts
-
-**For Web Applications:**
-```
-Create a development roadmap for a web application with user authentication, 
-real-time chat, and file sharing capabilities. Include MVP, Beta, Release, 
-and Future phases with appropriate priorities and implementation notes.
-```
-
-**For Mobile Apps:**
-```
-Generate a roadmap for a mobile fitness tracking app with social features. 
-Include tasks for iOS/Android development, backend API, user onboarding, 
-and analytics integration.
-```
-
-**For API Projects:**
-```
-Create a roadmap for a RESTful API with authentication, rate limiting, 
-documentation, and monitoring. Focus on scalability and security.
-```
-
-**For Custom Phases:**
-```
-Create a development roadmap with custom phases for a [PROJECT_TYPE]. 
-Include these phases: Planning, Design, Development, Testing, Deployment, Maintenance.
-Each phase should have appropriate tasks with tags, priorities, and implementation notes.
-```
-
-### ✨ AI-Assisted Roadmap Benefits
-
-- **Comprehensive Coverage**: AI assistants help ensure no critical tasks are missed
-- **Proper Prioritization**: Smart priority assignment based on dependencies
-- **Phase Organization**: Logical grouping of tasks by development lifecycle
-- **Implementation Notes**: Detailed technical considerations for each task
-- **Consistent Tagging**: Standardized tags for better organization
-- **Time-Saving**: Generate complete roadmaps in seconds instead of hours
-- **Template Integration**: Use Rask's task templates to standardize recurring tasks
-
-### 🔄 Workflow Integration
-
-1. **Generate**: Use AI assistants with our templates to create your initial roadmap
-2. **Initialize**: `rask init ai-generated-roadmap.md`
-3. **Enhance**: Use `rask template` commands to add standardized tasks
-4. **Execute**: Track progress with Rask's powerful features
-5. **Iterate**: Export progress and feed back to AI for roadmap updates
-
-> **Future Enhancement**: Direct AI integration is planned for future releases, which will automate this workflow even further.
-
-## 🏗️ Architecture
-
-Rask features a **modular architecture** designed for maintainability and extensibility:
-
-```
-src/
-├── commands/           # Modular command system
-│   ├── mod.rs         # Public API and routing
-│   ├── core.rs        # Core task operations
-│   ├── phases.rs      # Phase management system
-│   ├── project.rs     # Multi-project support
-│   ├── bulk.rs        # Bulk operations
-│   ├── export.rs      # Export functionality
-│   ├── config.rs      # Configuration management
-│   ├── dependencies.rs # Dependency analysis
-│   └── utils.rs       # Shared utilities
-├── model.rs           # Data models and types
-├── cli.rs             # Command-line interface
-├── main.rs            # Application entry point
-└── ...                # UI, parsing, and utilities
-```
-
-**Benefits:**
-- **Single Responsibility**: Each module has a focused purpose
-- **Better Maintainability**: Easier testing, debugging, and code reviews
-- **Improved Developer Experience**: Better IDE support and faster compilation
-- **Future-Proof**: Easy to extend with new features
 
 ## 🛠️ Built With
 
@@ -478,90 +372,55 @@ src/
 - **[serde](https://crates.io/crates/serde)** - Serialization framework
 - **[pulldown-cmark](https://crates.io/crates/pulldown-cmark)** - Markdown parsing
 - **[colored](https://crates.io/crates/colored)** - Terminal color output
-- **[chrono](https://crates.io/crates/chrono)** - Date and time handling
-- **[toml](https://crates.io/crates/toml)** - Configuration file parsing
-- **[dirs](https://crates.io/crates/dirs)** - Platform-specific directories
+- **[ratatui](https://crates.io/crates/ratatui)** - Terminal UI framework
 
-## 📈 Roadmap
+## 📈 Project Roadmap
 
-### ✅ Completed Features (v2.8.0)
-- [x] Core task management with Markdown sync
-- [x] Enhanced filtering and search capabilities
+### ✅ Current Status (v3.0.0)
+- [x] Core CLI task management with Markdown sync
+- [x] Interactive TUI with comprehensive dashboard
 - [x] Multi-project workspace system
-- [x] Sophisticated dependency management
-- [x] Configuration system with user/project settings
-- [x] Detailed task view and analysis
+- [x] Advanced dependency management with visualization
+- [x] Roadmap phases system with custom phase creation
+- [x] Time estimation and tracking with variance analysis
+- [x] Task filtering and search capabilities
+- [x] Export capabilities (JSON, CSV, HTML) with phase information
 - [x] Bulk operations for productivity
-- [x] Export capabilities (JSON, CSV, HTML)
-- [x] Enhanced dependency tree visualization
-- [x] **Modular architecture for better maintainability**
-- [x] **Roadmap phases system (MVP, Beta, Release, Future, Backlog)**
-- [x] **Custom phase creation with personalized names, descriptions, and emojis**
-- [x] **Task templates system with built-in and custom templates**
-- [x] **Time estimation and tracking with variance analysis**
-- [x] **Session-based time tracking with start/stop functionality**
-- [x] **Phase-based task organization with dynamic phase detection**
-- [x] **Timeline view with horizontal phase progression**
-- [x] **Timeline pagination for managing large numbers of phases**
-- [x] **Phase-grouped displays with individual progress bars**
-- [x] **Phase-specific filtering and visualization options**
-- [x] **Interactive TUI with comprehensive multi-view dashboard**
-- [x] **Project switcher for seamless navigation between projects**
-- [x] **Real-time task completion toggling and progress updates**
-- [x] **Settings persistence and customizable TUI interface**
-- [x] **Context-aware help system and keyboard navigation**
+- [x] Task templates system
+- [x] Timeline visualization with pagination
+- [x] Configuration system
+- [x] **Fixed TUI navigation freezing issues**
 
-### ✅ Phase 4: Advanced Phase Visualization 📊 (v2.6.2 - Completed)
-- [x] **Phase-grouped task displays with individual progress bars**
-- [x] **Timeline view showing horizontal phase progression**
-- [x] **Dynamic phase detection from roadmap data (no hardcoded phases)**
-- [x] **Timeline pagination for managing large numbers of phases**
-- [x] **Phase-specific filtering options**
-- [x] **Collapsible completed phases to reduce visual clutter**
-- [x] **Enhanced UI layouts with multi-column sectioned displays**
-- [x] **Comprehensive phase statistics and navigation**
+### 🎯 Next: Web Dashboard (v3.1.0)
+- [ ] REST API backend for project data
+- [ ] Web-based project overview dashboard
+- [ ] Browser-based task management interface
+- [ ] Real-time progress visualization
+- [ ] Team collaboration features
+- [ ] Web-based time tracking interface
 
-### ✅ Phase 5: Complete Interactive TUI System 🖥️ (v2.8.0 - Recently Completed)
-- [x] **Comprehensive multi-view dashboard with navigation bar**
-- [x] **Home Dashboard with project overview and quick actions**
-- [x] **Interactive Task Manager with real-time completion toggling**
-- [x] **AI Assistant interface with chat functionality (foundation)**
-- [x] **Templates view for browsing and applying task patterns**
-- [x] **Analytics view with progress visualization and insights**
-- [x] **Settings view with TUI customization options**
-- [x] **Project Switcher for seamless multi-project navigation**
-- [x] **Keyboard navigation system (F1-F7) with context-aware help**
-- [x] **Settings persistence and user preference management**
-- [x] **Professional TUI experience rivaling modern desktop applications**
+### 🔮 Future Phases
+- [ ] **Mobile Interface**: Companion app with offline sync
+- [ ] **Advanced Analytics**: Project insights and reporting
+- [ ] **External Integrations**: Git, GitHub, Jira, Slack connections
+- [ ] **Enterprise Features**: Multi-tenant architecture
 
-### 🚧 Phase 6: Enhanced Export & Plugin Foundation 📤 (v2.9.0 - Current Focus)
-- [ ] Time data integration in all export formats (JSON, CSV, HTML)
-- [ ] Advanced filtering in exports (date ranges, time thresholds)
-- [ ] Report templates (sprint reports, time tracking reports)
-- [ ] Export scheduling and automation
-- [ ] Interactive HTML reports with charts and visualizations
-- [ ] Custom export configurations and profiles
-- [ ] Plugin system foundation and architecture design
+## 🎓 Lessons Learned
 
-### 🔮 Future Development Phases
+This project started with ambitious goals for a comprehensive TUI with AI integration, advanced analytics, and complex features. Through development, we learned valuable lessons:
 
-**Phase 7: Web Dashboard Interface 🌐 (v3.1.0)**
-- Local web server for dashboard with REST API
-- Real-time project visualization and interactive time tracking
-- Team collaboration features and multi-user support
+### 🧠 Key Insights
+- **Complexity vs. Usability**: More features don't always mean better user experience
+- **Testing is Critical**: Complex features without proper testing lead to frustration
+- **Simple is Better**: Users prefer focused tools that do core tasks well
+- **Iterative Development**: Start small, validate with users, then expand
 
-**Phase 8: External Tool Integration 🔗 (v3.2.0)**
-- GitHub integration (sync with issues, PRs, commits)
-- Git integration (link commits to tasks)
-- Calendar integration (time blocking, meeting tracking)
-- Slack/Discord notifications and custom slash commands
-
-**Phase 10+: Advanced Features 🚀 (v4.0.0+)**
-- AI-powered task estimation and scheduling
-- Mobile companion app with offline sync
-- Enterprise features and multi-tenant architecture
-
-> 📋 **Complete Development Plan**: See [roadmap.md](roadmap.md) for detailed phase breakdown, timelines, and technical specifications.
+### 🔄 Course Correction
+Moving forward, Rask focuses on:
+- **Core CLI functionality** that works reliably
+- **Simple TUI interface** for interactive task management
+- **Web dashboard** as the next major milestone
+- **User feedback** driving feature priorities
 
 ## 🤝 Contributing
 
@@ -585,6 +444,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Ready to supercharge your project planning?** 🎯
+**Ready to try simple, focused project planning?** 🎯
 
-📖 **[Read the User Guide](USER_GUIDE.md)** for comprehensive documentation and examples.
+📖 **[Read the User Guide](USER_GUIDE.md)** for complete documentation and examples.

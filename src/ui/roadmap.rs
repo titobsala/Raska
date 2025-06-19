@@ -20,15 +20,10 @@ pub fn display_roadmap_enhanced(roadmap: &Roadmap, show_detailed: bool) {
     println!("\n{}", "═".repeat(60).bright_blue());
     println!("  {}", roadmap.title.bold().bright_cyan());
     
-    // Show current project information if available
-    if let Ok(Some(project_info)) = crate::project::get_current_project_info() {
-        println!("  📁 Project: {} {}", 
-            project_info.name.bright_yellow(),
-            if let Some(ref desc) = project_info.description {
-                format!("({})", desc).italic().bright_black().to_string()
-            } else {
-                String::new()
-            }
+    // Show local project directory information
+    if let Ok(current_dir) = std::env::current_dir() {
+        println!("  📁 Directory: {}", 
+            current_dir.display().to_string().bright_yellow()
         );
     }
     
@@ -110,15 +105,10 @@ pub fn display_roadmap_grouped_by_phase(roadmap: &Roadmap, detailed: bool, colla
     println!("\n{}", "═".repeat(80).bright_blue());
     println!("  {} - {} tasks across phases", roadmap.title.bold().bright_cyan(), total_tasks);
     
-    // Show current project information if available
-    if let Ok(Some(project_info)) = crate::project::get_current_project_info() {
-        println!("  📁 Project: {} {}", 
-            project_info.name.bright_yellow(),
-            if let Some(ref desc) = project_info.description {
-                format!("({})", desc).italic().bright_black().to_string()
-            } else {
-                String::new()
-            }
+    // Show local project directory information
+    if let Ok(current_dir) = std::env::current_dir() {
+        println!("  📁 Directory: {}", 
+            current_dir.display().to_string().bright_yellow()
         );
     }
     
@@ -208,7 +198,7 @@ pub fn display_roadmap_filtered_by_phase(roadmap: &Roadmap, phase_filter: &str, 
 }
 
 /// Display project timeline with horizontal phase layout
-pub fn display_project_timeline(roadmap: &Roadmap, detailed: bool, active_only: bool, compact: bool, page: Option<usize>, page_size: Option<usize>) {
+pub fn display_project_timeline(roadmap: &Roadmap, _detailed: bool, active_only: bool, compact: bool, page: Option<usize>, page_size: Option<usize>) {
     let total_tasks = roadmap.tasks.len();
     let completed_tasks = roadmap.tasks.iter().filter(|t| t.status == TaskStatus::Completed).count();
     
@@ -283,7 +273,7 @@ pub fn display_project_timeline(roadmap: &Roadmap, detailed: bool, active_only: 
         let tasks = phase_groups.get(&phase.name).unwrap_or(&empty_vec);
         let phase_completed = tasks.iter().filter(|t| t.status == TaskStatus::Completed).count();
         let phase_total = tasks.len();
-        let percentage = if phase_total > 0 { (phase_completed * 100) / phase_total } else { 0 };
+        let _percentage = if phase_total > 0 { (phase_completed * 100) / phase_total } else { 0 };
         
         print!("  {} {} ", phase.emoji(), phase.name.bright_yellow().bold());
         if compact {
@@ -304,10 +294,10 @@ pub fn display_project_timeline(roadmap: &Roadmap, detailed: bool, active_only: 
         let tasks = phase_groups.get(&phase.name).unwrap_or(&empty_vec);
         let phase_completed = tasks.iter().filter(|t| t.status == TaskStatus::Completed).count();
         let phase_total = tasks.len();
-        let percentage = if phase_total > 0 { (phase_completed * 100) / phase_total } else { 0 };
+        let _percentage = if phase_total > 0 { (phase_completed * 100) / phase_total } else { 0 };
         
         print!("  {}% [{}]", 
-            format!("{:3}", percentage).bright_white(),
+            format!("{:3}", _percentage).bright_white(),
             create_progress_bar(phase_completed, phase_total, 12)
         );
         
@@ -433,7 +423,7 @@ fn display_phase_section(phase_name: &str, emoji: &str, tasks: &[&crate::model::
     // Show tasks (limit to first few if not detailed)
     let tasks_to_show = if detailed { tasks.len() } else { std::cmp::min(tasks.len(), 5) };
     
-    for (i, task) in tasks.iter().take(tasks_to_show).enumerate() {
+    for (_i, task) in tasks.iter().take(tasks_to_show).enumerate() {
         display_task_line(task, detailed);
     }
     

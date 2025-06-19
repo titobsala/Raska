@@ -112,4 +112,53 @@ pub enum TemplateCommands {
     
     /// Show template help and examples
     Examples,
+    
+    /// Generate templates using AI based on project context
+    Generate {
+        /// Description of the templates to generate
+        #[arg(value_name = "DESCRIPTION", help = "Description of what kind of templates to generate")]
+        description: String,
+        
+        /// Number of templates to generate
+        #[arg(long, default_value = "3", help = "Number of templates to generate")]
+        count: usize,
+        
+        /// Category for generated templates
+        #[arg(long, help = "Category for generated templates")]
+        category: Option<String>,
+        
+        /// Phase for generated templates
+        #[arg(long, help = "Phase for generated templates")]
+        phase: Option<String>,
+        
+        /// Apply generated templates to the project
+        #[arg(long, help = "Automatically save generated templates")]
+        apply: bool,
+    },
+    
+    /// Get AI suggestions for relevant templates based on current project
+    Suggest {
+        /// Limit number of suggestions
+        #[arg(long, default_value = "5", help = "Number of template suggestions to show")]
+        limit: usize,
+        
+        /// Category filter for suggestions
+        #[arg(long, help = "Filter suggestions by category")]
+        category: Option<String>,
+        
+        /// Show detailed suggestions
+        #[arg(long, help = "Show detailed suggestion reasoning")]
+        detailed: bool,
+    },
+    
+    /// Use AI to enhance an existing template with better details
+    Enhance {
+        /// Name of the template to enhance
+        #[arg(value_name = "NAME", help = "Name of the template to enhance")]
+        name: String,
+        
+        /// Apply the enhanced template (replace original)
+        #[arg(long, help = "Replace the original template with the enhanced version")]
+        apply: bool,
+    },
 } 

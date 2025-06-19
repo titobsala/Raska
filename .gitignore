@@ -87,4 +87,23 @@ perf.data*
 
 # Coverage reports
 *.profraw
-tarpaulin-report.html 
+tarpaulin-report.html
+
+# Rask project directory management
+# Keep the structure and config, but ignore cache and temporary files
+.rask/cache/
+.rask/state/last_sync
+.rask/backups/
+.rask/exports/*.html
+.rask/exports/*.json
+.rask/exports/*.csv
+rask/
+.rask/
+
+
+# Keep these files in version control for team sharing:
+# .rask/README.md
+# .rask/config.toml
+# .rask/project-overview.md (auto-generated but useful for quick reference)
+# .rask/task-details.md (editable metadata)
+# .rask/sync.sh 
