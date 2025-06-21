@@ -20,6 +20,17 @@ impl From<CliPriority> for crate::model::Priority {
     }
 }
 
+impl From<crate::model::Priority> for CliPriority {
+    fn from(priority: crate::model::Priority) -> Self {
+        match priority {
+            crate::model::Priority::Low => CliPriority::Low,
+            crate::model::Priority::Medium => CliPriority::Medium,
+            crate::model::Priority::High => CliPriority::High,
+            crate::model::Priority::Critical => CliPriority::Critical,
+        }
+    }
+}
+
 /// Export format options
 #[derive(ValueEnum, Clone)]
 pub enum ExportFormat {

@@ -54,6 +54,9 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         Commands::Add { description, tag, priority, phase, note, dependencies, estimated_hours } => {
             commands::add_task_enhanced(description, tag, priority, phase, note, dependencies, estimated_hours)
         },
+        Commands::Quick { text } => {
+            commands::quick_add_task(text)
+        },
         Commands::Remove { id } => commands::remove_task(*id),
         Commands::Edit { id, description } => commands::edit_task(*id, description),
         Commands::Reset { id } => commands::reset_tasks(*id),
@@ -63,6 +66,10 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         Commands::Dependencies { task_id, validate, show_ready, show_blocked } => {
             commands::analyze_dependencies(task_id, *validate, *show_ready, *show_blocked)
         },
+        Commands::Ready => commands::show_ready_tasks(),
+        Commands::Urgent => commands::show_urgent_tasks(),
+        Commands::Blocked => commands::show_blocked_tasks(),
+        Commands::Find { query } => commands::find_tasks(query),
         Commands::Phase(phase_command) => {
             match phase_command {
                 PhaseCommands::List => commands::list_phases(),
