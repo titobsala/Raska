@@ -5,22 +5,23 @@ Welcome to the comprehensive Rask user guide! This document covers all features,
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-2. [Interactive TUI Mode](#interactive-tui-mode)
-3. [Core Commands](#core-commands)
-4. [Advanced Task Management](#advanced-task-management)
-5. [Roadmap Phases System](#roadmap-phases-system)
-6. [Timeline Visualization & Pagination](#timeline-visualization--pagination)
-7. [Time Estimation and Tracking](#time-estimation-and-tracking)
-8. [Filtering & Search](#filtering--search)
-9. [Project Management](#project-management)
-10. [Dependency Management](#dependency-management)
-11. [Configuration System](#configuration-system)
-12. [Bulk Operations](#bulk-operations)
-13. [Export Capabilities](#export-capabilities)
-14. [Task Templates System](#task-templates-system)
-15. [Usage Examples](#usage-examples)
-16. [Terminal UI Features](#terminal-ui-features)
-17. [Tips & Best Practices](#tips--best-practices)
+2. [Quick Task Creation & Smart Shortcuts](#quick-task-creation--smart-shortcuts)
+3. [Interactive TUI Mode](#interactive-tui-mode)
+4. [Core Commands](#core-commands)
+5. [Advanced Task Management](#advanced-task-management)
+6. [Roadmap Phases System](#roadmap-phases-system)
+7. [Timeline Visualization & Pagination](#timeline-visualization--pagination)
+8. [Time Estimation and Tracking](#time-estimation-and-tracking)
+9. [Filtering & Search](#filtering--search)
+10. [Project Management](#project-management)
+11. [Dependency Management](#dependency-management)
+12. [Configuration System](#configuration-system)
+13. [Bulk Operations](#bulk-operations)
+14. [Export Capabilities](#export-capabilities)
+15. [Task Templates System](#task-templates-system)
+16. [Usage Examples](#usage-examples)
+17. [Terminal UI Features](#terminal-ui-features)
+18. [Tips & Best Practices](#tips--best-practices)
 
 ## Getting Started
 
@@ -68,6 +69,268 @@ rask show
 4. **Complete tasks:**
 ```bash
 rask complete 1
+```
+
+## Quick Task Creation & Smart Shortcuts
+
+**NEW in v3.2.0**: Rask now includes powerful productivity features for rapid task creation and instant filtering, designed to eliminate friction in your daily workflow.
+
+### 🚀 Quick Task Creation with Natural Language Parsing
+
+The `rask quick` command (alias: `rask q`) intelligently parses task descriptions to automatically extract metadata, dramatically speeding up task creation.
+
+#### `rask quick <text>` / `rask q <text>`
+Create tasks using natural language descriptions.
+
+```bash
+# Basic examples
+rask quick "Fix login bug"
+rask q "Add user dashboard"
+
+# Advanced examples with automatic metadata extraction
+rask quick "Fix login bug high priority backend"
+# ✨ Extracts: priority=high, tags=[backend, bug]
+
+rask quick "Add user dashboard 2 hours frontend feature"
+# ✨ Extracts: tags=[frontend, feature], estimated_hours=2.0
+
+rask quick "Deploy to production critical infrastructure"
+# ✨ Extracts: priority=critical, tags=[infrastructure, deployment]
+
+rask quick "Create API endpoint medium priority backend 4 hours"
+# ✨ Extracts: priority=medium, tags=[backend, api], estimated_hours=4.0
+```
+
+### Natural Language Processing Features
+
+#### **Priority Detection**
+Automatically recognizes priority keywords:
+- **Critical**: "critical", "urgent", "emergency", "blocking"  
+- **High**: "high", "important", "priority"
+- **Medium**: "medium", "normal" (default)
+- **Low**: "low", "minor", "nice to have"
+
+#### **Smart Tag Extraction**
+Detects 20+ common development tags:
+- **Backend**: backend, api, server, database, auth, security
+- **Frontend**: frontend, ui, ux, css, html, javascript
+- **Testing**: testing, test, qa, bug, fix
+- **DevOps**: deployment, infrastructure, devops, docker, ci/cd
+- **Documentation**: docs, documentation, readme, guide
+
+#### **Time Estimation Parsing**
+Extracts time estimates from natural language:
+- "2 hours" → 2.0 hours
+- "30 minutes" → 0.5 hours  
+- "1.5h" → 1.5 hours
+- "4h 30m" → 4.5 hours
+
+#### **Phase Assignment**
+Automatically assigns appropriate phases based on keywords:
+- **MVP**: core, basic, essential, foundation
+- **Beta**: feature, enhancement, improvement
+- **Release**: deploy, production, launch, release
+- **Future**: future, later, enhancement
+
+### 🎯 Lightning-Fast Filter Shortcuts
+
+Quick filter shortcuts provide instant access to the most common task filtering operations.
+
+#### `rask ready` / `rask r`
+**Show tasks ready to start** - Tasks with no blocking dependencies.
+
+```bash
+rask ready    # Show all ready tasks
+rask r        # Shorthand alias
+
+# Example output:
+# 🎯 Ready Tasks (3 available to start)
+# ▶️ #4 Implement authentication #backend
+# 🔥 #7 Add error handling #backend  
+# ⬆️ #12 Create user profile page #frontend
+```
+
+**Benefits:**
+- Instant visibility into actionable work
+- No need to remember complex filter syntax
+- Perfect for daily standup preparation
+- Eliminates context switching
+
+#### `rask urgent` / `rask u`
+**Show urgent tasks** - High and critical priority tasks only.
+
+```bash
+rask urgent   # Show urgent tasks
+rask u        # Shorthand alias
+
+# Example output:
+# 🔥 Urgent Tasks (2 high-priority items)
+# 🔥 #3 Fix security vulnerability #backend #security
+# ⬆️ #8 Complete payment integration #backend #critical
+```
+
+**Use cases:**
+- Daily priority review
+- Crisis management
+- Sprint planning focus
+- Stakeholder updates
+
+#### `rask blocked` / `rask b`
+**Show blocked tasks** - Tasks waiting on incomplete dependencies.
+
+```bash
+rask blocked  # Show blocked tasks
+rask b        # Shorthand alias
+
+# Example output:
+# 🚧 Blocked Tasks (4 waiting on dependencies)
+# ▶️ #5 Frontend integration (blocked by: #2, #3)
+# ⬆️ #9 Performance testing (blocked by: #7)
+# 🔥 #11 Production deployment (blocked by: #8, #9, #10)
+```
+
+**Benefits:**
+- Identify bottlenecks quickly
+- Plan dependency resolution
+- Unblock team members
+- Optimize workflow
+
+#### `rask find <query>` / `rask f <query>`
+**Smart search** - Instant full-text search across tasks.
+
+```bash
+rask find "auth"          # Find authentication-related tasks
+rask f "backend"          # Find backend tasks
+rask find "user dashboard" # Find specific features
+rask f "#urgent"          # Find tasks with urgent tag
+
+# Example output:
+# 🔍 Search Results for "auth" (3 matches)
+# ✅ #2 User authentication system #backend #auth
+# ⬆️ #4 OAuth integration #backend #auth  
+# □ #15 Authentication testing #testing #auth
+```
+
+**Advanced search features:**
+- Full-text search in descriptions and notes
+- Tag-based searching with `#tagname`
+- Case-insensitive matching
+- Partial word matching
+- Multiple keyword support
+
+### Productivity Workflow Examples
+
+#### **Morning Development Routine**
+```bash
+# Quick project overview
+rask ready              # What can I work on?
+rask urgent             # What's most important?
+rask blocked            # What's holding us back?
+
+# Add quick tasks from standup
+rask q "Fix login timeout bug high priority backend"
+rask q "Add loading spinner to dashboard frontend"
+rask q "Update API documentation docs"
+```
+
+#### **Rapid Task Entry**
+```bash
+# Replace this verbose command:
+rask add "Fix user authentication bug" --tag backend,bug --priority high --phase mvp
+
+# With this natural language:
+rask q "Fix user authentication bug high priority backend"
+```
+
+#### **Instant Status Checks**
+```bash
+# Team lead checking project status
+rask urgent             # What needs immediate attention?
+rask blocked            # What's blocking the team?
+rask find "deployment"  # How's our release prep?
+rask ready              # What work is available?
+```
+
+#### **Sprint Planning Acceleration**
+```bash
+# Quick task creation for sprint backlog
+rask q "Implement user preferences API backend 6 hours"
+rask q "Design settings page UI frontend 4 hours"  
+rask q "Add preference validation testing 2 hours"
+rask q "Deploy preferences feature production critical"
+
+# Instant filtering for sprint planning
+rask ready              # Available sprint work
+rask urgent             # Must-have features
+rask find "API"         # Backend-focused sprint items
+```
+
+### Integration with Existing Features
+
+#### **Works with All Filtering**
+```bash
+# Combine quick shortcuts with traditional filtering
+rask ready --phase mvp           # Ready MVP tasks
+rask urgent --tag backend        # Urgent backend tasks
+rask blocked --priority critical # Critical blocked tasks
+rask find "API" --phase beta     # API tasks in beta phase
+```
+
+#### **Seamless TUI Integration**
+```bash
+# Use quick commands then launch TUI for detailed work
+rask q "Fix dashboard loading bug high priority frontend"
+rask urgent                      # Review urgent tasks  
+rask interactive                 # Switch to TUI for detailed management
+```
+
+#### **Export and Reporting**
+```bash
+# Create filtered exports using quick shortcuts
+rask urgent --export html -o urgent_tasks.html
+rask blocked --export csv -o blocked_analysis.csv
+rask ready --export json --pretty -o ready_tasks.json
+```
+
+### Best Practices for Quick Operations
+
+#### **Effective Natural Language Patterns**
+```bash
+# Good patterns that work well:
+rask q "Fix [issue] [priority] [area]"
+rask q "Add [feature] [time] [area] [type]"
+rask q "Create [component] [priority] [area]"
+rask q "Deploy [feature] [priority] [environment]"
+
+# Examples:
+rask q "Fix login timeout critical backend"
+rask q "Add user search 3 hours frontend feature"
+rask q "Create payment API high priority backend"
+rask q "Deploy auth system critical production"
+```
+
+#### **Quick Filter Workflow**
+```bash
+# Start each development session with:
+rask ready              # What's actionable?
+rask urgent             # What's most important?
+rask blocked            # Any impediments?
+
+# End sessions with:
+rask find "in progress" # What did I work on?
+rask ready              # What's ready for tomorrow?
+```
+
+#### **Team Collaboration**
+```bash
+# Share quick status with team:
+rask urgent | head -5   # Top 5 urgent items
+rask blocked            # Current blockers  
+rask ready | wc -l      # Number of ready tasks
+
+# Quick task assignment:
+rask q "Review PR #123 high priority review @teammate"
+rask q "Test feature X 2 hours testing @qa-team"
 ```
 
 ## Interactive TUI Mode
@@ -1885,6 +2148,130 @@ rask interactive
 # F1 → Return to home dashboard for overview
 ```
 
+### Scenario 7: Rapid Development with Quick Task Creation & Smart Shortcuts (NEW v3.2.0)
+
+```bash
+# Morning standup - quick status check using smart shortcuts
+rask ready              # What tasks are ready to work on?
+rask urgent             # What needs immediate attention?
+rask blocked            # What's holding up the team?
+
+# Example output from ready tasks:
+# 🎯 Ready Tasks (4 available to start)
+# ▶️ #12 Implement user search API #backend
+# 🔥 #15 Fix dashboard loading bug #frontend #critical
+# ⬆️ #18 Add error handling to payments #backend
+# ⬆️ #23 Create user profile tests #testing
+
+# Quick task creation during standup using natural language
+rask q "Fix authentication timeout bug critical backend"
+# ✨ Parsed: priority=critical, tags=[backend,bug], phase=mvp
+
+rask q "Add loading states to dashboard 2 hours frontend"
+# ✨ Parsed: tags=[frontend,ui], estimated_hours=2.0, phase=mvp
+
+rask q "Deploy hotfix to production urgent infrastructure"
+# ✨ Parsed: priority=critical, tags=[infrastructure,deployment], phase=release
+
+rask q "Create API documentation 3 hours docs"
+# ✨ Parsed: tags=[docs,documentation], estimated_hours=3.0, phase=mvp
+
+# Development workflow with instant filtering
+rask urgent             # Focus on critical issues first
+# 🔥 Urgent Tasks (3 high-priority items)
+# 🔥 #24 Fix authentication timeout bug #backend #bug
+# 🔥 #15 Fix dashboard loading bug #frontend #critical  
+# 🔥 #26 Deploy hotfix to production #infrastructure #deployment
+
+# Start working on most critical issue
+rask start 24 --description "Investigating auth timeout in production"
+
+# Quick progress check during the day
+rask find "auth"        # Check all authentication-related work
+# 🔍 Search Results for "auth" (4 matches)
+# ⏱️ #24 Fix authentication timeout bug #backend #bug [Active: 1.2h]
+# ✅ #8 User authentication system #backend #auth  
+# □ #32 OAuth integration #backend #auth
+# □ #45 Authentication testing #testing #auth
+
+# Team collaboration using quick shortcuts
+rask blocked            # Check what's blocking team progress
+# 🚧 Blocked Tasks (2 waiting on dependencies)
+# ▶️ #19 Frontend integration (blocked by: #15, #24)
+# ⬆️ #31 Performance testing (blocked by: #26)
+
+# Rapid task creation for sprint backlog
+rask q "Implement user preferences API backend 8 hours"
+rask q "Design settings page UI frontend 6 hours"
+rask q "Add preference validation testing 3 hours"
+rask q "Create user onboarding flow frontend 12 hours"
+rask q "Add analytics tracking backend 4 hours"
+
+# Sprint planning with smart filtering
+rask ready --phase mvp           # Ready tasks for current sprint
+rask urgent --tag backend        # Urgent backend work
+rask find "API" --phase beta     # API development for next phase
+
+# End of day workflow
+rask stop                        # Stop time tracking
+rask ready                       # Check tomorrow's ready tasks
+rask urgent                      # Review remaining urgent items
+
+# Export sprint progress using quick filters
+rask urgent --export html -o urgent_sprint_items.html
+rask ready --export json --pretty -o ready_tasks_tomorrow.json
+rask blocked --export csv -o team_blockers.csv
+
+# Team retrospective using natural language search
+rask find "bug" --export csv -o bugs_this_sprint.csv
+rask find "feature" --tag frontend -o frontend_features.json
+rask time --summary              # Sprint time tracking analysis
+```
+
+### Scenario 8: Product Manager Workflow with Quick Operations
+
+```bash
+# Daily product management routine using smart shortcuts
+rask urgent             # Critical items needing attention
+rask blocked            # Bottlenecks affecting team velocity
+rask find "user"        # All user-facing features
+rask ready              # Available work capacity
+
+# Stakeholder meeting preparation
+rask find "release"     # Release-related tasks
+rask urgent --phase release     # Critical release items
+rask timeline --page-size 10    # Full project timeline
+
+# Feature request processing with natural language
+rask q "Add user notifications feature high priority frontend 8 hours"
+rask q "Implement push notifications backend 12 hours"
+rask q "Create notification settings UI 4 hours frontend"
+rask q "Add notification analytics tracking 6 hours backend"
+
+# Priority management across features
+rask urgent             # Current high-priority work
+rask bulk set-priority 48,49,50,51 medium  # Adjust notification feature priority
+
+# Cross-team coordination
+rask blocked            # Dependencies blocking teams
+rask find "API" --tag backend   # Backend API development status
+rask find "UI" --tag frontend   # Frontend UI component status
+
+# Sprint planning with quick insights
+rask ready --phase mvp           # MVP work available
+rask urgent --phase beta         # Beta phase priorities
+rask blocked --phase release     # Release blockers
+
+# Generate reports for stakeholders
+rask export html --phase release --include-completed -o release_status.html
+rask urgent --export csv -o current_priorities.csv
+rask timeline --compact > project_timeline.txt
+
+# Feature impact analysis
+rask find "notification" --export json --pretty -o notification_feature_analysis.json
+rask dependencies --task-id 48  # Check notification feature dependencies
+```
+
 ## Terminal UI Features
 
 Rask provides a beautiful, intuitive terminal interface with:
@@ -2182,6 +2569,84 @@ Rask provides a beautiful, intuitive terminal interface with:
    rask bulk set-phase 40,41 future
    ```
 
+### Quick Task Creation & Smart Shortcuts Best Practices (NEW v3.2.0)
+
+1. **Optimize natural language patterns:**
+   ```bash
+   # Effective patterns for quick task creation
+   rask q "[Action] [Subject] [Priority] [Area] [Time]"
+   
+   # Examples that work well:
+   rask q "Fix login timeout critical backend"       # bug fixes
+   rask q "Add user search 4 hours frontend"        # features with time
+   rask q "Deploy auth system urgent production"    # deployments
+   rask q "Create API documentation 2 hours docs"   # documentation
+   rask q "Test payment flow 3 hours testing"       # testing tasks
+   ```
+
+2. **Master the smart shortcuts workflow:**
+   ```bash
+   # Start each day with the "3R" routine:
+   rask ready     # What's Ready to work on?
+   rask urgent    # What's uRgent and needs attention?
+   rask blocked   # What's bLocked and needs unblocking?
+   
+   # Use throughout the day for instant context:
+   rask find "feature-name"  # Quick feature-specific search
+   rask urgent --tag backend # Context-specific urgent items
+   rask ready --phase mvp    # Phase-specific ready tasks
+   ```
+
+3. **Combine quick operations with existing workflows:**
+   ```bash
+   # Sprint planning enhancement:
+   rask ready --phase mvp > sprint_ready.txt     # Export ready items
+   rask urgent --export csv -o sprint_urgent.csv # Prioritized list
+   rask blocked --phase mvp                      # Sprint blockers
+   
+   # Team standup preparation:
+   rask find "my-feature" --detailed            # My work status
+   rask blocked | grep "my-name"                # What I'm blocked on
+   rask ready | head -3                         # Next 3 tasks to pick up
+   ```
+
+4. **Effective tag extraction optimization:**
+   ```bash
+   # Use consistent terminology that matches your extraction patterns:
+   rask q "Fix API timeout bug high priority backend"  # Good: clear keywords
+   rask q "Add search functionality to user panel frontend 4 hours"  # Good: specific area
+   
+   # Avoid ambiguous descriptions:
+   rask q "Fix the thing that's broken somewhere"      # Poor: no extractable info
+   rask q "Add stuff to the dashboard thing"          # Poor: vague terminology
+   ```
+
+5. **Quick operations for team coordination:**
+   ```bash
+   # Daily team sync shortcuts:
+   rask urgent | wc -l              # Count of urgent items
+   rask blocked --export csv        # Share blockers in team chat
+   rask ready --tag backend | head -5  # Backend team's next work
+   
+   # Feature ownership and handoffs:
+   rask find "auth" --detailed      # All auth-related work
+   rask q "Handoff auth feature to QA team testing high priority"
+   rask blocked --tag "feature-x"  # Feature-specific blockers
+   ```
+
+6. **Natural language consistency for teams:**
+   ```bash
+   # Establish team conventions for better parsing:
+   # Priority: always use "critical", "high", "medium", "low"
+   # Areas: standardize on "backend", "frontend", "testing", "docs", "infrastructure"
+   # Time: use "X hours" or "X.5 hours" format consistently
+   
+   # Good team patterns:
+   rask q "Fix user registration bug high priority backend"
+   rask q "Add loading spinner medium priority frontend 1 hour"
+   rask q "Create deployment script high priority infrastructure 3 hours"
+   ```
+
 ### Time Tracking Workflows
 
 1. **Daily time tracking routine:**
@@ -2227,9 +2692,7 @@ Rask provides a beautiful, intuitive terminal interface with:
    # Use historical data to improve new task estimates
    ```
 
-### Time Tracking Configuration
-
-1. **Project-specific time settings:**
+4. **Time tracking configuration:**
    ```bash
    # Set time tracking preferences per project
    rask config set behavior.auto_start_tracking true --project
@@ -2237,101 +2700,12 @@ Rask provides a beautiful, intuitive terminal interface with:
    rask config set export.include_time_data true --project
    ```
 
-2. **Team time tracking standards:**
+5. **Team time tracking standards:**
    ```bash
    # Standardize time tracking across team
    rask config set behavior.default_time_estimate 4.0
    rask config set export.default_time_format detailed
    rask config set behavior.track_break_time false
-   ```
-
-### Interactive TUI Best Practices
-
-1. **Optimize TUI workflow for daily development:**
-   ```bash
-   # Start your development day
-   rask interactive
-   
-   # Daily routine using TUI:
-   # F1 - Home: Quick project overview
-   # F2 - Tasks: Work on ready tasks, toggle completion
-   # F5 - Analytics: Check progress and priorities
-   # F7 - Projects: Switch between different projects
-   # F6 - Settings: Adjust preferences as needed
-   ```
-
-2. **Use TUI for team collaboration:**
-   ```bash
-   # Team standup with TUI
-   rask interactive
-   # F5 - Analytics: Show team progress and bottlenecks
-   # F2 - Task Manager: Review blockers and dependencies
-   # F7 - Project Switcher: Compare multiple project states
-   # F4 - Templates: Discuss standard task patterns
-   ```
-
-3. **Configure TUI for optimal experience:**
-   ```bash
-   # Launch TUI and configure settings (F6)
-   rask interactive
-   # Set default view to Task Manager for development focus
-   # Configure auto-refresh for real-time updates
-   # Save project-specific preferences
-   # Customize keyboard shortcuts if needed
-   ```
-
-### Timeline Navigation & Visualization
-
-1. **Optimize timeline display for your workflow:**
-   ```bash
-   # Daily development review
-   rask timeline --active-only              # Focus on active phases
-   rask timeline --page 1 --compact         # Current work overview
-   
-   # Sprint planning
-   rask timeline --page-size 8              # See more phases at once
-   rask show --group-by-phase --detailed    # Detailed phase breakdown
-   
-   # Stakeholder presentations
-   rask timeline --page-size 10 --compact   # Full project overview
-   ```
-
-2. **Use pagination effectively:**
-   ```bash
-   # Navigate large projects systematically
-   rask timeline --page 1                   # Foundation & core phases
-   rask timeline --page 2                   # Development phases
-   rask timeline --page 3                   # Release & future phases
-   
-   # Adjust page size based on context
-   rask timeline --page-size 3              # Detailed review
-   rask timeline --page-size 8              # Team meetings
-   rask timeline --page-size 15             # Executive overview
-   ```
-
-3. **Combine timeline with phase management:**
-   ```bash
-   # Phase transition workflow
-   rask timeline --active-only              # See current state
-   rask show --phase mvp --detailed         # Focus on current phase
-   rask bulk set-phase 10,11,12 beta        # Move completed tasks
-   rask timeline --page 2                   # Review next phases
-   
-   # Progress tracking
-   rask show --group-by-phase --collapse-completed  # Hide completed work
-   rask timeline --compact                  # Quick progress overview
-   ```
-
-4. **Timeline configuration for teams:**
-   ```bash
-   # Set consistent timeline defaults
-   rask config set ui.default_page_size 5
-   rask config set ui.timeline_compact_mode false
-   rask config set ui.show_phase_dependencies true
-   
-   # Project-specific timeline settings
-   rask config set ui.default_page_size 8 --project    # Larger projects
-   rask config set ui.timeline_compact_mode true --project  # Dense info
    ```
 
 ---

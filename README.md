@@ -1,12 +1,27 @@
 # Rask 🚀 - CLI Project Planner
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/tito-sala/rask)
+[![Version](https://img.shields.io/badge/version-3.2.0-blue.svg)](https://github.com/tito-sala/rask)
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 **Rask** is a command-line project planner built with Rust. It transforms Markdown files into sophisticated task management systems with advanced task tracking, dependency management, multi-project support, roadmap phases, interactive TUI interface, and comprehensive terminal UI. Recently fixed TUI navigation issues for smoother user experience.
 
 ## ✨ Key Features
+
+### 🚀 **Quick Task Creation & Smart Shortcuts**
+- **Natural Language Parsing**: Create tasks with `rask quick "Fix bug high priority backend"`
+- **Intelligent Tag Detection**: Automatically extracts tags from task descriptions
+- **Smart Priority Recognition**: Detects priority levels from natural language
+- **Phase Assignment**: Automatically assigns appropriate development phases
+- **Time Estimation**: Parses time estimates from descriptions
+- **Quick Filter Shortcuts**: Instant access to ready, urgent, blocked, and search filters
+
+### 🎯 **Lightning-Fast Task Filtering**
+- **Ready Tasks**: `rask ready` (alias: `r`) - Show tasks ready to start
+- **Urgent Tasks**: `rask urgent` (alias: `u`) - Show high/critical priority tasks
+- **Blocked Tasks**: `rask blocked` (alias: `b`) - Show tasks waiting on dependencies
+- **Smart Search**: `rask find <query>` (alias: `f`) - Instant task search
+- **Productivity Boost**: Access most common filters with single commands
 
 ### 🖥️ **Interactive TUI Interface**
 - Full-featured Terminal User Interface with real-time interaction
@@ -152,7 +167,34 @@ rask init roadmap.md
 rask interactive
 ```
 
-4. **Or use traditional CLI:**
+4. **Quick Task Creation with Natural Language:**
+```bash
+# Smart task creation - extracts tags, priority, and phase automatically
+rask quick "Fix login bug high priority backend"
+rask quick "Add user dashboard 2 hours frontend"
+rask quick "Deploy to production critical infrastructure"
+
+# Shorthand alias
+rask q "Create API endpoint medium priority backend"
+```
+
+5. **Lightning-Fast Filtering:**
+```bash
+# Show tasks ready to start (no blockers)
+rask ready     # or: rask r
+
+# Show urgent tasks (high/critical priority)
+rask urgent    # or: rask u
+
+# Show blocked tasks (waiting on dependencies)
+rask blocked   # or: rask b
+
+# Search tasks instantly
+rask find "auth"        # or: rask f "auth"
+rask find "backend"     # or: rask f "backend"
+```
+
+6. **Traditional CLI Commands:**
 ```bash
 # View your project
 rask show
@@ -172,7 +214,7 @@ rask stop
 rask complete 1
 ```
 
-5. **Export progress with phase and time information:**
+7. **Export progress with phase and time information:**
 ```bash
 rask export html -o progress_report.html --include-completed
 ```
@@ -187,6 +229,11 @@ For comprehensive documentation, examples, and advanced usage patterns, see the 
 |---------|-------------|
 | `rask interactive [options]` | Launch interactive TUI with full dashboard |
 | `rask init <file.md>` | Initialize project from Markdown |
+| `rask quick <text>` / `rask q <text>` | 🚀 **NEW**: Smart task creation with natural language parsing |
+| `rask ready` / `rask r` | 🎯 **NEW**: Show tasks ready to start (no blockers) |
+| `rask urgent` / `rask u` | 🔥 **NEW**: Show urgent tasks (high/critical priority) |
+| `rask blocked` / `rask b` | 🚧 **NEW**: Show blocked tasks (waiting on dependencies) |
+| `rask find <query>` / `rask f <query>` | 🔍 **NEW**: Search tasks instantly |
 | `rask show [options]` | Display project status with phase grouping and filtering |
 | `rask timeline [options]` | Show horizontal timeline with phase progression and pagination |
 | `rask add <desc> [options]` | Add task with metadata, phase, and time estimate |
@@ -273,7 +320,7 @@ Comprehensive Terminal User Interface with multiple views:
 │ │ ✅ ▶️ #1 Set up development environment 🚀      │ │ │ 🧪 Beta: 50% (1/2)   │
 │ │ ✅ ⬆️ #2 Design database schema 🚀 [2.8h]      │ │ │ 🎯 Release: 0% (0/2) │
 │ │ ✅ 🔥 #3 Create API endpoints #backend 🧪      │ │ │                      │
-│ │ □ ⬆️ #4 Implement authentication 🧪 [4.5h]     │ │ │ 🎯 Ready: Task #4    │
+│ │ □ ⬆️ #4 Implement authentication 🧪 [4.5h]     │ │ │                      │
 │ │     🔗 Depends on: 2, 3                        │ │ │                      │
 │ │ ⏱️ ▶️ #5 Write tests #testing 🎯 [1.2h tracked] │ │ │                      │
 │ │     🔗 Depends on: 4 | 🕐 Active session       │ │ │                      │
@@ -376,7 +423,7 @@ Format as markdown for 'rask init roadmap.md'
 
 ## 📈 Project Roadmap
 
-### ✅ Current Status (v3.0.0)
+### ✅ Current Status (v3.2.0)
 - [x] Core CLI task management with Markdown sync
 - [x] Interactive TUI with comprehensive dashboard
 - [x] Multi-project workspace system
@@ -390,8 +437,17 @@ Format as markdown for 'rask init roadmap.md'
 - [x] Timeline visualization with pagination
 - [x] Configuration system
 - [x] **Fixed TUI navigation freezing issues**
+- [x] **🚀 NEW: Quick Task Creation with Natural Language Parsing**
+- [x] **🎯 NEW: Lightning-Fast Filter Shortcuts (ready/urgent/blocked/find)**
 
-### 🎯 Next: Web Dashboard (v3.1.0)
+### 🎯 Next: Enhanced User Experience (v3.3.0)
+- [ ] **Smart Templates**: AI-powered task template suggestions
+- [ ] **Bulk Quick Actions**: Apply quick operations to multiple tasks
+- [ ] **Enhanced Natural Language**: More sophisticated parsing patterns
+- [ ] **Quick Phase Management**: Instant phase switching with shortcuts
+- [ ] **Workflow Automation**: Custom automation rules and triggers
+
+### 🔮 Future: Web Dashboard (v4.0.0)
 - [ ] REST API backend for project data
 - [ ] Web-based project overview dashboard
 - [ ] Browser-based task management interface
@@ -399,7 +455,7 @@ Format as markdown for 'rask init roadmap.md'
 - [ ] Team collaboration features
 - [ ] Web-based time tracking interface
 
-### 🔮 Future Phases
+### 🌟 Long-term Vision
 - [ ] **Mobile Interface**: Companion app with offline sync
 - [ ] **Advanced Analytics**: Project insights and reporting
 - [ ] **External Integrations**: Git, GitHub, Jira, Slack connections
