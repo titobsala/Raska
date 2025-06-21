@@ -558,7 +558,7 @@ pub fn add_task_enhanced(
         new_task = new_task.with_tags(parsed_tags);
     }
     
-        if let Some(ref priority_cli) = priority {
+    if let Some(ref priority_cli) = priority {
         let priority_model: Priority = priority_cli.clone().into();
         new_task = new_task.with_priority(priority_model);
     }
@@ -743,7 +743,7 @@ pub fn list_tasks(
         });
     }
     
-        // Apply priority filter
+    // Apply priority filter
     if let Some(ref priority_cli) = priority {
         let priority_model: Priority = priority_cli.clone().into();
         filtered_tasks.retain(|task| task.priority == priority_model);
@@ -1222,4 +1222,294 @@ fn sync_to_local_files(force: bool, dry_run: bool) -> CommandResult {
     ui::display_info("📝 task-details.md      - Updated task metadata");
     
     Ok(())
+}
+
+/// 🚀 Quick task creation with natural language parsing
+pub fn quick_add_task(text: &str) -> CommandResult {
+    let parsed = parse_natural_language_task(text);
+    
+    // Show what was parsed for user feedback
+    ui::display_info("🤖 Parsed task information:");
+    ui::display_info(&format!("📝 Description: {}", parsed.description));
+    ui::display_info(&format!("🏷️  Tags: {}", if parsed.tags.is_empty() { "None".to_string() } else { parsed.tags.join(", ") }));
+    ui::display_info(&format!("⚡ Priority: {}", parsed.priority));
+    ui::display_info(&format!("🚀 Phase: {}", parsed.phase.as_ref().unwrap_or(&"mvp".to_string())));
+    
+    // Convert to add_task_enhanced parameters
+    let tags_str = if parsed.tags.is_empty() { None } else { Some(parsed.tags.join(",")) };
+    let priority = Some(parsed.priority.into());
+    let phase = parsed.phase.clone();
+    
+    // Call the existing add_task_enhanced function
+    add_task_enhanced(
+        &parsed.description,
+        &tags_str,
+        &priority,
+        &phase,
+        &None, // notes
+        &None, // dependencies  
+        &parsed.estimated_hours,
+    )
+}
+
+/// Parse natural language text into task components
+struct ParsedTask {
+    description: String,
+    tags: Vec<String>,
+    priority: Priority,
+    phase: Option<String>,
+    estimated_hours: Option<f64>,
+}
+
+fn parse_natural_language_task(text: &str) -> ParsedTask {
+    let mut description = text.to_string();
+    let mut tags = Vec::new();
+    let mut priority = Priority::Medium;
+    let mut phase = None;
+    let mut estimated_hours = None;
+    
+    // Priority keywords (case insensitive)
+    let priority_patterns = [
+        ("critical", Priority::Critical),
+        ("urgent", Priority::Critical),
+        ("high", Priority::High), 
+        ("important", Priority::High),
+        ("medium", Priority::Medium),
+        ("normal", Priority::Medium),
+        ("low", Priority::Low),
+    ];
+    
+    // Phase keywords
+    let phase_patterns = [
+        ("mvp", "mvp"),
+        ("beta", "beta"),
+        ("release", "release"),
+        ("future", "future"),
+        ("backlog", "backlog"),
+        ("later", "future"),
+        ("someday", "backlog"),
+    ];
+    
+    // Common tag patterns
+    let tag_patterns = [
+        ("backend", "backend"),
+        ("frontend", "frontend"),
+        ("api", "api"),
+        ("ui", "ui"),
+        ("ux", "ux"),
+        ("database", "database"),
+        ("db", "database"),
+        ("auth", "auth"),
+        ("security", "security"),
+        ("testing", "testing"),
+        ("test", "testing"),
+        ("bug", "bug"),
+        ("fix", "bug"),
+        ("feature", "feature"),
+        ("deploy", "deployment"),
+        ("deployment", "deployment"),
+        ("docs", "documentation"),
+        ("documentation", "documentation"),
+        ("refactor", "refactoring"),
+        ("performance", "performance"),
+        ("optimization", "performance"),
+        ("mobile", "mobile"),
+        ("web", "web"),
+        ("desktop", "desktop"),
+    ];
+    
+    let text_lower = text.to_lowercase();
+    
+    // Extract priority
+    for (keyword, prio) in &priority_patterns {
+        if text_lower.contains(keyword) {
+            priority = prio.clone();
+            // Remove the keyword from description
+            description = description.replace(&format!(" {}", keyword), "");
+            description = description.replace(&format!("{} ", keyword), "");
+            description = description.replace(keyword, "");
+            break;
+        }
+    }
+    
+    // Extract phase
+    for (keyword, phase_val) in &phase_patterns {
+        if text_lower.contains(keyword) {
+            phase = Some(phase_val.to_string());
+            // Remove the keyword from description
+            description = description.replace(&format!(" {}", keyword), "");
+            description = description.replace(&format!("{} ", keyword), "");
+            description = description.replace(keyword, "");
+            break;
+        }
+    }
+    
+    // Extract tags
+    for (keyword, tag) in &tag_patterns {
+        if text_lower.contains(keyword) {
+            tags.push(tag.to_string());
+            // Remove the keyword from description to clean it up
+            description = description.replace(&format!(" {}", keyword), "");
+            description = description.replace(&format!("{} ", keyword), "");
+            description = description.replace(keyword, "");
+        }
+    }
+    
+    // Extract time estimates
+    let time_keywords = [
+        ("hours", 1.0, "h"),
+        ("hour", 1.0, "h"), 
+        ("hrs", 1.0, "hr"),
+        ("hr", 1.0, "hr"),
+        ("days", 8.0, "day"),
+        ("day", 8.0, "day"),
+        ("weeks", 40.0, "week"),
+        ("week", 40.0, "week"),
+    ];
+    
+    // Simple time extraction
+    let words: Vec<&str> = text_lower.split_whitespace().collect();
+    for i in 0..words.len().saturating_sub(1) {
+        if let Ok(time_val) = words[i].parse::<f64>() {
+            for (keyword, multiplier, _short) in &time_keywords {
+                if words[i + 1].starts_with(keyword) {
+                    estimated_hours = Some(time_val * multiplier);
+                    // Remove the time pattern from description
+                    description = description.replace(&format!("{} {}", words[i], words[i + 1]), "");
+                    break;
+                }
+            }
+            if estimated_hours.is_some() {
+                break;
+            }
+        }
+    }
+    
+    // Clean up description (remove extra spaces, trim)
+    description = description
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join(" ")
+        .trim()
+        .to_string();
+    
+    // If description is empty after cleaning, use original text
+    if description.is_empty() {
+        description = text.to_string();
+    }
+    
+    ParsedTask {
+        description,
+        tags,
+        priority,
+        phase,
+        estimated_hours,
+    }
+}
+
+/// 🎯 Show tasks ready to start (no blockers)
+pub fn show_ready_tasks() -> CommandResult {
+    let roadmap = state::load_state()?;
+    let ready_tasks = roadmap.get_ready_tasks();
+    
+    if ready_tasks.is_empty() {
+        ui::display_info("🎯 No ready tasks found");
+        ui::display_info("💡 All tasks either have incomplete dependencies or are already completed");
+    } else {
+        ui::display_info(&format!("🎯 Ready Tasks ({} available to start)", ready_tasks.len()));
+        ui::display_filtered_tasks(&roadmap, &ready_tasks, false);
+    }
+    
+    Ok(())
+}
+
+/// 🔥 Show urgent tasks (high/critical priority)
+pub fn show_urgent_tasks() -> CommandResult {
+    let roadmap = state::load_state()?;
+    let urgent_tasks: Vec<&Task> = roadmap.tasks.iter()
+        .filter(|task| matches!(task.priority, Priority::High | Priority::Critical) && task.status == TaskStatus::Pending)
+        .collect();
+    
+    if urgent_tasks.is_empty() {
+        ui::display_info("🔥 No urgent tasks found");
+        ui::display_info("💡 All high/critical priority tasks are completed or none exist");
+    } else {
+        ui::display_info(&format!("🔥 Urgent Tasks ({} high/critical priority)", urgent_tasks.len()));
+        ui::display_filtered_tasks(&roadmap, &urgent_tasks, false);
+    }
+    
+    Ok(())
+}
+
+/// 🔒 Show blocked tasks (waiting on dependencies)
+pub fn show_blocked_tasks() -> CommandResult {
+    let roadmap = state::load_state()?;
+    let blocked_tasks = roadmap.get_blocked_tasks();
+    
+    if blocked_tasks.is_empty() {
+        ui::display_info("🔒 No blocked tasks found");
+        ui::display_info("💡 All tasks are either ready to start or completed");
+    } else {
+        ui::display_info(&format!("🔒 Blocked Tasks ({} waiting on dependencies)", blocked_tasks.len()));
+        ui::display_filtered_tasks(&roadmap, &blocked_tasks, true); // Show detailed for dependencies
+    }
+    
+    Ok(())
+}
+
+/// 🔍 Fuzzy search tasks by description
+pub fn find_tasks(query: &str) -> CommandResult {
+    let roadmap = state::load_state()?;
+    
+    // Simple fuzzy search - look for partial matches in description and notes
+    let mut found_tasks: Vec<&Task> = Vec::new();
+    let query_lower = query.to_lowercase();
+    
+    for task in &roadmap.tasks {
+        let description_lower = task.description.to_lowercase();
+        let notes_lower = task.notes.as_ref().map(|n| n.to_lowercase()).unwrap_or_default();
+        
+        // Exact word match gets priority
+        if description_lower.split_whitespace().any(|word| word.contains(&query_lower)) ||
+           notes_lower.split_whitespace().any(|word| word.contains(&query_lower)) {
+            found_tasks.push(task);
+        }
+        // Fuzzy match - check if query letters appear in order (simple fuzzy)
+        else if simple_fuzzy_match(&description_lower, &query_lower) ||
+                simple_fuzzy_match(&notes_lower, &query_lower) {
+            found_tasks.push(task);
+        }
+    }
+    
+    if found_tasks.is_empty() {
+        ui::display_info(&format!("🔍 No tasks found matching '{}'", query));
+        ui::display_info("💡 Try a different search term or check spelling");
+    } else {
+        ui::display_info(&format!("🔍 Found {} task(s) matching '{}'", found_tasks.len(), query));
+        ui::display_filtered_tasks(&roadmap, &found_tasks, false);
+    }
+    
+    Ok(())
+}
+
+/// Simple fuzzy matching - checks if query letters appear in order in the text
+fn simple_fuzzy_match(text: &str, query: &str) -> bool {
+    if query.is_empty() {
+        return false;
+    }
+    
+    let text_chars: Vec<char> = text.chars().collect();
+    let query_chars: Vec<char> = query.chars().collect();
+    
+    let mut text_idx = 0;
+    let mut query_idx = 0;
+    
+    while text_idx < text_chars.len() && query_idx < query_chars.len() {
+        if text_chars[text_idx] == query_chars[query_idx] {
+            query_idx += 1;
+        }
+        text_idx += 1;
+    }
+    
+    query_idx == query_chars.len()
 } 

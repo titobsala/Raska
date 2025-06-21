@@ -102,6 +102,14 @@ pub enum Commands {
         estimated_hours: Option<f64>,
     },
 
+    /// 🚀 Quick task creation with natural language parsing
+    #[command(alias = "q")]
+    Quick {
+        /// Natural language task description with embedded metadata
+        #[arg(value_name = "TEXT", help = "Natural language task (e.g., 'Fix login bug high priority backend tomorrow')")]
+        text: String,
+    },
+
     /// Remove a task from the project
     Remove {
         /// ID of the task to remove
@@ -172,6 +180,26 @@ pub enum Commands {
         /// Show tasks blocked by dependencies
         #[arg(long, help = "Show tasks blocked by incomplete dependencies")]
         show_blocked: bool,
+    },
+
+    /// 🎯 Show tasks ready to start (no blockers)
+    #[command(alias = "r")]
+    Ready,
+
+    /// 🔥 Show urgent tasks (high/critical priority)
+    #[command(alias = "u")]
+    Urgent,
+
+    /// 🔒 Show blocked tasks (waiting on dependencies)
+    #[command(alias = "b")]
+    Blocked,
+
+    /// 🔍 Fuzzy search tasks by description
+    #[command(alias = "f")]
+    Find {
+        /// Search query (supports fuzzy matching)
+        #[arg(value_name = "QUERY", help = "Search query to find tasks (e.g., 'auth' finds 'authentication')")]
+        query: String,
     },
 
     /// Manage and view project phases
