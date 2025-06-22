@@ -196,27 +196,31 @@ rask b        # Shorthand alias
 - Optimize workflow
 
 #### `rask find <query>` / `rask f <query>`
-**Smart search** - Instant full-text search across tasks.
+**Smart search** - Instant full-text search across task descriptions and notes.
 
 ```bash
-rask find "auth"          # Find authentication-related tasks
-rask f "backend"          # Find backend tasks
-rask find "user dashboard" # Find specific features
-rask f "#urgent"          # Find tasks with urgent tag
+rask find "auth"          # Find "auth" in task descriptions/notes
+rask f "user"             # Find "user" in task descriptions/notes
+rask find "dashboard"     # Find "dashboard" in descriptions/notes
 
 # Example output:
-# 🔍 Search Results for "auth" (3 matches)
-# ✅ #2 User authentication system #backend #auth
-# ⬆️ #4 OAuth integration #backend #auth  
-# □ #15 Authentication testing #testing #auth
+# 🔍 Search Results for "auth" (2 matches)
+# ▶️ #5 Implement user authentication
+# 🔥 #23 Fix critical authentication bug #backend #security
 ```
 
-**Advanced search features:**
-- Full-text search in descriptions and notes
-- Tag-based searching with `#tagname`
-- Case-insensitive matching
-- Partial word matching
-- Multiple keyword support
+**Search capabilities:**
+- **Searches:** Task descriptions and notes content
+- **Does NOT search:** Tags (use filtering for tags)
+- **Features:** Case-insensitive matching, partial word matching
+
+**For tag-based filtering, use list command instead:**
+```bash
+# To find tasks with specific tags:
+rask list --tag backend     # Find tasks tagged with "backend"
+rask list --tag urgent      # Find tasks tagged with "urgent"
+rask list --tag backend,urgent  # Find tasks with either tag
+```
 
 ### Productivity Workflow Examples
 
@@ -403,19 +407,18 @@ Interactive task management interface with:
 - `Tab`: Switch between task list and chat
 - `PgUp`/`PgDn`: Fast scroll through tasks
 
-#### 📄 Templates (View available in TUI)
-Browse and manage task templates:
+#### 📄 Templates (Coming Soon)
+**⚠️ Feature Status: Not Yet Implemented**
 
+This feature is planned for a future release but is not currently available.
+
+Planned template capabilities:
 - **Template Categories**: Organized by type (Development, Testing, etc.)
 - **Template Preview**: See template details and structure
 - **Quick Application**: Apply templates to create new tasks
 - **Custom Templates**: Create and manage your own patterns
 
-**Features:**
-- Browse built-in templates for common scenarios
-- Preview template structure before applying
-- Create consistent task patterns
-- Speed up project setup with proven templates
+**Note:** Currently, use the `rask add` command with consistent patterns to achieve similar results.
 
 #### ⚙️ Settings (Available in TUI)
 Customize TUI behavior and appearance:
@@ -432,48 +435,19 @@ Customize TUI behavior and appearance:
 - **Performance**: Refresh rates, auto-save options
 - **Export**: Default formats and options
 
-#### 🔄 Project Switcher (Available in TUI)
-Seamless multi-project navigation (navigation issues recently fixed):
+#### 🔄 Project Switcher (Coming Soon)
+**⚠️ Feature Status: Not Yet Implemented**
 
-- **Project List**: All available projects with statistics
+This feature is planned for a future release but is not currently available.
+
+Multi-project navigation capabilities:
+- **Project List**: All available projects with statistics  
 - **Current Project**: Highlighted active project
-- **Project Details**: Creation dates, descriptions, state files
-- **Quick Switching**: Instant project switching with Enter
-- **Project Statistics**: Task counts and completion progress for each project
+- **Quick Switching**: Instant project switching
+- **Project Statistics**: Task counts and completion progress
 
-**Features:**
-- **Visual Project List**: See all projects with progress indicators
-- **Current Project Highlighting**: Clear indication of active project
-- **Project Metadata**: Creation dates, descriptions, file paths
-- **Instant Switching**: Change projects without leaving TUI
-- **Statistics Display**: Quick overview of each project's status
-- **Navigation Fix**: Recent improvements resolved freezing issues
+**Note:** Currently, Rask operates as a single-project tool. Each roadmap file represents one project.
 
-**Navigation:**
-- `↑↓`: Navigate project list
-- `Enter`: Switch to selected project
-- `r`: Refresh project list
-
-
-### Universal Keyboard Shortcuts
-
-These shortcuts work across all views:
-
-| Shortcut | Action |
-|----------|--------|
-| `F1` | Home Dashboard |
-| `F2` | Task Manager |
-| `F3` | AI Assistant |
-| `F4` | Templates |
-| `F5` | Analytics |
-| `F6` | Settings |
-| `F7` / `p` | Project Switcher |
-| `Tab` | Cycle through panels in current view |
-| `h` | Show help and shortcuts |
-| `r` | Refresh project data |
-| `s` | Save current settings |
-| `Esc` | Return to Home view |
-| `q` / `Ctrl+C` | Quit application |
 
 ### TUI Settings and Persistence
 
@@ -501,15 +475,13 @@ rask interactive
 # Check progress at end of day (Analytics - F5)
 ```
 
-#### Multi-Project Management
+#### Multi-Project Management (When Available)
 ```bash
-# Launch TUI
+# Launch TUI (when multi-project support is implemented)
 rask interactive
 
-# Switch between projects (Project Switcher - F7/p)
-# Compare progress across projects (Analytics - F5)
-# Apply consistent templates across projects (Templates - F4)
-# Configure project-specific settings (Settings - F6)
+# Note: Multi-project features are not yet available
+# Currently work with one project per TUI session
 ```
 
 #### Sprint Planning Session
@@ -529,10 +501,10 @@ rask interactive
 **Use TUI when:**
 - Interactive task management and real-time updates
 - Exploring project status and navigation
-- Multi-project switching and comparison
 - Learning Rask features with guided interface
 - Collaborative planning and discussion
 - Visual progress tracking and analytics
+- Single-project focused work sessions
 
 **Use CLI when:**
 - Automation and scripting
@@ -704,7 +676,7 @@ rask add "Deploy to production" --depends-on 5,8,12
 rask dependencies --task-id 15
 
 # Check what's ready to work on
-rask dependencies --ready
+rask ready  # Use ready shortcut instead
 ```
 
 ## Roadmap Phases System
@@ -1005,7 +977,7 @@ rask timeline
 rask show --phase mvp
 
 # Check what's ready to work on
-rask dependencies --ready
+rask ready  # Use ready shortcut instead
 
 # Navigate to next phase for planning
 rask timeline --page 2
@@ -1396,48 +1368,30 @@ rask dependencies --ready
 
 ## Project Management
 
-Rask supports multiple projects with isolated state and easy switching.
+**⚠️ Feature Status: Not Yet Implemented**
 
-### `rask project create <name> [--description <desc>]`
-Create a new project workspace.
+Multi-project support is planned for a future release but is not currently available. All `rask project` commands are not yet implemented.
 
-```bash
-rask project create web-app --description "Main web application project"
-rask project create mobile-app --description "React Native mobile app"
-```
-
-### `rask project list`
-List all available projects.
+**Current Workflow:**
+Rask currently operates as a single-project tool. Each roadmap Markdown file represents one project. To work with multiple projects:
 
 ```bash
-rask project list
+# Work with different roadmap files
+rask init project1-roadmap.md
+rask show  # Work with project1
+
+# Switch to another project by using a different roadmap file
+rask init project2-roadmap.md  
+rask show  # Work with project2
 ```
 
-**Output shows:**
-- Project names and descriptions
-- Current active project (marked with ★)
-- Task counts and progress for each project
-- Phase distribution for each project
+**Planned Multi-Project Features (Coming Soon):**
+- `rask project create <name>` - Create new project workspace
+- `rask project list` - List all available projects
+- `rask project switch <name>` - Switch between projects
+- `rask project delete <name>` - Delete projects
 
-### `rask project switch <name>`
-Switch to a different project.
-
-```bash
-rask project switch mobile-app
-```
-
-**What happens:**
-- Saves current project state
-- Loads target project state
-- Updates current project indicator
-- All subsequent commands operate on new project
-
-### `rask project delete <name> [--force]`
-Delete a project (requires confirmation unless --force).
-
-```bash
-rask project delete old-project --force
-```
+**Note:** Use separate directories or clearly named roadmap files to organize multiple projects until multi-project support is implemented.
 
 ## Dependency Management
 
@@ -1483,18 +1437,16 @@ rask dependencies --task-id 15
 - Blocking relationships
 - ASCII art tree structure
 
-### `rask dependencies --ready`
-Show tasks ready to be started.
-
-```bash
-rask dependencies --ready
-```
-
-### `rask dependencies --blocked`
+### `rask dependencies --show-blocked`
 Show tasks blocked by incomplete dependencies.
 
 ```bash
-rask dependencies --blocked
+rask dependencies --show-blocked
+```
+
+**Note:** To see ready tasks (tasks with no blocking dependencies), use the quick shortcut commands:
+```bash
+rask ready    # or rask r
 ```
 
 ## Configuration System
@@ -1757,140 +1709,52 @@ rask export html --phase release --priority high --tag deployment --include-comp
 
 ## Task Templates System
 
-Rask includes a comprehensive task templates system for consistent task creation and project setup.
+**⚠️ Feature Status: Not Yet Implemented**
 
-### Template Commands
+The task templates system is planned for a future release but is not currently available. All `rask template` commands are not yet implemented.
 
-#### `rask template list [--category <cat>]`
-List all available templates.
+**Current Alternatives:**
+For consistent task creation, use the `rask add` command with standardized patterns:
 
 ```bash
-# List all templates
-rask template list
-
-# List templates by category
-rask template list --category development
-rask template list --category testing
+# Create consistent patterns manually
+rask add "Fix [bug description]" --tag bug,urgent --priority high --phase mvp
+rask add "Implement [feature name]" --tag feature,development --priority medium --phase mvp
+rask add "Test [component name]" --tag testing --priority medium --phase beta
 ```
 
-#### `rask template show <name>`
-Show detailed template information.
+**Planned Template Features (Coming Soon):**
+- `rask template list` - List all available templates
+- `rask template show <name>` - Show detailed template information  
+- `rask template use <name>` - Create task from template
+- `rask template create <name>` - Create custom template
+- `rask template delete <name>` - Delete custom template
 
+**Note:** Until templates are implemented, consider creating shell scripts or aliases for common task patterns.
+
+### Planned Template Features (Details)
+
+When implemented, the template system will include:
+
+**Template Categories:**
+- **Development**: Core development tasks (Feature Implementation, Bug Fix, Code Review, API Endpoint)
+- **Testing**: Quality assurance and testing (Unit Testing, Integration Testing, Performance Testing)
+- **Documentation**: Documentation and guides (Technical docs, User guides)
+- **DevOps**: Deployment and infrastructure (Deployment, Environment Setup)
+- **Design**: UI/UX and design tasks (UI Components)
+- **Security**: Security-related tasks (Security Review)
+
+**Template Workflow (When Available):**
 ```bash
-rask template show "Feature Implementation"
-rask template show "Bug Fix"
-```
+# Future template usage (not yet available)
+# rask template use "Feature Implementation" "User dashboard analytics"
+# rask template use "Unit Testing" "Test dashboard analytics feature"  
+# rask template use "Code Review" "Review analytics implementation"
 
-#### `rask template use <name> [description]`
-Create task from template.
-
-```bash
-# Use template with default description
-rask template use "Bug Fix"
-
-# Use template with custom description
-rask template use "Feature Implementation" "User authentication system"
-```
-
-#### `rask template create <name> <desc> [options]`
-Create custom template.
-
-```bash
-# Create basic template
-rask template create "Code Review" "Review pull request for team member"
-
-# Create template with metadata
-rask template create "API Endpoint" "Implement new API endpoint" \
-  --tags "backend,api" --priority high --phase mvp --estimated-hours 4.0
-```
-
-#### `rask template delete <name>`
-Delete custom template.
-
-```bash
-rask template delete "Old Template"
-```
-
-#### `rask template examples`
-Show help and integration examples.
-
-```bash
-rask template examples
-```
-
-### Built-in Templates
-
-Rask comes with several built-in templates for common development scenarios:
-
-| Template | Category | Description |
-|----------|----------|-------------|
-| Feature Implementation | Development | Complete feature development with testing |
-| Bug Fix | Development | Systematic bug identification and resolution |
-| Code Review | Development | Pull request review and feedback process |
-| API Endpoint | Development | REST API endpoint implementation |
-| Database Migration | Development | Database schema changes and migrations |
-| Unit Testing | Testing | Comprehensive unit test coverage |
-| Integration Testing | Testing | End-to-end integration testing |
-| Performance Testing | Testing | Load and performance testing |
-| Documentation | Documentation | Technical documentation writing |
-| User Guide | Documentation | User-facing documentation |
-| Deployment | DevOps | Production deployment process |
-| Environment Setup | DevOps | Development environment configuration |
-| Security Review | Security | Security assessment and improvements |
-| UI Component | Design | User interface component development |
-
-### Template Categories
-
-Templates are organized into logical categories:
-
-- **Development**: Core development tasks
-- **Testing**: Quality assurance and testing
-- **Documentation**: Documentation and guides
-- **DevOps**: Deployment and infrastructure
-- **Design**: UI/UX and design tasks
-- **Security**: Security-related tasks
-
-### Custom Template Creation
-
-Create templates that match your team's workflow:
-
-```bash
-# Development workflow template
-rask template create "Sprint Task" "Standard sprint development task" \
-  --tags "development,sprint" \
-  --priority medium \
-  --phase mvp \
-  --estimated-hours 8.0
-
-# Bug tracking template
-rask template create "Production Bug" "Critical production issue" \
-  --tags "bug,production,urgent" \
-  --priority critical \
-  --phase release \
-  --estimated-hours 2.0
-```
-
-### Template Best Practices
-
-1. **Consistent Naming**: Use clear, descriptive template names
-2. **Appropriate Tags**: Include relevant tags for filtering
-3. **Realistic Estimates**: Base time estimates on historical data
-4. **Phase Alignment**: Assign templates to appropriate phases
-5. **Team Standards**: Create templates that match team conventions
-
-### Template Integration Workflow
-
-```bash
-# Daily development with templates
-rask template use "Feature Implementation" "User dashboard analytics"
-rask template use "Unit Testing" "Test dashboard analytics feature"
-rask template use "Code Review" "Review analytics implementation"
-
-# Sprint planning with templates
-rask template list --category development
-rask template use "API Endpoint" "User preferences API"
-rask template use "Database Migration" "Add user preferences table"
-rask template use "Documentation" "API documentation for preferences"
+# Current alternative - manual consistent patterns:
+rask add "User dashboard analytics" --tag feature,frontend --priority high --phase mvp
+rask add "Test dashboard analytics feature" --tag testing --priority medium --phase beta
+rask add "Review analytics implementation" --tag review --priority medium --phase mvp
 ```
 
 ## Usage Examples
@@ -1989,7 +1853,7 @@ rask dependencies --task-id 8
 
 # Check what's ready in each phase
 rask phase show mvp
-rask dependencies --ready
+rask ready  # Tasks ready to start
 
 # Use bulk operations for sprint planning
 rask bulk set-priority 1,2,3,4 critical
@@ -2400,15 +2264,15 @@ Rask provides a beautiful, intuitive terminal interface with:
      - Add session management
    ```
 
-4. **Template usage guidelines:**
+4. **Task creation guidelines:**
    ```bash
-   # Use templates for consistency
-   rask template use "Feature Implementation" "User authentication system"
-   rask template use "Bug Fix" "Login form validation error"
+   # Note: Templates not yet available - use consistent patterns instead
+   # Future: rask template use "Feature Implementation" "User authentication system"
+   # Future: rask template use "Bug Fix" "Login form validation error"
    
-   # Create custom templates for recurring patterns
-   rask template create "Code Review" "Review pull request for [PR_NAME]" \
-     --tags "review,quality" --priority high --phase mvp
+   # Current alternative - use consistent task creation patterns:
+   rask add "User authentication system" --tag feature,auth --priority high --phase mvp
+   rask add "Login form validation error" --tag bug,fix --priority high --phase mvp
    ```
 
 5. **Set up logical dependencies:**
@@ -2464,7 +2328,7 @@ Rask provides a beautiful, intuitive terminal interface with:
    rask timeline                    # Overview of all phases
    rask timeline --active-only      # Focus on active phases
    rask phase overview              # Detailed phase statistics
-   rask dependencies --ready        # Ready tasks
+   rask ready                       # Ready tasks
    rask show --phase mvp            # Current focus phase
    ```
 
@@ -2473,9 +2337,9 @@ Rask provides a beautiful, intuitive terminal interface with:
    # Interactive bulk operations via TUI
    rask interactive
    # F2 - Task Manager: Toggle multiple task completions
-   # F7 - Project Switcher: Compare and switch projects
    # F5 - Analytics: Review progress across phases
    # F6 - Settings: Configure project preferences
+   # Note: Project Switcher (F7) not yet implemented
    ```
 
 3. **Use bulk CLI operations for automation:**
@@ -2545,7 +2409,7 @@ Rask provides a beautiful, intuitive terminal interface with:
    ```bash
    # Check release readiness
    rask phase show release
-   rask dependencies --blocked
+   rask blocked  # Check what's blocking the release
    
    # Prepare release report
    rask export html --phase release --include-completed -o release_report.html

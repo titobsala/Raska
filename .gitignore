@@ -58,6 +58,9 @@ $RECYCLE.BIN/
 .directory
 .Trash-*
 
+test/
+/test
+
 # Application specific files
 # Our state file (you might want to keep this in version control for testing)
 # .rask_state.json
