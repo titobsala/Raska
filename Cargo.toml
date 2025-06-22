@@ -1,6 +1,6 @@
 [package]
 name = "rask"
-version = "3.2.1"
+version = "3.2.2"
 edition = "2021"
 description = "An advanced CLI project planner with tags, priorities, dependencies, and multi-project support"
 license = "MIT"
@@ -32,3 +32,5 @@ dotenv = "0.15"
 uuid = { version = "1.0", features = ["v4"] }
 # Async traits for AI providers
 async-trait = "0.1"
+# Regular expressions for improved parsing
+regex = "1.0"

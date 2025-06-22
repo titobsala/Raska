@@ -13,6 +13,7 @@ use crate::{
 use super::{CommandResult, utils, dependencies};
 use std::fs;
 use std::path::{PathBuf, Path};
+use regex;
 
 /// Initialize a new project from a Markdown file
 pub fn init_project(filepath: &PathBuf) -> CommandResult {
@@ -1268,18 +1269,21 @@ fn parse_natural_language_task(text: &str) -> ParsedTask {
     let mut phase = None;
     let mut estimated_hours = None;
     
-    // Priority keywords (case insensitive)
+    // Priority keywords (case insensitive) - more specific patterns
     let priority_patterns = [
         ("critical", Priority::Critical),
         ("urgent", Priority::Critical),
+        ("high priority", Priority::High),
         ("high", Priority::High), 
         ("important", Priority::High),
+        ("medium priority", Priority::Medium),
         ("medium", Priority::Medium),
         ("normal", Priority::Medium),
+        ("low priority", Priority::Low),
         ("low", Priority::Low),
     ];
     
-    // Phase keywords
+    // Phase keywords - more specific patterns
     let phase_patterns = [
         ("mvp", "mvp"),
         ("beta", "beta"),
@@ -1290,16 +1294,18 @@ fn parse_natural_language_task(text: &str) -> ParsedTask {
         ("someday", "backlog"),
     ];
     
-    // Common tag patterns
+    // Common tag patterns - more specific to avoid false matches
     let tag_patterns = [
         ("backend", "backend"),
         ("frontend", "frontend"),
+        ("front-end", "frontend"),
         ("api", "api"),
         ("ui", "ui"),
         ("ux", "ux"),
         ("database", "database"),
         ("db", "database"),
         ("auth", "auth"),
+        ("authentication", "auth"),
         ("security", "security"),
         ("testing", "testing"),
         ("test", "testing"),
@@ -1308,6 +1314,8 @@ fn parse_natural_language_task(text: &str) -> ParsedTask {
         ("feature", "feature"),
         ("deploy", "deployment"),
         ("deployment", "deployment"),
+        ("production", "production"),
+        ("staging", "staging"),
         ("docs", "documentation"),
         ("documentation", "documentation"),
         ("refactor", "refactoring"),
@@ -1316,42 +1324,65 @@ fn parse_natural_language_task(text: &str) -> ParsedTask {
         ("mobile", "mobile"),
         ("web", "web"),
         ("desktop", "desktop"),
+        ("infrastructure", "infrastructure"),
     ];
     
     let text_lower = text.to_lowercase();
+    let words: Vec<&str> = text_lower.split_whitespace().collect();
     
-    // Extract priority
+    // Track which standalone words/phrases we've extracted to remove them more precisely
+    let mut standalone_words_to_remove: Vec<String> = Vec::new();
+    
+    // Extract priority - check longer phrases first, only if they are standalone
     for (keyword, prio) in &priority_patterns {
-        if text_lower.contains(keyword) {
-            priority = prio.clone();
-            // Remove the keyword from description
-            description = description.replace(&format!(" {}", keyword), "");
-            description = description.replace(&format!("{} ", keyword), "");
-            description = description.replace(keyword, "");
-            break;
+        // Check if the keyword appears as standalone words
+        if keyword.contains(' ') {
+            // Multi-word phrase - check if it appears exactly
+            if text_lower.contains(keyword) {
+                priority = prio.clone();
+                standalone_words_to_remove.push(keyword.to_string());
+                break;
+            }
+        } else {
+            // Single word - check if it appears as a standalone word
+            if words.iter().any(|&word| word == *keyword) {
+                priority = prio.clone();
+                standalone_words_to_remove.push(keyword.to_string());
+                break;
+            }
         }
     }
     
-    // Extract phase
+    // Extract phase - only if standalone words
     for (keyword, phase_val) in &phase_patterns {
-        if text_lower.contains(keyword) {
+        if words.iter().any(|&word| word == *keyword) {
             phase = Some(phase_val.to_string());
-            // Remove the keyword from description
-            description = description.replace(&format!(" {}", keyword), "");
-            description = description.replace(&format!("{} ", keyword), "");
-            description = description.replace(keyword, "");
+            standalone_words_to_remove.push(keyword.to_string());
             break;
         }
     }
     
-    // Extract tags
+    // Extract tags - be very careful about context, only exact word matches for short words
     for (keyword, tag) in &tag_patterns {
-        if text_lower.contains(keyword) {
-            tags.push(tag.to_string());
-            // Remove the keyword from description to clean it up
-            description = description.replace(&format!(" {}", keyword), "");
-            description = description.replace(&format!("{} ", keyword), "");
-            description = description.replace(keyword, "");
+        if keyword.len() <= 3 {
+            // Short words like "ui", "ux", "db" - must be exact standalone words
+            if words.iter().any(|&word| word == *keyword) {
+                tags.push(tag.to_string());
+                standalone_words_to_remove.push(keyword.to_string());
+            }
+        } else {
+            // Longer words - check if they appear as standalone words or as part of compound words
+            if words.iter().any(|&word| word == *keyword || word.contains(keyword)) {
+                tags.push(tag.to_string());
+                // DON'T remove longer words from description to preserve meaning
+                // Only remove if it's clearly a metadata word (like "backend", "frontend")
+                if *keyword == "backend" || *keyword == "frontend" || *keyword == "testing" || 
+                   *keyword == "deployment" || *keyword == "documentation" || *keyword == "infrastructure" {
+                    if words.iter().any(|&word| word == *keyword) {
+                        standalone_words_to_remove.push(keyword.to_string());
+                    }
+                }
+            }
         }
     }
     
@@ -1367,21 +1398,36 @@ fn parse_natural_language_task(text: &str) -> ParsedTask {
         ("week", 40.0, "week"),
     ];
     
-    // Simple time extraction
-    let words: Vec<&str> = text_lower.split_whitespace().collect();
+    // More precise time extraction
     for i in 0..words.len().saturating_sub(1) {
         if let Ok(time_val) = words[i].parse::<f64>() {
             for (keyword, multiplier, _short) in &time_keywords {
                 if words[i + 1].starts_with(keyword) {
                     estimated_hours = Some(time_val * multiplier);
-                    // Remove the time pattern from description
-                    description = description.replace(&format!("{} {}", words[i], words[i + 1]), "");
+                    // Remove the time pattern more precisely
+                    standalone_words_to_remove.push(format!("{} {}", words[i], words[i + 1]));
                     break;
                 }
             }
             if estimated_hours.is_some() {
                 break;
             }
+        }
+    }
+    
+    // Very careful removal of extracted keywords while preserving description integrity
+    for word_to_remove in &standalone_words_to_remove {
+        // Use word boundary regex to ensure we only remove complete words
+        let regex_pattern = if word_to_remove.contains(' ') {
+            // Multi-word phrase - match exactly with word boundaries
+            format!(r"(?i)\b{}\b", regex::escape(word_to_remove))
+        } else {
+            // Single word - match with word boundaries
+            format!(r"(?i)\b{}\b", regex::escape(word_to_remove))
+        };
+        
+        if let Ok(re) = regex::Regex::new(&regex_pattern) {
+            description = re.replace_all(&description, " ").to_string();
         }
     }
     
@@ -1393,10 +1439,15 @@ fn parse_natural_language_task(text: &str) -> ParsedTask {
         .trim()
         .to_string();
     
-    // If description is empty after cleaning, use original text
-    if description.is_empty() {
+    // If description is empty or too short after cleaning, preserve more of the original
+    if description.is_empty() || description.len() < 3 {
+        // Keep the original but still extract metadata
         description = text.to_string();
     }
+    
+    // Remove duplicates from tags
+    tags.sort();
+    tags.dedup();
     
     ParsedTask {
         description,
@@ -1457,59 +1508,69 @@ pub fn show_blocked_tasks() -> CommandResult {
     Ok(())
 }
 
-/// 🔍 Fuzzy search tasks by description
+/// 🔍 Enhanced search tasks by description, notes, and tags
 pub fn find_tasks(query: &str) -> CommandResult {
     let roadmap = state::load_state()?;
     
-    // Simple fuzzy search - look for partial matches in description and notes
-    let mut found_tasks: Vec<&Task> = Vec::new();
-    let query_lower = query.to_lowercase();
-    
-    for task in &roadmap.tasks {
-        let description_lower = task.description.to_lowercase();
-        let notes_lower = task.notes.as_ref().map(|n| n.to_lowercase()).unwrap_or_default();
-        
-        // Exact word match gets priority
-        if description_lower.split_whitespace().any(|word| word.contains(&query_lower)) ||
-           notes_lower.split_whitespace().any(|word| word.contains(&query_lower)) {
-            found_tasks.push(task);
-        }
-        // Fuzzy match - check if query letters appear in order (simple fuzzy)
-        else if simple_fuzzy_match(&description_lower, &query_lower) ||
-                simple_fuzzy_match(&notes_lower, &query_lower) {
-            found_tasks.push(task);
-        }
-    }
+    // Use the model's search_tasks method which includes tags, descriptions, and notes
+    let found_tasks = roadmap.search_tasks(query);
     
     if found_tasks.is_empty() {
         ui::display_info(&format!("🔍 No tasks found matching '{}'", query));
+        ui::display_info("💡 Search includes task descriptions, notes, and tags");
         ui::display_info("💡 Try a different search term or check spelling");
+        
+        // Provide helpful suggestions
+        let all_tags: std::collections::HashSet<String> = roadmap.tasks.iter()
+            .flat_map(|t| &t.tags)
+            .cloned()
+            .collect();
+        if !all_tags.is_empty() && all_tags.len() <= 10 {
+            let tags_sample: Vec<_> = all_tags.iter().take(5).collect();
+            ui::display_info(&format!("💡 Available tags: {}", 
+                tags_sample.iter()
+                    .map(|t| format!("#{}", t))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
     } else {
-        ui::display_info(&format!("🔍 Found {} task(s) matching '{}'", found_tasks.len(), query));
+        // Show what was matched
+        let mut tag_matches = 0;
+        let mut description_matches = 0;
+        let mut notes_matches = 0;
+        
+        let query_lower = query.to_lowercase();
+        for task in &found_tasks {
+            if task.tags.iter().any(|tag| tag.to_lowercase().contains(&query_lower)) {
+                tag_matches += 1;
+            }
+            if task.description.to_lowercase().contains(&query_lower) {
+                description_matches += 1;
+            }
+            if task.notes.as_ref().map_or(false, |notes| notes.to_lowercase().contains(&query_lower)) {
+                notes_matches += 1;
+            }
+        }
+        
+        let mut match_info = Vec::new();
+        if description_matches > 0 {
+            match_info.push(format!("{} in descriptions", description_matches));
+        }
+        if tag_matches > 0 {
+            match_info.push(format!("{} in tags", tag_matches));
+        }
+        if notes_matches > 0 {
+            match_info.push(format!("{} in notes", notes_matches));
+        }
+        
+        ui::display_info(&format!("🔍 Found {} task(s) matching '{}' ({})", 
+            found_tasks.len(), 
+            query,
+            match_info.join(", ")
+        ));
         ui::display_filtered_tasks(&roadmap, &found_tasks, false);
     }
     
     Ok(())
-}
-
-/// Simple fuzzy matching - checks if query letters appear in order in the text
-fn simple_fuzzy_match(text: &str, query: &str) -> bool {
-    if query.is_empty() {
-        return false;
-    }
-    
-    let text_chars: Vec<char> = text.chars().collect();
-    let query_chars: Vec<char> = query.chars().collect();
-    
-    let mut text_idx = 0;
-    let mut query_idx = 0;
-    
-    while text_idx < text_chars.len() && query_idx < query_chars.len() {
-        if text_chars[text_idx] == query_chars[query_idx] {
-            query_idx += 1;
-        }
-        text_idx += 1;
-    }
-    
-    query_idx == query_chars.len()
 } 
