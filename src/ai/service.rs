@@ -274,6 +274,83 @@ impl AiService {
         
         Ok(enhancement)
     }
+    
+    /// Generate or analyze a project roadmap with AI suggestions
+    pub async fn generate_project_roadmap(&self, roadmap: &Roadmap, file: Option<&str>, focus: Option<&str>, generate_plan: bool) -> Result<String> {
+        let project_context = utils::create_project_context(roadmap);
+        
+        // Read roadmap file if specified, otherwise use current project state
+        let roadmap_content = if let Some(file_path) = file {
+            match std::fs::read_to_string(file_path) {
+                Ok(content) => content,
+                Err(_) => {
+                    return Err(anyhow::anyhow!("Unable to read roadmap file: {}", file_path));
+                }
+            }
+        } else if let Some(source_file) = &roadmap.source_file {
+            match std::fs::read_to_string(source_file) {
+                Ok(content) => content,
+                Err(_) => {
+                    // Fallback to analyzing current project state
+                    format!("# {}\n\nCurrent project with {} tasks across {} phases", 
+                        roadmap.title, 
+                        roadmap.tasks.len(),
+                        roadmap.get_all_phases().len()
+                    )
+                }
+            }
+        } else {
+            format!("# {}\n\nCurrent project with {} tasks across {} phases", 
+                roadmap.title, 
+                roadmap.tasks.len(),
+                roadmap.get_all_phases().len()
+            )
+        };
+
+        let focus_instruction = match focus {
+            Some("structure") => "Focus on improving the overall project structure, organization, and hierarchy of tasks and phases.",
+            Some("priorities") => "Focus on analyzing and optimizing task priorities, identifying critical path items and urgent tasks.",
+            Some("phases") => "Focus on phase organization, phase transitions, and ensuring logical grouping of tasks.",
+            Some("timeline") => "Focus on timeline analysis, scheduling, and identifying potential bottlenecks or scheduling conflicts.",
+            Some("dependencies") => "Focus on task dependencies, identifying missing connections and potential circular dependencies.",
+            _ => "Provide a comprehensive analysis covering structure, priorities, phases, timeline, and dependencies.",
+        };
+
+        let prompt = if generate_plan {
+            format!(
+                "Generate a new comprehensive project plan based on these requirements:\n\n{}\n\n\
+                Current Project Context: {}\n\n\
+                Create a well-structured roadmap with:\n\
+                1. Clear phases with logical progression\n\
+                2. Specific, actionable tasks\n\
+                3. Appropriate priorities and dependencies\n\
+                4. Realistic timeline estimates\n\
+                5. Risk mitigation strategies\n\n\
+                {} Format the response as a detailed markdown roadmap.",
+                roadmap_content, project_context, focus_instruction
+            )
+        } else {
+            format!(
+                "Analyze this project roadmap and provide detailed suggestions for improvement:\n\n\
+                ROADMAP CONTENT:\n{}\n\n\
+                CURRENT PROJECT STATE:\n{}\n\n\
+                ANALYSIS FOCUS:\n{}\n\n\
+                Provide:\n\
+                1. Overall assessment of the roadmap structure and quality\n\
+                2. Specific suggestions for improvements\n\
+                3. Identification of missing tasks or phases\n\
+                4. Priority and timeline recommendations\n\
+                5. Risk analysis and mitigation suggestions\n\
+                6. Dependencies that should be added or modified\n\
+                7. Phase organization improvements\n\n\
+                Format your response with clear sections and actionable recommendations.",
+                roadmap_content, project_context, focus_instruction
+            )
+        };
+
+        let response = self.provider.chat(&prompt, None).await?;
+        Ok(response)
+    }
 }
 
 /// Utility functions for AI integration

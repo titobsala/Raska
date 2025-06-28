@@ -39,6 +39,9 @@ pub fn handle_ai_command(ai_command: &AiCommands) -> CommandResult {
             AiCommands::Suggest { count, apply, priority, phase } => {
                 handle_ai_suggest(*count, *apply, priority.as_deref(), phase.as_deref()).await
             }
+            AiCommands::Roadmap { file, apply, focus, output, generate_plan } => {
+                handle_ai_roadmap(file.as_deref(), *apply, focus.as_deref(), output.as_deref(), *generate_plan).await
+            }
         }
     })
 }
@@ -582,6 +585,42 @@ async fn handle_ai_suggest(count: usize, apply: bool, priority: Option<&str>, ph
         }
         Err(e) => {
             display_error(&format!("Failed to generate suggestions: {}", e));
+        }
+    }
+
+    Ok(())
+}
+
+/// Handle AI roadmap command
+async fn handle_ai_roadmap(file: Option<&str>, apply: bool, focus: Option<&str>, output: Option<&str>, generate_plan: bool) -> CommandResult {
+    let config = RaskConfig::load().map_err(|e| format!("Failed to load configuration: {}", e))?;
+    
+    if !config.ai.is_ready() {
+        display_error("AI is not configured. Please run 'rask ai configure' first.");
+        return Ok(());
+    }
+
+    let roadmap = load_state()?;
+    let ai_service = AiService::new(config).await
+        .map_err(|e| format!("Failed to initialize AI service: {}", e))?;
+
+    display_info("🗓 Generating project roadmap...");
+
+    match ai_service.generate_project_roadmap(&roadmap, file.as_deref(), focus.as_deref(), generate_plan).await {
+        Ok(roadmap) => {
+            if let Some(output_path) = output {
+                let json_output = serde_json::to_string_pretty(&roadmap)
+                    .map_err(|e| format!("Failed to serialize roadmap: {}", e))?;
+                fs::write(output_path, json_output)
+                    .map_err(|e| format!("Failed to write to file: {}", e))?;
+                display_success(&format!("Project roadmap exported to {}", output_path));
+            } else {
+                println!("📋 Project Roadmap");
+                println!("{}", roadmap);
+            }
+        }
+        Err(e) => {
+            display_error(&format!("Failed to generate project roadmap: {}", e));
         }
     }
 

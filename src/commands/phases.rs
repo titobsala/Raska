@@ -8,6 +8,7 @@ use crate::model::{Phase};
 use crate::state;
 use crate::ui;
 use super::CommandResult;
+use colored::Colorize;
 
 /// List all phases with their task counts
 pub fn list_phases() -> CommandResult {
@@ -223,6 +224,171 @@ pub fn show_phase_overview() -> CommandResult {
     }
     
     println!("  • Create custom phases: rask phase create \"<name>\" --description \"<desc>\" --emoji \"<emoji>\"");
+    
+    Ok(())
+}
+
+/// Fork (duplicate) tasks from a phase or specific tasks into a new phase
+pub fn fork_phase_or_tasks(
+    new_phase_name: &str,
+    from_phase: Option<&str>,
+    task_ids: Option<&str>,
+    description: Option<&str>,
+    emoji: Option<&str>,
+    copy: bool,
+) -> CommandResult {
+    let mut roadmap = state::load_state()?;
+    
+    // Validate inputs
+    if from_phase.is_none() && task_ids.is_none() {
+        ui::display_error("Must specify either --from-phase or --task-ids");
+        return Ok(());
+    }
+    
+    if from_phase.is_some() && task_ids.is_some() {
+        ui::display_error("Cannot specify both --from-phase and --task-ids. Choose one.");
+        return Ok(());
+    }
+    
+    if new_phase_name.trim().is_empty() {
+        ui::display_error("New phase name cannot be empty");
+        return Ok(());
+    }
+    
+    // Create the new phase
+    let new_phase = Phase::with_details(
+        new_phase_name.trim().to_string(),
+        description.map(|s| s.to_string()),
+        emoji.map(|s| s.to_string()),
+    );
+    
+    let mut tasks_to_fork = Vec::new();
+    let operation = if copy { "copied" } else { "moved" };
+    
+    // Get tasks to fork
+    if let Some(source_phase_name) = from_phase {
+        // Fork entire phase
+        let source_phase = Phase::from_string(source_phase_name);
+        let phase_tasks = roadmap.filter_by_phase(&source_phase);
+        
+        if phase_tasks.is_empty() {
+            ui::display_warning(&format!("No tasks found in phase '{}'", source_phase_name));
+            return Ok(());
+        }
+        
+        for task in phase_tasks {
+            tasks_to_fork.push(task.id);
+        }
+        
+        ui::display_info(&format!(
+            "🍴 Forking {} tasks from {} {} to {} {}",
+            tasks_to_fork.len(),
+            source_phase.emoji(),
+            source_phase.name,
+            new_phase.emoji(),
+            new_phase.name
+        ));
+    } else if let Some(task_ids_str) = task_ids {
+        // Fork specific tasks
+        let task_ids: Result<Vec<usize>, _> = task_ids_str
+            .split(',')
+            .map(|s| s.trim().parse::<usize>())
+            .collect();
+        
+        let task_ids = match task_ids {
+            Ok(ids) => ids,
+            Err(_) => {
+                ui::display_error("Invalid task IDs. Use comma-separated numbers: 1,2,3");
+                return Ok(());
+            }
+        };
+        
+        // Validate all task IDs exist
+        for &task_id in &task_ids {
+            if roadmap.find_task_by_id(task_id).is_none() {
+                ui::display_error(&format!("Task #{} not found", task_id));
+                return Ok(());
+            }
+        }
+        
+        tasks_to_fork = task_ids;
+        ui::display_info(&format!(
+            "🍴 Forking {} specific tasks to {} {}",
+            tasks_to_fork.len(),
+            new_phase.emoji(),
+            new_phase.name
+        ));
+    }
+    
+    // Fork the tasks
+    let mut forked_count = 0;
+    let next_id = roadmap.get_next_task_id();
+    
+    for (i, &task_id) in tasks_to_fork.iter().enumerate() {
+        if let Some(original_task) = roadmap.find_task_by_id(task_id) {
+            if copy {
+                // Create a copy of the task with new ID and phase
+                let mut new_task = original_task.clone();
+                new_task.id = next_id + i;
+                new_task.phase = new_phase.clone();
+                
+                // Reset some fields for the copy
+                new_task.status = crate::model::TaskStatus::Pending;
+                new_task.completed_at = None;
+                new_task.actual_hours = None;
+                new_task.time_sessions = Vec::new();
+                new_task.created_at = Some(chrono::Utc::now().to_rfc3339());
+                
+                // Clear dependencies to avoid conflicts (user can re-add if needed)
+                new_task.dependencies = Vec::new();
+                
+                roadmap.add_task(new_task);
+                forked_count += 1;
+            } else {
+                // Move the task to the new phase
+                if let Some(task) = roadmap.find_task_by_id_mut(task_id) {
+                    let old_phase = task.phase.clone();
+                    task.phase = new_phase.clone();
+                    
+                    println!("   {} Task #{} {} from {} {} to {} {}", 
+                        "✅".bright_green(),
+                        task_id,
+                        operation,
+                        old_phase.emoji(),
+                        old_phase.name,
+                        new_phase.emoji(),
+                        new_phase.name
+                    );
+                    forked_count += 1;
+                }
+            }
+        }
+    }
+    
+    // Save the updated roadmap
+    state::save_state(&roadmap)?;
+    
+    // Show summary
+    ui::display_success(&format!(
+        "🎉 Successfully {} {} tasks to {} {} phase!",
+        operation,
+        forked_count,
+        new_phase.emoji(),
+        new_phase.name
+    ));
+    
+    if copy {
+        println!();
+        println!("💡 Copied tasks have:");
+        println!("   • New task IDs (#{} - #{})", next_id, next_id + forked_count - 1);
+        println!("   • Reset to Pending status");
+        println!("   • Cleared dependencies (re-add if needed)");
+        println!("   • Cleared time tracking data");
+    }
+    
+    println!();
+    println!("🔍 View the new phase: rask phase show \"{}\"", new_phase.name);
+    println!("📊 Phase overview: rask phase overview");
     
     Ok(())
 } 
