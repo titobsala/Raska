@@ -11,32 +11,46 @@ pub fn display_task_line(task: &Task, detailed: bool) {
         status_icon.bright_black() 
     };
     
+    // AI task indicator - show special icon for AI-generated tasks
+    let ai_indicator = if task.is_ai_generated() {
+        "🤖".bright_cyan()
+    } else {
+        "  ".normal()
+    };
+    
     // Apply priority-based coloring to task description
     let priority_color_fn = get_priority_color(&task.priority);
-    let description = if task.status == TaskStatus::Completed {
+    let mut description = if task.status == TaskStatus::Completed {
         priority_color_fn(&task.description).strikethrough().dimmed()
     } else {
         priority_color_fn(&task.description)
     };
+    
+    // Special coloring for AI-generated tasks (cyan tint when not completed)
+    if task.is_ai_generated() && task.status != TaskStatus::Completed {
+        description = description.bright_cyan();
+    }
     
     // Format the main task line with consistent spacing
     // In detailed mode, we don't show priority icon here since it's shown in details below
     // In non-detailed mode, we show the priority icon for quick reference
     if detailed {
         // Detailed view: no priority icon in main line (shown in details below)
-        print!("  {} #{:2} {}", 
+        print!("  {} {} #{:2} {}", 
             status_color,       // Status checkbox (✓ or □)
+            ai_indicator,       // AI indicator (🤖 or spaces)
             task.id,           // Task ID with consistent 2-digit padding
-            description        // Task description with priority coloring
+            description        // Task description with priority/AI coloring
         );
     } else {
         // List view: show priority icon for quick scanning
         let priority_indicator = get_priority_indicator(&task.priority);
-        print!("  {} {} #{:2} {}", 
+        print!("  {} {} {} #{:2} {}", 
             status_color,           // Status checkbox (✓ or □)
+            ai_indicator,           // AI indicator (🤖 or spaces)
             priority_indicator,     // Priority emoji (🔥, ⬆️, ▶️, ⬇️)
             task.id,               // Task ID with consistent 2-digit padding
-            description            // Task description with priority coloring
+            description            // Task description with priority/AI coloring
         );
     }
     
@@ -58,6 +72,16 @@ pub fn display_task_line(task: &Task, detailed: bool) {
             get_priority_indicator(&task.priority),
             format!("{}", task.priority).bright_white()
         );
+        
+        // Show AI information if available
+        if task.is_ai_generated() {
+            if let Some(operation) = task.get_ai_operation() {
+                println!("       🤖 AI Generated: {} operation", operation.bright_cyan());
+            }
+            if let Some(reasoning) = task.get_ai_reasoning() {
+                println!("       💡 AI Suggestion: {}", reasoning.bright_blue().italic());
+            }
+        }
         
         if let Some(ref notes) = task.notes {
             println!("       💭 {}", notes.italic().bright_black());
@@ -273,6 +297,44 @@ pub fn display_detailed_task_view(task: &crate::model::Task, roadmap: &crate::mo
                 .join(" ")
                 .bright_cyan()
         );
+    }
+    
+    // AI Information - prominently displayed for AI-generated tasks
+    if task.is_ai_generated() {
+        println!("\n{}", "─".repeat(40).bright_cyan());
+        println!("  🤖 {} {}", "AI Generated Task".bold().bright_cyan(), "🤖".bright_cyan());
+        println!("{}", "─".repeat(40).bright_cyan());
+        
+        if let Some(operation) = task.get_ai_operation() {
+            println!("  🔧 {}: {} operation", "AI Source".bold(), operation.bright_cyan());
+        }
+        
+        if let Some(reasoning) = task.get_ai_reasoning() {
+            println!("  💡 {}:", "AI Analysis & Suggestions".bold().bright_blue());
+            // Handle multi-line AI reasoning with proper indentation
+            for line in reasoning.lines() {
+                if line.trim().is_empty() {
+                    println!();
+                } else {
+                    println!("      {}", line.bright_blue().italic());
+                }
+            }
+        }
+        
+        if let Some(ai_timestamp) = &task.ai_info.ai_timestamp {
+            use chrono::DateTime;
+            if let Ok(datetime) = DateTime::parse_from_rfc3339(ai_timestamp) {
+                println!("  🕒 {}: {}", "AI Generated".bold(), 
+                    datetime.format("%Y-%m-%d at %H:%M").to_string().bright_black()
+                );
+            }
+        }
+        
+        if let Some(model) = &task.ai_info.ai_model {
+            println!("  🧠 {}: {}", "AI Model".bold(), model.bright_magenta());
+        }
+        
+        println!("{}", "─".repeat(40).bright_cyan());
     }
     
         // Notes
