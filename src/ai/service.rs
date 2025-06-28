@@ -370,7 +370,14 @@ pub mod utils {
             task.set_estimated_hours(hours);
         }
 
-        // Add AI reasoning as an implementation note
+        // Mark as AI-generated with reasoning
+        task.mark_as_ai_generated(
+            "suggestion", 
+            Some(suggestion.reasoning.clone()),
+            None // Model will be added by the calling function if available
+        );
+
+        // Also add AI reasoning as an implementation note for backward compatibility
         task.add_implementation_note(format!("AI Reasoning: {}", suggestion.reasoning));
 
         task

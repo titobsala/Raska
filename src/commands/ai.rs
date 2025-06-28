@@ -222,6 +222,7 @@ async fn handle_ai_breakdown(description: &str, apply: bool, default_phase: Opti
         return Ok(());
     }
 
+    let model_name = config.ai.default_model.clone();
     let ai_service = AiService::new(config).await
         .map_err(|e| format!("Failed to initialize AI service: {}", e))?;
 
@@ -251,7 +252,15 @@ async fn handle_ai_breakdown(description: &str, apply: bool, default_phase: Opti
                     }
 
                     let new_id = roadmap.get_next_task_id();
-                    let task = utils::ai_suggestion_to_task(suggestion, new_id);
+                    let mut task = utils::ai_suggestion_to_task(suggestion, new_id);
+                    
+                    // Update AI info with correct operation and model
+                    task.mark_as_ai_generated(
+                        "breakdown",
+                        task.get_ai_reasoning().map(|s| s.clone()),
+                        Some(model_name.clone())
+                    );
+                    
                     roadmap.add_task(task);
                     added_count += 1;
                 }
@@ -515,6 +524,7 @@ async fn handle_ai_suggest(count: usize, apply: bool, priority: Option<&str>, ph
         return Ok(());
     }
 
+    let model_name = config.ai.default_model.clone();
     let roadmap = load_state()?;
     let ai_service = AiService::new(config).await
         .map_err(|e| format!("Failed to initialize AI service: {}", e))?;
@@ -561,7 +571,15 @@ async fn handle_ai_suggest(count: usize, apply: bool, priority: Option<&str>, ph
 
                 for suggestion in suggestions {
                     let new_id = roadmap.get_next_task_id();
-                    let task = utils::ai_suggestion_to_task(suggestion, new_id);
+                    let mut task = utils::ai_suggestion_to_task(suggestion, new_id);
+                    
+                    // Update AI info with correct operation and model
+                    task.mark_as_ai_generated(
+                        "suggest",
+                        task.get_ai_reasoning().map(|s| s.clone()),
+                        Some(model_name.clone())
+                    );
+                    
                     roadmap.add_task(task);
                     added_count += 1;
                 }
