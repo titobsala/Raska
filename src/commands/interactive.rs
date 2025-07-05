@@ -394,6 +394,7 @@ fn handle_templates_keys(key: event::KeyEvent, app: &mut App) {
                         time_sessions: Vec::new(),
                         implementation_notes: Vec::new(),
                         completed_at: None,
+                        ai_info: crate::model::AiTaskInfo::default(),
                     };
                     roadmap.tasks.push(new_task);
                     let _ = crate::state::save_state(roadmap);

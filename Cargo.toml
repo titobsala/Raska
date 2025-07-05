@@ -1,6 +1,6 @@
 [package]
 name = "rask"
-version = "3.2.2"
+version = "3.3.0"
 edition = "2021"
 description = "An advanced CLI project planner with tags, priorities, dependencies, and multi-project support"
 license = "MIT"
@@ -15,7 +15,8 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 pulldown-cmark = "0.9"
 colored = "2.0"
-chrono = { version = "0.4", features = ["serde"] }
+chrono = { version = "0.4.31", features = ["serde"] }
+inquire = "0.7.5"
 toml = "0.8"
 dirs = "5.0"
 # TUI dependencies

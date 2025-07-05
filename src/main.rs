@@ -77,6 +77,9 @@ fn run_command(command: &Commands) -> commands::CommandResult {
                 PhaseCommands::Set { task_id, phase } => commands::set_task_phase(*task_id, phase),
                 PhaseCommands::Overview => commands::show_phase_overview(),
                 PhaseCommands::Create { name, description, emoji } => commands::create_custom_phase(name, description.as_deref(), emoji.as_deref()),
+                PhaseCommands::Fork { new_phase, from_phase, task_ids, description, emoji, copy } => {
+                    commands::fork_phase_or_tasks(new_phase, from_phase.as_deref(), task_ids.as_deref(), description.as_deref(), emoji.as_deref(), *copy)
+                },
             }
         },
         Commands::Config(config_command) => {

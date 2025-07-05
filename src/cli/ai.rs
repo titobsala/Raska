@@ -113,4 +113,27 @@ pub enum AiCommands {
         #[arg(long, value_name = "PHASE", help = "Phase to assign to suggested tasks")]
         phase: Option<String>,
     },
+    
+    /// Analyze roadmap file and suggest improvements or create a plan
+    Roadmap {
+        /// Roadmap file to analyze (defaults to current project's roadmap)
+        #[arg(value_name = "FILE", help = "Roadmap markdown file to analyze")]
+        file: Option<String>,
+        
+        /// Apply suggested improvements/tasks to the project
+        #[arg(long, help = "Apply AI suggestions directly to the project")]
+        apply: bool,
+        
+        /// Focus area for analysis (structure, priorities, phases, timeline, dependencies)
+        #[arg(long, value_name = "FOCUS", help = "Focus analysis on: structure, priorities, phases, timeline, dependencies")]
+        focus: Option<String>,
+        
+        /// Export detailed analysis to file
+        #[arg(long, short, value_name = "FILE", help = "Export detailed analysis to file")]
+        output: Option<String>,
+        
+        /// Generate a new project plan instead of analyzing existing roadmap
+        #[arg(long, help = "Generate a new project plan based on requirements")]
+        generate_plan: bool,
+    },
 }
