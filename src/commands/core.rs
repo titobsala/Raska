@@ -19,7 +19,8 @@ use regex;
 pub fn init_project(filepath: &PathBuf) -> CommandResult {
     // Read and parse the markdown file
     let markdown_content = fs::read_to_string(filepath)?;
-    let mut roadmap = parser::parse_markdown_to_roadmap(&markdown_content, Some(filepath))?;
+    let project_name = filepath.file_stem().and_then(|s| s.to_str()).unwrap_or("Untitled Project");
+    let mut roadmap = parser::parse_markdown_to_roadmap(&markdown_content, Some(filepath), project_name)?;
     
     // Set up local project directory structure
     setup_local_project_directory(&mut roadmap, filepath)?;
@@ -1073,7 +1074,7 @@ fn sync_from_roadmap(force: bool, dry_run: bool) -> CommandResult {
     
     // Parse the updated roadmap file
     let markdown_content = fs::read_to_string(source_path)?;
-    let mut updated_roadmap = parser::parse_markdown_to_roadmap(&markdown_content, Some(source_path))?;
+    let mut updated_roadmap = parser::parse_markdown_to_roadmap(&markdown_content, Some(source_path), &roadmap.title)?;
     
     // Preserve metadata and project ID
     updated_roadmap.metadata = roadmap.metadata;
