@@ -161,4 +161,15 @@ pub enum TemplateCommands {
         #[arg(long, help = "Replace the original template with the enhanced version")]
         apply: bool,
     },
+
+    /// Generate a new project roadmap from a template
+    Roadmap {
+        /// Name of the roadmap template to use
+        #[arg(value_name = "TEMPLATE_NAME", help = "Name of the roadmap template to use")]
+        template_name: String,
+
+        /// Name of the new project
+        #[arg(value_name = "PROJECT_NAME", help = "Name of the new project")]
+        project_name: String,
+    },
 } 

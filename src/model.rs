@@ -190,14 +190,65 @@ impl TaskTemplate {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TemplateCollection {
     pub templates: Vec<TaskTemplate>,
+    pub roadmap_templates: Vec<RoadmapTemplate>,
     pub created_at: String,
     pub last_modified: String,
+}
+
+/// Represents a question to ask the user during interactive roadmap generation.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct InteractiveQuestion {
+    /// A machine-readable key for the AI prompt (e.g., "target_audience").
+    pub key: String,
+    /// The human-readable question to ask the user.
+    pub prompt: String,
+    /// The type of input expected (e.g., text, choice).
+    pub question_type: QuestionType,
+    /// An optional default value.
+    pub default_value: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum QuestionType {
+    Text, // Free-form text input
+}
+
+/// A template for generating an entire project roadmap, including interactive questions.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RoadmapTemplate {
+    pub name: String,
+    pub description: String,
+    /// A list of questions to ask the user to customize the roadmap.
+    pub interactive_questions: Vec<InteractiveQuestion>,
+    /// The base list of tasks that will be refined by the AI.
+    pub base_tasks: Vec<TaskTemplate>,
 }
 
 impl Default for TemplateCollection {
     fn default() -> Self {
         TemplateCollection {
             templates: TaskTemplate::predefined_templates(),
+            roadmap_templates: vec![
+                RoadmapTemplate {
+                    name: "Web App".to_string(),
+                    description: "A simple web application".to_string(),
+                    interactive_questions: vec![
+                        InteractiveQuestion {
+                            key: "target_audience".to_string(),
+                            prompt: "Who is the target audience for this web app?".to_string(),
+                            question_type: QuestionType::Text,
+                            default_value: Some("General users".to_string()),
+                        },
+                        InteractiveQuestion {
+                            key: "core_feature".to_string(),
+                            prompt: "What is the core feature of this web app?".to_string(),
+                            question_type: QuestionType::Text,
+                            default_value: Some("User authentication and data display".to_string()),
+                        },
+                    ],
+                    base_tasks: vec![],
+                },
+            ],
             created_at: chrono::Utc::now().to_rfc3339(),
             last_modified: chrono::Utc::now().to_rfc3339(),
         }
