@@ -19,7 +19,7 @@ fn extract_text(parser: &mut CmarkParser) -> String {
     text
 }
 
-pub fn parse_markdown_to_roadmap(markdown_input: &str, source_file: Option<&Path>) -> Result<Roadmap, Error> {
+pub fn parse_markdown_to_roadmap(markdown_input: &str, source_file: Option<&Path>, project_name: &str) -> Result<Roadmap, Error> {
     let mut parser = CmarkParser::new(markdown_input);
     let mut roadmap_title = String::new();
     let mut tasks: Vec<Task> = Vec::new();
@@ -49,7 +49,7 @@ pub fn parse_markdown_to_roadmap(markdown_input: &str, source_file: Option<&Path
     }
 
     if roadmap_title.is_empty() {
-        return Err(Error::new(ErrorKind::InvalidData, "Markdown is missing a project title (H1 heading)."));
+        roadmap_title = project_name.to_string();
     }
 
     let mut roadmap = Roadmap::new(roadmap_title);

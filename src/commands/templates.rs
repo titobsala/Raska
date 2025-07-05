@@ -43,6 +43,9 @@ pub fn handle_template_command(cmd: TemplateCommands) -> Result<(), Box<dyn std:
         TemplateCommands::Enhance { name, apply } => {
             enhance_template_with_ai(&name, apply)
         }
+        TemplateCommands::Roadmap { template_name, project_name } => {
+            generate_roadmap_from_template(&template_name, &project_name)
+        }
     }
 }
 
@@ -917,4 +920,89 @@ fn enhance_template_with_ai(
 
         Ok(())
     })
-} 
+}
+
+fn generate_roadmap_from_template(
+    template_name: &str,
+    project_name: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use tokio::runtime::Runtime;
+
+    let rt = Runtime::new()?;
+
+    rt.block_on(async {
+        // Load AI config
+        let config = crate::config::RaskConfig::load()?;
+        if !config.ai.is_ready() {
+            println!("  {} AI is not configured. Please run 'rask ai configure' first.", "❌".bright_red());
+            return Ok(());
+        }
+
+        // Load templates and find the roadmap template
+        let templates = load_templates()?;
+        let roadmap_template = match templates.roadmap_templates.iter().find(|t| t.name == template_name) {
+            Some(t) => t.clone(),
+            None => {
+                println!("  {} Roadmap template '{}' not found", "❌".bright_red(), template_name.bright_white());
+                return Ok(());
+            }
+        };
+
+        let mut answers = std::collections::HashMap::new();
+        for question in &roadmap_template.interactive_questions {
+            let answer_str = match question.question_type {
+                crate::model::QuestionType::Text => {
+                    inquire::Text::new(&question.prompt)
+                        .with_default(question.default_value.as_deref().unwrap_or(""))
+                        .prompt()? // This returns Result<String, InquireError>, so answer_str will be String
+                }
+            };
+            answers.insert(question.key.clone(), answer_str);
+        }
+
+        let ai_service = crate::ai::service::AiService::new(config).await?;
+
+        let mut prompt = format!(
+            "You are an expert project manager. Generate a project roadmap in Markdown format for a new project called '{}'.
+
+The roadmap MUST start with an H1 heading for the project title, e.g., '# My Project'.
+
+",
+            project_name
+        );
+
+        prompt.push_str("The user has provided the following requirements:
+");
+        for (key, value) in &answers {
+            prompt.push_str(&format!("- {}: {}
+", key, value));
+        }
+
+        if !roadmap_template.base_tasks.is_empty() {
+            prompt.push_str("
+Use the following tasks as a base:
+");
+            for task in &roadmap_template.base_tasks {
+                prompt.push_str(&format!("- {}
+", task.description));
+            }
+        }
+
+        let response = ai_service.chat(prompt).await?;
+
+        let mut roadmap = crate::parser::parse_markdown_to_roadmap(&response, None, project_name)?;
+        roadmap.title = project_name.to_string();
+        roadmap.source_file = Some(format!("{}.md", project_name));
+
+        state::save_state(&roadmap)?;
+
+        // Save the AI-generated markdown to a new file
+        let output_file_path = format!("{}.md", project_name);
+        std::fs::write(&output_file_path, &response)?;
+
+        println!("\n✅ Roadmap for '{}' created successfully!", project_name.bright_white());
+        println!("   Run 'rask --project {}' to start working on it.", project_name);
+
+        Ok(())
+    })
+}
