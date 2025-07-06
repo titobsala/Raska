@@ -610,7 +610,7 @@ async fn handle_ai_suggest(count: usize, apply: bool, priority: Option<&str>, ph
 }
 
 /// Handle AI roadmap command
-async fn handle_ai_roadmap(file: Option<&str>, apply: bool, focus: Option<&str>, output: Option<&str>, generate_plan: bool) -> CommandResult {
+pub async fn handle_ai_roadmap(file: Option<&str>, apply: bool, focus: Option<&str>, output: Option<&str>, generate_plan: bool) -> CommandResult {
     let config = RaskConfig::load().map_err(|e| format!("Failed to load configuration: {}", e))?;
     
     if !config.ai.is_ready() {
