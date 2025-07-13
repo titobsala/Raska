@@ -27,6 +27,19 @@ use std::{
     path::PathBuf,
 };
 use chrono;
+use crate::commands::ai::handle_ai_roadmap;
+
+const TEMPLATES: &[(&str, &str)] = &[
+    ("✨ (AI) Generate Roadmap from scratch", "Let AI create a new project plan for you"),
+    ("Web Development Project", "Set up web development environment and structure"),
+    ("Mobile App Development", "Create mobile app with UI/UX design and core features"),
+    ("Data Analysis Project", "Analyze data and create visualizations with insights"),
+    ("Game Development", "Design and implement game mechanics and graphics"),
+    ("Research Project", "Conduct research and document findings"),
+    ("Infrastructure Setup", "Set up development and deployment infrastructure"),
+    ("Bug Fix Template", "Identify, reproduce, and fix software bugs"),
+    ("Feature Development", "Design and implement new software features"),
+];
 
 /// TUI Settings for persistence
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -354,7 +367,7 @@ fn handle_tasks_keys(key: event::KeyEvent, app: &mut App) {
 
 /// Handle key events for the Templates panel
 fn handle_templates_keys(key: event::KeyEvent, app: &mut App) {
-    let template_count = 8; // Hardcoded count of templates
+    let template_count = TEMPLATES.len();
     match key.code {
         KeyCode::Esc | KeyCode::Tab => app.focus = PanelFocus::Navigation,
         KeyCode::Down => {
@@ -366,42 +379,51 @@ fn handle_templates_keys(key: event::KeyEvent, app: &mut App) {
             app.selected_template = Some(new_idx);
         }
         KeyCode::Enter => { // Apply template by creating a new task
-            if let (Some(roadmap), Some(template_idx)) = (&mut app.roadmap, app.selected_template) {
-                let templates = vec![
-                    ("Web Development Project", "Set up web development environment and structure"),
-                    ("Mobile App Development", "Create mobile app with UI/UX design and core features"),
-                    ("Data Analysis Project", "Analyze data and create visualizations with insights"),
-                    ("Game Development", "Design and implement game mechanics and graphics"),
-                    ("Research Project", "Conduct research and document findings"),
-                    ("Infrastructure Setup", "Set up development and deployment infrastructure"),
-                    ("Bug Fix Template", "Identify, reproduce, and fix software bugs"),
-                    ("Feature Development", "Design and implement new software features"),
-                ];
-                if let Some((name, desc)) = templates.get(template_idx) {
-                    let new_id = roadmap.tasks.iter().map(|t| t.id).max().unwrap_or(0) + 1;
-                    let new_task = Task {
-                        id: new_id,
-                        description: format!("{}: {}", name, desc),
-                        status: TaskStatus::Pending,
-                        priority: Priority::Medium,
-                        phase: Phase::new("Planning".to_string()),
-                        created_at: Some(chrono::Utc::now().to_rfc3339()),
-                        tags: std::collections::HashSet::new(),
-                        dependencies: Vec::new(),
-                        notes: None,
-                        estimated_hours: None,
-                        actual_hours: None,
-                        time_sessions: Vec::new(),
-                        implementation_notes: Vec::new(),
-                        completed_at: None,
-                        ai_info: crate::model::AiTaskInfo::default(),
-                    };
-                    roadmap.tasks.push(new_task);
-                    let _ = crate::state::save_state(roadmap);
-                    // Switch to tasks view to see the new task
-                    app.current_view = AppView::Tasks;
-                    app.focus = PanelFocus::Tasks;
-                    app.selected_task = Some(roadmap.tasks.len() - 1);
+            if let Some(template_idx) = app.selected_template {
+                if template_idx == 0 { // AI-powered generation
+                    display_info("🤖 AI is generating a new roadmap... this may take a moment.");
+                    
+                    // Since handle_ai_roadmap is async, we need a runtime to execute it.
+                    let rt = tokio::runtime::Runtime::new().unwrap();
+                    rt.block_on(async {
+                        let output_file = "ai_generated_roadmap.md";
+                        // We pass `None` for the file to generate from scratch.
+                        // We also set `generate_plan` to true.
+                        let result = handle_ai_roadmap(None, false, None, Some(output_file), true).await;
+                        
+                        if result.is_ok() {
+                            display_info(&format!("✅ AI roadmap generated successfully! Saved to {}", output_file));
+                        } else {
+                            display_info("❌ AI roadmap generation failed.");
+                        }
+                    });
+                } else if let Some((name, desc)) = TEMPLATES.get(template_idx) {
+                    if let Some(roadmap) = &mut app.roadmap {
+                        let new_id = roadmap.tasks.iter().map(|t| t.id).max().unwrap_or(0) + 1;
+                        let new_task = Task {
+                            id: new_id,
+                            description: format!("{}: {}", name, desc),
+                            status: TaskStatus::Pending,
+                            priority: Priority::Medium,
+                            phase: Phase::new("Planning".to_string()),
+                            created_at: Some(chrono::Utc::now().to_rfc3339()),
+                            tags: std::collections::HashSet::new(),
+                            dependencies: Vec::new(),
+                            notes: None,
+                            estimated_hours: None,
+                            actual_hours: None,
+                            time_sessions: Vec::new(),
+                            implementation_notes: Vec::new(),
+                            completed_at: None,
+                            ai_info: crate::model::AiTaskInfo::default(),
+                        };
+                        roadmap.tasks.push(new_task);
+                        let _ = crate::state::save_state(roadmap);
+                        // Switch to tasks view to see the new task
+                        app.current_view = AppView::Tasks;
+                        app.focus = PanelFocus::Tasks;
+                        app.selected_task = Some(roadmap.tasks.len() - 1);
+                    }
                 }
             }
         }
@@ -616,44 +638,52 @@ fn render_tasks_view(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_stateful_widget(list, area, &mut list_state);
 }
 
-
 /// Render the Templates view
 fn render_templates_view(f: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(40), Constraint::Percentage(60)].as_ref())
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
         .split(area);
 
-    // Left panel: Template list
-    let templates = vec![
-        "Web Development Project", "Mobile App Development", "Data Analysis Project", "Game Development",
-        "Research Project", "Infrastructure Setup", "Bug Fix Template", "Feature Development",
-    ];
-    let template_items: Vec<ListItem> = templates.iter().enumerate().map(|(i, name)| {
-        let style = if app.selected_template == Some(i) {
+    // Templates List
+    let templates: Vec<ListItem> = TEMPLATES.iter().enumerate().map(|(i, (name, _))| {
+        let style = if app.selected_template == Some(i) && app.focus == PanelFocus::Templates {
             Style::default().bg(Color::Blue).fg(Color::White)
         } else {
             Style::default()
         };
         ListItem::new(Line::from(Span::styled(*name, style)))
     }).collect();
-    
-    let list_block = Block::default().borders(Borders::ALL).title(" 📄 Templates ").border_style(if app.focus == PanelFocus::Templates { Style::default().fg(Color::Yellow) } else { Style::default() });
-    let list = List::new(template_items).block(list_block);
-    let mut list_state = ListState::default();
-    list_state.select(app.selected_template);
-    f.render_stateful_widget(list, chunks[0], &mut list_state);
 
-    // Right panel: Preview
-    let descriptions = vec![
-        "A full-stack web application template.", "A cross-platform mobile app template.", "A data analysis workflow template.", "A complete game development pipeline.",
-        "An academic or industry research project.", "A DevOps infrastructure setup template.", "A systematic workflow for fixing bugs.", "A template for implementing new features.",
-    ];
-    let preview_text = app.selected_template.and_then(|i| descriptions.get(i)).unwrap_or(&"Select a template to see details.");
-    let preview_widget = Paragraph::new(*preview_text)
-        .block(Block::default().borders(Borders::ALL).title(" 🔍 Preview ").border_style(Style::default().fg(Color::Green)))
+    let templates_list = List::new(templates)
+        .block(Block::default().borders(Borders::ALL).title("📋 Templates").border_style(
+            if app.focus == PanelFocus::Templates {
+                Style::default().fg(Color::Yellow)
+            } else {
+                Style::default()
+            }
+        ))
+        .highlight_style(Style::default().add_modifier(Modifier::BOLD))
+        .highlight_symbol(">> ");
+
+    f.render_widget(templates_list, chunks[0]);
+
+    // Template Preview
+    let preview_text = if let Some(idx) = app.selected_template {
+        if let Some((_, desc)) = TEMPLATES.get(idx) {
+            vec![Line::from(*desc)]
+        } else {
+            vec![Line::from("Select a template to see details.")]
+        }
+    } else {
+        vec![Line::from("Select a template to see details.")]
+    };
+
+    let preview = Paragraph::new(preview_text)
+        .block(Block::default().borders(Borders::ALL).title("🔍 Preview"))
         .wrap(Wrap { trim: true });
-    f.render_widget(preview_widget, chunks[1]);
+
+    f.render_widget(preview, chunks[1]);
 }
 
 /// Render the Settings view
