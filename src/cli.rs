@@ -427,6 +427,33 @@ pub enum Commands {
         #[arg(long, help = "Show what would be synced without making changes")]
         dry_run: bool,
     },
+
+    /// 🌐 Launch web interface server
+    Web {
+        /// Port to run the web server on
+        #[arg(long, short, value_name = "PORT", default_value = "3000", help = "Port to run the web server on")]
+        port: u16,
+        
+        /// Host address to bind the web server to
+        #[arg(long, value_name = "HOST", default_value = "127.0.0.1", help = "Host address to bind the web server to")]
+        host: String,
+        
+        /// Run web server in background as daemon
+        #[arg(long, help = "Run web server in background as daemon")]
+        daemon: bool,
+        
+        /// Stop any running daemon
+        #[arg(long, help = "Stop any running web server daemon")]
+        stop: bool,
+        
+        /// Show web server status
+        #[arg(long, help = "Show current web server status")]
+        status: bool,
+        
+        /// Auto-open browser after starting server
+        #[arg(long, help = "Automatically open web interface in browser")]
+        open: bool,
+    },
 }
 
 /// Parse command line arguments and return the CLI structure

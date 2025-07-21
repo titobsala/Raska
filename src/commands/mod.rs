@@ -15,6 +15,7 @@ pub mod notes;
 pub mod templates;
 pub mod utils;
 pub mod interactive;
+pub mod web;
 
 // Re-export all public command functions
 pub use ai::*;
@@ -28,6 +29,7 @@ pub use phases::*;
 pub use notes::*;
 pub use templates::*;
 pub use interactive::*;
+pub use web::*;
 
 // Common types used across all command modules
 pub type CommandResult = Result<(), Box<dyn std::error::Error>>;
