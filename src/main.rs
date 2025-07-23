@@ -8,6 +8,7 @@ mod model;
 mod parser;
 mod state;
 mod ui;
+mod web;
 
 use cli::{Commands, PhaseCommands, NotesCommands};
 use std::process;
@@ -143,6 +144,9 @@ fn run_command(command: &Commands) -> commands::CommandResult {
         },
         Commands::Sync { from_roadmap, from_details, from_global, to_files, force, dry_run } => {
             commands::sync_project_files(*from_roadmap, *from_details, *from_global, *to_files, *force, *dry_run)
+        },
+        Commands::Web { port, host, daemon, stop, status, open } => {
+            commands::handle_web_command(*port, host, *daemon, *stop, *status, *open)
         },
     }
 }
