@@ -103,10 +103,11 @@ tarpaulin-report.html
 rask/
 .rask/
 
+node_modules/
 
 # Keep these files in version control for team sharing:
 # .rask/README.md
 # .rask/config.toml
 # .rask/project-overview.md (auto-generated but useful for quick reference)
 # .rask/task-details.md (editable metadata)
-# .rask/sync.sh 
+# .rask/sync.sh
