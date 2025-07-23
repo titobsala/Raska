@@ -63,8 +63,6 @@ async fn create_app() -> Result<Router> {
         .nest("/ws", routes::websocket_routes())
         // Static file serving (for React frontend)
         .nest("/", routes::static_routes())
-        // Health check
-        .route("/health", get(health_check))
         // Fallback for SPA routing
         .fallback(spa_fallback)
         .layer(
@@ -81,14 +79,6 @@ async fn create_app() -> Result<Router> {
     Ok(app)
 }
 
-/// Health check endpoint
-async fn health_check() -> Json<Value> {
-    Json(json!({
-        "status": "ok",
-        "service": "rask-web",
-        "version": env!("CARGO_PKG_VERSION")
-    }))
-}
 
 /// Fallback handler for SPA routing - serves index.html for unknown routes
 async fn spa_fallback() -> Result<Html<String>, StatusCode> {
